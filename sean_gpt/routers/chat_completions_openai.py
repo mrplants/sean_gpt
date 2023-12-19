@@ -1,20 +1,20 @@
 import requests
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Depends
 
-from ..model.chat_request import ChatRequest
-from ..settings import Settings
+from ..model.chat_completion.chat_request import ChatRequest
+from ..model.authentication.user import User
+from .authentication import get_current_active_user
+from ..config import settings
 
 router = APIRouter(
     prefix="/chat/completions/openai",
     tags=["Chat Completion"],
 )
 
-def get_settings(request: Request):
-    return request.app.state.settings
-
-@router.post("/")
-def openai_chat_completions(request: ChatRequest, settings: Settings = Depends(get_settings)):
+@router.post("/", dependencies=[Depends(get_current_active_user)])
+def openai_chat_completions(request: ChatRequest):
     """ Passes the request verbatim to the OpenAI API.
 
     Args:

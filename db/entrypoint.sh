@@ -9,7 +9,7 @@ while ! mongo --eval "print('waited for connection')" &> /dev/null; do
 done
 
 # Run import script
-mongoimport --uri "mongodb://localhost:27017" --db sean_gpt --collection user --file /data/export.json --jsonArray
+mongoimport --uri "mongodb://localhost:27017" --db sean_gpt --collection user --file /data/dev_user_export.json --jsonArray
 
 echo "Data import complete."
 

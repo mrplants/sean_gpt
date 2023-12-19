@@ -71,7 +71,6 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
     user = await authenticate_user(form_data.username, form_data.password)
-    print(settings)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

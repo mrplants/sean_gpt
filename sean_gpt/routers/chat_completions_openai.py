@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from ..model.chat_completion.chat_request import ChatRequest
 from ..model.authentication.user import User
-from .authentication import get_current_active_user
+from .authentication import get_current_user
 from ..config import settings
 
 router = APIRouter(
@@ -13,7 +13,7 @@ router = APIRouter(
     tags=["Chat Completion"],
 )
 
-@router.post("/", dependencies=[Depends(get_current_active_user)])
+@router.post("/", dependencies=[Depends(get_current_user)])
 def openai_chat_completions(request: ChatRequest):
     """ Passes the request verbatim to the OpenAI API.
 

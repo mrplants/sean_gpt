@@ -1,11 +1,13 @@
 # Use an official Python runtime as a parent image
 FROM python:3.10
+RUN pip install --upgrade pip
 
 # Set the working directory to /app
 WORKDIR /app
 
 # Download the git repo
-RUN wget https://raw.githubusercontent.com/mrplants/sean_gpt/main/dist/sean_gpt-0.1.0-py3-none-any.whl
+#RUN wget https://raw.githubusercontent.com/mrplants/sean_gpt/main/dist/sean_gpt-0.1.0-py3-none-any.whl
+COPY sean_gpt-0.1.0-py3-none-any.whl /app/sean_gpt-0.1.0-py3-none-any.whl
 
 # Install the package
 RUN pip install sean_gpt-0.1.0-py3-none-any.whl

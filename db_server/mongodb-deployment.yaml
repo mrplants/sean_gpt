@@ -13,6 +13,8 @@ spec:
         app: mongodb
     spec:
       containers:
-        image: sean_gpt_db
+      - name: mongodb
+        image: sean_gpt_db:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 27017

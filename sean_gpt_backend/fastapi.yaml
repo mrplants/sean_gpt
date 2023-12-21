@@ -3,7 +3,7 @@ kind: ReplicaSet
 metadata:
   name: fastapi-backend
 spec:
-  replicas: 1  # Adjust replica count as needed
+  replicas: 1
   selector:
     matchLabels:
       app: fastapi-backend
@@ -16,13 +16,11 @@ spec:
       - name: fastapi-backend
         image: sean_gpt_backend:latest
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8000
         envFrom:
         - secretRef:
-            name: fastapi-secrets
+            name: sean-gpt-backend-secrets
         - configMapRef:
-            name: fastapi-env
+            name: sean-gpt-env
 ---
 apiVersion: v1
 kind: Service

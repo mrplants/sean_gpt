@@ -16,9 +16,12 @@ spec:
       containers:
       - name: postgres
         image: postgres
+        envFrom:
+        - secretRef:
+            name: sean-gpt-db-secrets
+        - configMapRef:
+            name: sean-gpt-env
         env:
-        - name: POSTGRES_PASSWORD
-          value: "supersecret"
         - name: PGDATA
           value: /data/pgdata
         volumeMounts:
@@ -30,7 +33,7 @@ spec:
       volumes:
       - name: init-scripts
         configMap:
-          name: postgres-init-scripts
+          name: postgres-init-script
   volumeClaimTemplates:
   - metadata:
       name: postgres-volume
@@ -50,17 +53,34 @@ spec:
   clusterIP: None
   selector:
     app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: postgres-init-scripts
+  name: postgres-init-script
 data:
-  init_1.sql: |
-    CREATE TABLE IF NOT EXISTS user_data (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        username VARCHAR(50) NOT NULL UNIQUE,
-        hashed_password VARCHAR(255) NOT NULL
-    );
-    INSERT INTO user_data (username, hashed_password)
-    VALUES ('johndoe@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW');
+  init.sh: |
+    #!/bin/bash
+    # Create a new user
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d postgres -c "CREATE USER $API_DB_USER WITH ENCRYPTED PASSWORD '$API_DB_PASSWORD';"
+
+    # Create a new database
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d postgres -c "CREATE DATABASE $DATABASE_NAME;"
+
+    # Create table and insert data as admin user
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c '
+        CREATE TABLE IF NOT EXISTS user_data (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            username VARCHAR(50) NOT NULL UNIQUE,
+            hashed_password VARCHAR(255) NOT NULL
+        );
+        INSERT INTO user_data (username, hashed_password)
+        VALUES ('\''johndoe@example.com'\'', '\''$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'\'');
+    '
+    # Grant specific privileges to API user
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c "
+        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE user_data TO $API_DB_USER;
+    "

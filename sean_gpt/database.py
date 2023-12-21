@@ -1,7 +1,7 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from odmantic import AIOEngine
-
 from .config import settings
+
+from sqlmodel import Field, SQLModel, create_engine
+
 
 client = AsyncIOMotorClient(settings.database_url)
 db = AIOEngine(client=client, database=settings.database_name)

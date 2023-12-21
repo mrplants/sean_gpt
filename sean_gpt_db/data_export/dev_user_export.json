@@ -1,9 +1,0 @@
-[{
-    "_id": {
-      "$oid": "6581546ae3be1138486c5b5b"
-    },
-    "email": "johndoe@example.com",
-    "full_name": "John Doe",
-    "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-    "username": "johndoe"
-  }]

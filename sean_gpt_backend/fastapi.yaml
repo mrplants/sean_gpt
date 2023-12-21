@@ -1,9 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: ReplicaSet
 metadata:
   name: fastapi-backend
 spec:
-  replicas: 1
+  replicas: 1  # Adjust replica count as needed
   selector:
     matchLabels:
       app: fastapi-backend
@@ -23,3 +23,15 @@ spec:
             name: fastapi-secrets
         - configMapRef:
             name: fastapi-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: fastapi-backend
+  ports:
+    - port: 8000
+      targetPort: 8000

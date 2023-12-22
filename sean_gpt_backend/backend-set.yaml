@@ -19,6 +19,8 @@ spec:
         envFrom:
         - secretRef:
             name: sean-gpt-backend-secrets
+        - secretRef:
+            name: sean-gpt-db-secrets
         - configMapRef:
             name: sean-gpt-env
 ---

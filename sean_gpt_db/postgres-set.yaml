@@ -72,15 +72,15 @@ data:
 
     # Create table and insert data as admin user
     PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c '
-        CREATE TABLE IF NOT EXISTS user_data (
+        CREATE TABLE IF NOT EXISTS userdata (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            username VARCHAR(50) NOT NULL UNIQUE,
+            email VARCHAR(255) NOT NULL UNIQUE,
             hashed_password VARCHAR(255) NOT NULL
         );
-        INSERT INTO user_data (username, hashed_password)
+        INSERT INTO userdata (email, hashed_password)
         VALUES ('\''johndoe@example.com'\'', '\''$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'\'');
     '
     # Grant specific privileges to API user
     PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c "
-        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE user_data TO $API_DB_USER;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE userdata TO $API_DB_USER;
     "

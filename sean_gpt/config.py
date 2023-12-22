@@ -1,7 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="env/.env.secrets")
+load_dotenv(dotenv_path="env/.env.backend_secrets")
+load_dotenv(dotenv_path="env/.env.db_secrets")
 load_dotenv(dotenv_path="env/.env.local")
 load_dotenv(dotenv_path="env/.env")
 
@@ -11,10 +12,16 @@ load_dotenv(dotenv_path="env/.env")
 class Settings(BaseSettings):
     secret_key: str
     openai_api_key: str
-    database_name: str
-    database_url: str
     algorithm: str
     openai_api_url: str
     access_token_expire_minutes: int
+    debug: bool = False
+    api_db_dialect: str
+    api_db_driver: str
+    api_db_host: str
+    api_db_port: str
+    api_db_name: str
+    api_db_user: str
+    api_db_password: str
 
 settings = Settings()

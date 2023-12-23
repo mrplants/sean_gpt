@@ -1,10 +1,17 @@
 from typing import Optional
+from uuid import UUID
 
 from sqlmodel import Field, SQLModel
 
-class User(SQLModel):
-    email: str
+class UserBase(SQLModel):
+    email: str = Field(index=True, unique=True)
 
-class UserData(User, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class UserRead(UserBase):
+    id: UUID
+
+class UserCreate(UserBase):
+    password: str
+
+class AuthenticatedUser(UserBase, table=True):
+    id: Optional[UUID] = Field(default=None, primary_key=True)
     hashed_password: str

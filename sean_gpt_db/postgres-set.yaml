@@ -68,19 +68,20 @@ data:
     PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d postgres -c "CREATE USER $API_DB_USER WITH ENCRYPTED PASSWORD '$API_DB_PASSWORD';"
 
     # Create a new database
-    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d postgres -c "CREATE DATABASE $DATABASE_NAME;"
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d postgres -c "CREATE DATABASE $API_DB_NAME;"
+
+    # Grant the user the ability to create tables in the public schema
+    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $API_DB_NAME -c "
+        GRANT CREATE ON SCHEMA public TO $API_DB_USER;
+    "
 
     # Create table and insert data as admin user
-    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c '
-        CREATE TABLE IF NOT EXISTS userdata (
+    PGPASSWORD=$API_DB_PASSWORD psql -v ON_ERROR_STOP=1 -U $API_DB_USER -d $API_DB_NAME -c '
+        CREATE TABLE IF NOT EXISTS authenticateduser (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             email VARCHAR(255) NOT NULL UNIQUE,
             hashed_password VARCHAR(255) NOT NULL
         );
-        INSERT INTO userdata (email, hashed_password)
+        INSERT INTO authenticateduser (email, hashed_password)
         VALUES ('\''johndoe@example.com'\'', '\''$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'\'');
     '
-    # Grant specific privileges to API user
-    PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $DATABASE_NAME -c "
-        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE userdata TO $API_DB_USER;
-    "

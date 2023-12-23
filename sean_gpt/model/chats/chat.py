@@ -2,7 +2,7 @@ from typing import Optional
 import uuid
 from uuid import UUID
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel    
 
 class ChatBase(SQLModel):
     id: Optional[UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -14,4 +14,4 @@ class Chat(ChatBase, table=True):
     pass
 
 class ChatRead(ChatBase):
-    id: int
+    id: UUID

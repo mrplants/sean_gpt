@@ -1,9 +1,10 @@
+from typing import Annotated
+
 from .config import settings
 from sqlmodel import create_engine, SQLModel, Session
 from fastapi import Depends
 
 # Import all the models, so that they're registered with sqlmodel
-from .model.ai_model import AI
 from .model.authentication.user import AuthenticatedUser
 from .model.chats.message import Message
 from .model.chats.chat import Chat
@@ -20,4 +21,4 @@ def get_session():
     with Session(db_engine) as session:
         yield session
 
-SessionDep = Depends(get_session)
+SessionDep = Annotated[Session, Depends(get_session)]

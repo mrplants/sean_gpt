@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 from ..database import db_engine
 from ..model.chats.chat import ChatMessage, ChatRequest, Chat, Message
 from ..model.authentication.user import User
-from ..model.ai_model import AI
+from ..model.ai import AI
 from .auth import get_current_user
 from ..config import settings
 

@@ -4,15 +4,12 @@ from typing import Annotated
 from fastapi import Depends, APIRouter, HTTPException, status, Security
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..model.authentication.user import UserRead
-from ..model.authentication.token import Token
-from ..config import settings
-from ..auth_utils import authenticate_user, create_access_token, AuthenticatedUserDep
+from ...model.authentication.user import UserRead
+from ...model.authentication.token import Token
+from ...config import settings
+from .utils import authenticate_user, create_access_token, AuthenticatedUserDep
 
-router = APIRouter(
-    prefix="",
-    tags=["Authentication"],
-)
+router = APIRouter()
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):

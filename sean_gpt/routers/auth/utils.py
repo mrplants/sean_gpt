@@ -7,10 +7,10 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlmodel import select, Session
 
-from .model.authentication.user import UserRead, AuthenticatedUser
-from .model.authentication.token import Token, TokenData
-from .config import settings
-from .database import db_engine
+from ...model.authentication.user import UserRead, AuthenticatedUser
+from ...model.authentication.token import Token, TokenData
+from ...config import settings
+from ...database import db_engine
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

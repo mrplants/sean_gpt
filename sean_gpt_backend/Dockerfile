@@ -5,8 +5,12 @@ RUN pip install --upgrade pip
 # Set the working directory to /app
 WORKDIR /app
 
-# Download the git repo
-#RUN wget https://raw.githubusercontent.com/mrplants/sean_gpt/main/dist/sean_gpt-0.1.0-py3-none-any.whl
+# Copy the requirements for the package so we can install them before the package.
+# This allows caching dependencies.
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
+
+# Install the package
 COPY sean_gpt-0.1.0-py3-none-any.whl /app/sean_gpt-0.1.0-py3-none-any.whl
 
 # Install the package

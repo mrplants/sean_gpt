@@ -8,6 +8,7 @@ from fastapi import Depends
 from .model.authentication.user import AuthenticatedUser
 from .model.chats.message import Message
 from .model.chats.chat import Chat
+from .model.ai import AI
 
 # dialect+driver://username:password@host:port/database
 database_url = f"{settings.api_db_dialect}{settings.api_db_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.api_db_host}:{settings.api_db_port}/{settings.api_db_name}"

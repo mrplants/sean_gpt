@@ -51,5 +51,5 @@ def get_chat_messages(*, chat: ChatRead = Depends(get_chat), session: SessionDep
     Returns:
         A list of messages associated with this chat and user.
     """
-    messages = session.exec(select(Message).where(Message.chat_id == chat.chat_id)).all()
+    messages = session.exec(select(Message).where(Message.chat_id == chat.id)).all()
     return messages

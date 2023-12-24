@@ -8,13 +8,14 @@ from ..auth.utils import AuthenticatedUserDep
 from ...database import SessionDep
 from ...model.chats.chat import ChatRead, Chat
 from ...model.chats.message import MessageRead, Message, MessageCreate
+from ...model.ai import AI
 from ...ai import default_ai
 from .util import get_chat
 
 router = APIRouter()
 
 @router.post("/")
-def create_chat(*, chat_name: str|None = None, current_user: AuthenticatedUserDep, session: SessionDep) -> ChatRead:
+def create_chat(*, chat_name: str|None = None, ai:AI = Depends(default_ai), current_user: AuthenticatedUserDep, session: SessionDep) -> ChatRead:
     """ Creates a new chat in the database.
 
     Args:
@@ -25,14 +26,14 @@ def create_chat(*, chat_name: str|None = None, current_user: AuthenticatedUserDe
     Returns:
         The created chat.
     """
-    chat = Chat(user_id=current_user.id, name=chat_name, assistant_id=default_ai.id)
+    chat = Chat(user_id=current_user.id, name=chat_name, assistant_id=ai.id)
     session.add(chat)
     session.commit()
     session.refresh(chat)
     return chat
 
 @router.post("/{chat_id}/message")
-def create_message(*, user_msg:MessageCreate, chat: ChatRead = Depends(get_chat), session: SessionDep) -> MessageRead:
+def create_message(*, user_msg:MessageCreate, ai:AI = Depends(default_ai), chat: ChatRead = Depends(get_chat), session: SessionDep) -> MessageRead:
     """ Creates a new message pair (user/assistant) in the database.
 
     This endpoint is effectively a push/get endpoint.  It stores the new user chat
@@ -66,7 +67,7 @@ def create_message(*, user_msg:MessageCreate, chat: ChatRead = Depends(get_chat)
     # Generate a response from the openai endpoint.  In this case, the model name
     # is the default_ai name.
     response = client.chat.completions.create(
-        model=default_ai.name,
+        model=ai.name,
         messages=oai_messages,
         temperature=1,
         max_tokens=256,

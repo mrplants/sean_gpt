@@ -35,4 +35,10 @@ def create_ai(name: str) -> AI:
         session.refresh(ai)
     return ai
 
-default_ai:AI = get_ai(DEFAULT_AI_MODEL) or create_ai(DEFAULT_AI_MODEL)
+def default_ai() -> AI:
+    """ Retrieve the default AI model.
+    
+    Returns:
+        The default AI model.
+    """
+    return get_ai(DEFAULT_AI_MODEL) or create_ai(DEFAULT_AI_MODEL)

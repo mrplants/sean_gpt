@@ -21,21 +21,16 @@ const getAIResponse = async (userMessage) => {
   formattedMessages.push({ role: 'user', content: userMessage });
 
   // Make the API request
-  const response = await fetch('/chat/completions/openai/', {
+  const chat_id = "403941d6-0f2d-4d58-be7e-798753ee8366"
+  const response = await fetch('/chats/'+chat_id+'/message', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${authService.getToken()}`
     },
     body: JSON.stringify({
-      model: "gpt-4-1106-preview",
-      messages: formattedMessages,
-      temperature: 1,
-      max_tokens: 256,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0
-    }),
+      "content": userMessage
+    })
   });
 
     if (!response.ok) {
@@ -50,7 +45,7 @@ const getAIResponse = async (userMessage) => {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    return data.content;
   };
 
   // Handle sending a message

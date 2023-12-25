@@ -19,6 +19,7 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 sqlmodel = "^0.0.14"
 psycopg2-binary = "^2.9.9"
+twilio = "^8.11.0"
 
 
 [build-system]

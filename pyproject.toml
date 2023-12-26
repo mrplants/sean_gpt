@@ -20,6 +20,8 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 sqlmodel = "^0.0.14"
 psycopg2-binary = "^2.9.9"
 twilio = "^8.11.0"
+httpx = "^0.26.0"
+pytest = "^7.4.3"
 
 
 [build-system]

@@ -28,3 +28,20 @@ def get_chat(chat_id: UUID, current_user: AuthenticatedUserDep, session: Session
     if not chat:
         raise HTTPException(status_code=404)
     return chat
+
+def create_chat(*, chat_name: str|None = None, ai:AI = Depends(default_ai), current_user: AuthenticatedUserDep, session: SessionDep) -> ChatRead:
+    """ Creates a new chat in the database.
+
+    Args:
+        chat_name (str): The name of the chat to create.
+        current_user (AuthenticatedUserDep): The current user.
+        session (SessionDep): The database session.
+
+    Returns:
+        The created chat.
+    """
+    chat = Chat(user_id=current_user.id, name=chat_name, assistant_id=ai.id)
+    session.add(chat)
+    session.commit()
+    session.refresh(chat)
+    return chat

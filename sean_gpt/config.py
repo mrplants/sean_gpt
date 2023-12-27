@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_url: str
     access_token_expire_minutes: int
     debug: bool = False
+    admin_phone: str
+    admin_password: str
     api_db_dialect: str
     api_db_driver: str
     api_db_host: str

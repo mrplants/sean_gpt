@@ -1,11 +1,13 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from sqlmodel import select
 
-from ..auth.utils import AuthenticatedUserDep
+from ..users.util import AuthenticatedUserDep
 from ...database import SessionDep
+from ...ai import default_ai
+from ...model.ai import AI
 from ...model.chats.chat import Chat, ChatRead
 from ...model.chats.message import Message, MessageRead
 

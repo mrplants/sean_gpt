@@ -74,14 +74,3 @@ data:
     PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $API_DB_NAME -c "
         GRANT CREATE ON SCHEMA public TO $API_DB_USER;
     "
-
-    # Create table and insert data as admin user
-    PGPASSWORD=$API_DB_PASSWORD psql -v ON_ERROR_STOP=1 -U $API_DB_USER -d $API_DB_NAME -c '
-        CREATE TABLE IF NOT EXISTS authenticateduser (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            email VARCHAR(255) NOT NULL UNIQUE,
-            hashed_password VARCHAR(255) NOT NULL
-        );
-        INSERT INTO authenticateduser (email, hashed_password)
-        VALUES ('\''johndoe@example.com'\'', '\''$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW'\'');
-    '

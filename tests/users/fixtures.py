@@ -26,8 +26,8 @@ def admin_auth_token() -> str:
         f"/users/token",
         data={
             "grant_type": "password",
-            "username": settings.ADMIN_PHONE,
-            "password": settings.ADMIN_PASSWORD,
+            "username": settings.admin_phone,
+            "password": settings.admin_password,
         },
     )
     return response.json()["access_token"]

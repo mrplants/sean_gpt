@@ -1,7 +1,7 @@
 ################
 # /users/token #
 ################
-# GET (protected):  Get a user's auth token
+# POST (protected):  Login and retrieve a user's auth token
 
 from fastapi.testclient import TestClient
 
@@ -14,8 +14,12 @@ from .fixtures import *
 client = TestClient(app)
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(referral_code: str):
-    check_authorized_route("GET", "/users/token")
+def test_verified_authorized_routes(verified_new_user: dict):
+    check_authorized_route("POST", "/users/token", {
+        "grant_type": "password",
+        "username": verified_new_user["phone"],
+        "password": verified_new_user["password"],
+    })
 
 @describe(""" Test that an authorization token can be generated. """)
 def test_generate_token():
@@ -24,8 +28,8 @@ def test_generate_token():
         "/users/token",
         data={
             "grant_type": "password",
-            "username": settings.ADMIN_PHONE,
-            "password": settings.ADMIN_PASSWORD,
+            "username": settings.admin_phone,
+            "password": settings.admin_password,
         },
     )
     # The response should be:
@@ -61,7 +65,7 @@ def test_generate_token_incorrect_password():
         "/users/token",
         data={
             "grant_type": "password",
-            "username": settings.ADMIN_PHONE,
+            "username": settings.admin_phone,
             "password": "incorrect_password",
         },
     )

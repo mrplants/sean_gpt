@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlmodel import Field, SQLModel
 
 class UserBase(SQLModel):
-    email: str = Field(index=True, unique=True)
+    phone: str = Field(index=True, unique=True)
 
 class UserRead(UserBase):
     id: UUID

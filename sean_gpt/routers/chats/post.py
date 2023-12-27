@@ -4,7 +4,7 @@ client = OpenAI()
 from fastapi import APIRouter, Depends
 from sqlmodel import select
 
-from ..auth.utils import AuthenticatedUserDep
+from ..users.util import AuthenticatedUserDep
 from ...database import SessionDep
 from ...model.chats.chat import ChatRead, Chat
 from ...model.chats.message import MessageRead, Message, MessageCreate

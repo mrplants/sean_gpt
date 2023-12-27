@@ -7,7 +7,7 @@ from sqlmodel import select
 from ...database import SessionDep
 from ...model.chats.chat import Chat, ChatRead
 from ...model.chats.message import Message, MessageRead
-from ..auth.utils import AuthenticatedUserDep
+from ..users.util import AuthenticatedUserDep
 from .util import get_chat
 
 router = APIRouter()

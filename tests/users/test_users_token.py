@@ -3,9 +3,6 @@
 ################
 # POST (protected):  Login and retrieve a user's auth token
 
-# TODO: Missing tests
-# - Test that a verification token will expire.
-
 from fastapi.testclient import TestClient
 
 from sean_gpt.config import settings

@@ -37,3 +37,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str
 
 settings = Settings()
+
+class Constants(BaseSettings):
+    phone_verification_message: str
+
+constants = Constants()

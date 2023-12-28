@@ -3,7 +3,7 @@ from typing import Annotated
 from twilio.rest import Client
 from fastapi import Depends
 
-from sean_gpt import settings
+from .config import settings
 
 def get_twilio_client():
     if settings.debug:

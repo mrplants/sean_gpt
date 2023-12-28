@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status, Security, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
-from ...config import settings
+from ...config import constants, settings
 from .util import authenticate_user, AuthenticatedUserDep
 from ...auth_util import create_access_token, get_password_hash
 from ...util.describe import describe
@@ -28,7 +28,7 @@ Args:
 Returns:
           UserRead: The user's information.
 """)
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def create_user(*, user: UserCreate, referral_code: str = Body(), session: SessionDep) -> UserRead:
     # Check if the user exists
     select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == user.phone)
@@ -36,7 +36,7 @@ def create_user(*, user: UserCreate, referral_code: str = Body(), session: Sessi
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already exists",
+            detail="Unable to create user:  Phone already exists.",
         )
     # Check if the referral code exists
     select_referral = select(AuthenticatedUser).where(AuthenticatedUser.referral_code == referral_code)
@@ -44,10 +44,12 @@ def create_user(*, user: UserCreate, referral_code: str = Body(), session: Sessi
     if not existing_referral:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Referral code does not exist",
+            detail="Unable to create user:  Referral code does not exist.",
         )
     # Create the user
-    user = AuthenticatedUser(phone=user.phone, hashed_password=get_password_hash(user.password))
+    user = AuthenticatedUser(phone=user.phone,
+                             hashed_password=get_password_hash(user.password),
+                             referrer_user_id=existing_referral.id)
     # Add the user to the database
     session.add(user)
     session.commit()
@@ -85,20 +87,23 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 @router.post("/request_phone_verification")
 def request_phone_verification(session: SessionDep, current_user: AuthenticatedUserDep, sms_client: TwilioClientDep):
     # Check if the user is already verified
-    if current_user.verified:
+    if current_user.is_phone_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already verified",
         )
     # Generate a verification token
-    verification_token = VerificationToken(user_id=current_user.id)
+    token_code = secrets.token_urlsafe(6)
+    verification_token = VerificationToken(
+        token_hash=get_password_hash(token_code),
+        user_id=current_user.id)
     # Add the verification token to the database
     session.add(verification_token)
     session.commit()
     session.refresh(verification_token)
     # Send the verification token to the user
     sms_client.messages.create(
-        body=settings.
+        body=constants.phone_verification_message.format(token_code),
         from_=settings.twilio_sid,
         to=current_user.phone,
     )

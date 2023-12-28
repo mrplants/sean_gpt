@@ -12,7 +12,7 @@ from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: str, client: TestClient):
-    check_authorized_route("PUT", "/users/password", {
+    check_authorized_route("PUT", "/users/password", json={
         "new_password": f"test{random.randint(0, 1000000)}",
         "old_password": verified_new_user["password"]
     }, authorized_user=verified_new_user, client=client)
@@ -31,7 +31,7 @@ def test_password_change(new_user: dict, client: TestClient):
     )
     # The response should be:
     # HTTP/1.1 204 No Content
-    assert response.status_code == 204
+    assert response.status_code == 204, f"Status should be 204, not {response.status_code}. Response: {response.text}"
     # Check that the user can log in with the new password
     response = client.post(
         "/users/token",
@@ -41,7 +41,7 @@ def test_password_change(new_user: dict, client: TestClient):
             "password": new_password,
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 200, f"Status should be 200, not {response.status_code}. Response: {response.text}"
     # Check that the user cannot log in with the old password
     response = client.post(
         "/users/token",
@@ -51,7 +51,7 @@ def test_password_change(new_user: dict, client: TestClient):
             "password": new_user["password"],
         },
     )
-    assert response.status_code == 400
+    assert response.status_code == 400, f"Status should be 400, not {response.status_code}. Response: {response.text}"
 
 
 @describe(""" Test that a user's password cannot be changed with an incorrect password. """)

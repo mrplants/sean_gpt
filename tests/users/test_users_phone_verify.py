@@ -8,9 +8,13 @@
 ############################
 # PUT (protected):  Verify a user's phone
 
+# TODO: Missing tests
+# - Test that a verification token will expire.
+# - Test that a verification token is deleted after use.
+
 from fastapi.testclient import TestClient
 
-from sean_gpt import constants
+from sean_gpt.config import constants
 from sean_gpt.util.describe import describe
 
 from .fixtures import *

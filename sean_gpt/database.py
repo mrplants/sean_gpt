@@ -26,6 +26,8 @@ def fill_database():
         admin_user = AuthenticatedUser(
             phone=settings.admin_phone,
             hashed_password=get_password_hash(settings.admin_password),
+            referrer_user_id="root",
+            is_phone_verified=True,
         )
         # Check if the admin user exists
         select_admin = select(AuthenticatedUser).where(AuthenticatedUser.phone == settings.admin_phone)

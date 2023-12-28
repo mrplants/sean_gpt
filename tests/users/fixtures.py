@@ -10,8 +10,7 @@ from unittest.mock import patch, Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from sean_gpt.config import settings
-from sean_gpt import constants
+from sean_gpt.config import settings, constants
 from sean_gpt.util.describe import describe
 from ..util import *
 
@@ -102,7 +101,7 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: Test
     yield new_user
 
 @describe(""" Checks that a route requires authorization for access. """)
-def check_authorized_route(request_type: str, route: str, authorized_user: dict, client: TestClient, json_payload: dict = {}):
+def check_authorized_route(request_type: str, route: str, authorized_user: dict, client: TestClient, **request_args):
     request_func = {
         "get": client.get,
         "post": client.post,
@@ -112,21 +111,21 @@ def check_authorized_route(request_type: str, route: str, authorized_user: dict,
     response = request_func(
         route,
         headers={"Authorization": f"Bearer {authorized_user['access_token']}"},
-        json=json_payload
+        **request_args
     )
     # The response should be any 2xx response code
-    assert response.status_code // 100 == 2
+    assert response.status_code // 100 == 2, f"Expected status code 2xx, got {response.status_code}. Response body: {response.content}"
     # Now send an unauthorized request
     response = client.post(
         route,
         headers={"Authorization": f"Bearer invalid_token"},
-        json=json_payload
+        **request_args
     )
     # The response should not be a 2xx response code
-    assert response.status_code // 100 != 2
+    assert response.status_code // 100 != 2, f"Expected status code NOT 2xx, got {response.status_code}. Response body: {response.content}"
 
 @describe(""" Checks that a route requires a verified user for access. """)
-def check_verified_route(request_type: str, route: str, verified_user: dict, unverified_user: dict, client: TestClient, json_payload: dict = {}):
+def check_verified_route(request_type: str, route: str, verified_user: dict, unverified_user: dict, client: TestClient, **request_args):
     request_func = {
         "get": client.get,
         "post": client.post,
@@ -136,15 +135,15 @@ def check_verified_route(request_type: str, route: str, verified_user: dict, unv
     response = request_func(
         route,
         headers={"Authorization": f"Bearer {verified_user['access_token']}"},
-        json=json_payload
+        **request_args
     )
     # The response should be any 2xx response code
-    assert response.status_code // 100 == 2
+    assert response.status_code // 100 == 2, f"Expected status code 2xx, got {response.status_code}. Response body: {response.text}"
     # Now send an unverified request
     response = request_func(
         route,
         headers={"Authorization": f"Bearer {unverified_user['access_token']}"},
-        json=json_payload
+        **request_args
     )
     # The response should not be a 2xx response code
-    assert response.status_code // 100 != 2
+    assert response.status_code // 100 != 2, f"Expected status code NOT 2xx, got {response.status_code}. Response body: {response.text}"

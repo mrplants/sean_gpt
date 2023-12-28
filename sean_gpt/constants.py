@@ -1,1 +1,0 @@
-PHONE_VERIFICATION_MESSAGE = "Your verification code is {}."

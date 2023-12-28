@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlmodel import select, Session
 
 from ...model.authenticated_user import UserRead, AuthenticatedUser
-from ...model.access_token import TokenData
+from ...model.access_token import AccessTokenData
 from ...config import settings
 from ...database import db_engine
 from ...auth_util import verify_password
@@ -65,7 +65,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Authentic
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = AccessTokenData(username=username)
     except JWTError:
         raise credentials_exception
     user = get_user(phone=token_data.username)

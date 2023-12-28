@@ -7,27 +7,23 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.main import app
-from sean_gpt.config import settings
-from sean_gpt import constants
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(referral_code: str):
+def test_verified_authorized_routes(referral_code: str, verified_new_user: dict, client: TestClient):
     check_authorized_route("POST", "/users", {
         "phone": f"+{random.randint(10000000000, 20000000000)}",
         "password": f"test{random.randint(0, 1000000)}",
         "referral_code": referral_code
-    })
-    check_authorized_route("GET", "/users")
-    check_authorized_route("DELETE", "/users")
+    }, authorized_user=verified_new_user, client=client)
+    check_authorized_route("GET", "/users", authorized_user=verified_new_user, client=client)
+    check_authorized_route("DELETE", "/users", authorized_user=verified_new_user, client=client)
 
 @describe(""" Test that a new account can be created. """)
-def test_new_account_creation(admin_user: dict):
+def test_new_account_creation(admin_user: dict, client: TestClient):
     # Get the admin user's ID
     response = client.get(
         "/users",
@@ -68,7 +64,7 @@ def test_new_account_creation(admin_user: dict):
     assert response.json()["is_phone_verified"] == False
 
 @describe(""" Test that a new account cannot be created with an incorrect referral code. """)
-def test_new_account_creation_incorrect_referral_code():
+def test_new_account_creation_incorrect_referral_code(client: TestClient):
     # Create a new user with random phone and password
     test_new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     response = client.post(
@@ -91,7 +87,7 @@ def test_new_account_creation_incorrect_referral_code():
     assert response.json()["detail"] == "Unable to create user:  Referral code is incorrect."
 
 @describe(""" Test that a new account cannot be created with an existing phone. """)
-def test_new_account_creation_existing_phone(referral_code: str):
+def test_new_account_creation_existing_phone(referral_code: str, client: TestClient):
     # Create a new user with random phone and password
     test_new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     client.post(
@@ -123,7 +119,7 @@ def test_new_account_creation_existing_phone(referral_code: str):
     assert response.json()["detail"] == "Unable to create user:  Phone already exists."
 
 @describe(""" Test that a user's info can be retrieved. """)
-def test_get_user_info(verified_new_user: dict):
+def test_get_user_info(verified_new_user: dict, client: TestClient):
     response = client.get(
         "/users",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"}
@@ -146,7 +142,7 @@ def test_get_user_info(verified_new_user: dict):
     assert response.json()["is_phone_verified"] == True
 
 @describe(""" Test that a user's account can be deleted. """)
-def test_delete_user(verified_new_user: dict):
+def test_delete_user(verified_new_user: dict, client: TestClient):
     response = client.delete(
         "/users",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"}

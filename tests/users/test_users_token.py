@@ -5,24 +5,22 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.main import app
 from sean_gpt.config import settings
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(verified_new_user: dict):
+def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
     check_authorized_route("POST", "/users/token", {
         "grant_type": "password",
         "username": verified_new_user["phone"],
         "password": verified_new_user["password"],
-    })
+    }, authorized_user=verified_new_user, client=client)
 
 @describe(""" Test that an authorization token can be generated. """)
-def test_generate_token():
+def test_generate_token(client: TestClient):
     # Generate a token
     response = client.post(
         "/users/token",
@@ -46,7 +44,7 @@ def test_generate_token():
     assert type(response.json()["access_token"]) == str
 
 @describe(""" Test that an authorization token will expire. """)
-def test_token_expiration(admin_auth_token: str):
+def test_token_expiration(admin_auth_token: str, client: TestClient):
     # Check the expiration date of the token using JWT
     # The JWT expiration can be decoded and checked without the secret key.
     # Decode the token without verification
@@ -59,7 +57,7 @@ def test_token_expiration(admin_auth_token: str):
     assert decoded["exp"] - decoded["iat"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
 @describe(""" Test that an authorization token will not be generated with an incorrect password. """)
-def test_generate_token_incorrect_password():
+def test_generate_token_incorrect_password(client: TestClient):
     # Generate a token
     response = client.post(
         "/users/token",

@@ -5,22 +5,20 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.main import app
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(new_user: str):
+def test_verified_authorized_routes(verified_new_user: str, client: TestClient):
     check_authorized_route("PUT", "/users/password", {
         "new_password": f"test{random.randint(0, 1000000)}",
-        "old_password": new_user["password"]
-    })
+        "old_password": verified_new_user["password"]
+    }, authorized_user=verified_new_user, client=client)
 
 @describe(""" Test that a user's password can be changed. """)
-def test_password_change(new_user: dict):
+def test_password_change(new_user: dict, client: TestClient):
     # Change the user's password
     new_password = f"new_password{random.randint(0, 1000000)}"
     response = client.put(
@@ -57,7 +55,7 @@ def test_password_change(new_user: dict):
 
 
 @describe(""" Test that a user's password cannot be changed with an incorrect password. """)
-def test_password_change_incorrect_password(new_user: dict):
+def test_password_change_incorrect_password(new_user: dict, client: TestClient):
     # Change the user's password
     new_password = f"new_password{random.randint(0, 1000000)}"
     response = client.put(

@@ -5,20 +5,18 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.main import app
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes():
-    check_authorized_route("GET", "/users/referral_code")
-    check_verified_route("GET", "/users/referral_code")
+def test_verified_authorized_routes(verified_new_user: dict, new_user: dict, client: TestClient):
+    check_authorized_route("GET", "/users/referral_code", authorized_user=verified_new_user, client=client)
+    check_verified_route("GET", "/users/referral_code", verified_user=new_user, unverified_user=new_user, client=client)
 
 @describe(""" Test that a referral code can be generated. """)
-def test_referral_code_generation(admin_user: dict):
+def test_referral_code_generation(admin_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
         f"/users/referral_code",
@@ -36,7 +34,7 @@ def test_referral_code_generation(admin_user: dict):
     assert type(response.json()["referral_code"]) == str
 
 @describe(""" Test that a referral code cannot be generated for an unverified user. """)
-def test_referral_code_generation_unverified(new_user: dict):
+def test_referral_code_generation_unverified(new_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
         f"/users/referral_code",

@@ -4,7 +4,7 @@ from ...model.authentication.user import UserRead
 from .util import AuthenticatedUserDep
 
 router = APIRouter()
-@router.delete("/users")
+@router.delete("/")
 async def read_users_me(current_user: AuthenticatedUserDep):
     """ Delete the current user. """
     pass

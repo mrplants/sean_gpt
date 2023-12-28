@@ -12,12 +12,12 @@ from .routers import users
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
-    # configure the database on server start
+    # Configure the database on server start
     create_tables()
     yield
     # Shutdown logic
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(chats.router)
 app.include_router(sms.router)

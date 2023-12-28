@@ -10,24 +10,21 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.main import app
-from sean_gpt.config import settings
 from sean_gpt import constants
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(mock_twilio_sms_create: Mock, new_user: dict):
-    check_authorized_route("POST", "/users/request_phone_verification", new_user=new_user)
+def test_verified_authorized_routes(mock_twilio_sms_create: Mock, new_user: dict, client: TestClient):
+    check_authorized_route("POST", "/users/request_phone_verification", authorized_user=new_user, client=client)
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
     code_message_regex = constants.PHONE_VERIFICATION_MESSAGE.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
     check_authorized_route("PUT", "/users/is_phone_verified", {
         "phone_verification_code": phone_verification_code
-    }, new_user=new_user)
+    }, authorized_user=new_user, client=client)
 
 @describe(""" Test that a user's phone can be verified.
 
@@ -38,7 +35,7 @@ A user's phone is verified with this flow:
 
 Here, we will mock the twilio client to return a known verification code.
 """)
-def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock):
+def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient):
     # Request new user verification code
     client.post(
         "/users/request_phone_verification",
@@ -66,7 +63,7 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock):
     assert response.json()["is_phone_verified"] == True
 
 @describe(""" Test that a user's phone cannot be verified with an incorrect verification code. """)
-def test_phone_verification_incorrect_code(new_user: dict):
+def test_phone_verification_incorrect_code(new_user: dict, client: TestClient):
     # Pass an incorrect verification code
     response = client.put(
         "/users/is_phone_verified",

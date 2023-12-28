@@ -4,23 +4,20 @@ Other endpoints requiring authorization for access can uses these functions and
 test fixtures to verify that the authorization is working as expected.
 """
 import random
-import pytest
 import re
 from unittest.mock import patch, Mock
 
+import pytest
 from fastapi.testclient import TestClient
-from jose import jwt
 
-from sean_gpt.main import app
 from sean_gpt.config import settings
 from sean_gpt import constants
 from sean_gpt.util.describe import describe
-
-client = TestClient(app)
+from ..util import *
 
 @describe(""" Test fixture to provide an admin auth token. """)
 @pytest.fixture(scope="module")
-def admin_auth_token() -> str:
+def admin_auth_token(client: TestClient) -> str:
     # Generate a token
     response = client.post(
         f"/users/token",
@@ -32,7 +29,9 @@ def admin_auth_token() -> str:
     )
     return response.json()["access_token"]
 
-def admin_user(admin_auth_token: str) -> dict:
+@describe(""" Test fixture to provide an admin user. """)
+@pytest.fixture(scope="module")
+def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     # Get the admin user
     response = client.get(
         "/users/me",
@@ -42,7 +41,7 @@ def admin_user(admin_auth_token: str) -> dict:
 
 @describe(""" Test fixture to provide a valid referral code. """)
 @pytest.fixture(scope="function")
-def referral_code(admin_auth_token: str) -> str:
+def referral_code(admin_auth_token: str, client: TestClient) -> str:
     # Get a referral code
     response = client.get(
         "/users/referral_code",
@@ -52,7 +51,7 @@ def referral_code(admin_auth_token: str) -> str:
 
 @describe(""" Test fixture to provide a new user and their auth token. """)
 @pytest.fixture(scope="function")
-def new_user(referral_code: str) -> dict:
+def new_user(referral_code: str, client: TestClient) -> dict:
     # Create a new user with random phone and password
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
@@ -64,27 +63,29 @@ def new_user(referral_code: str) -> dict:
             "referral_code": referral_code
         }
     )
+    print(f'status_code: {response_user.status_code}')
     # Get the new user's auth token
     response_token = client.post(
-        "/auth/token",
+        "/users/token",
         data={
             "grant_type": "password",
             "username": new_user_phone,
             "password": new_user_password,
         },
     )
+    print(response_user.json() | response_token.json() | {"password": new_user_password})
     yield response_user.json() | response_token.json() | {"password": new_user_password}
     # TODO: Delete the new user as cleanup
 
 @describe(""" Test fixture to mock the Twilio SMS function. """)
 @pytest.fixture(scope="module")
-def mock_twilio_sms_create() -> Mock:
-    with patch('twilio.rest.Client.messages.create') as mock_message_create:
+def mock_twilio_sms_create(client: TestClient) -> Mock:
+    with patch('twilio.rest.api.v2010.account.message.MessageList.create') as mock_message_create:
         yield mock_message_create
 
 @describe(""" Test fixture to provide a verified new user and their auth token. """)
 @pytest.fixture(scope="function")
-def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock) -> dict:
+def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient) -> dict:
     # Request new user verification code
     client.post(
         f"/users/request_phone_verification",
@@ -101,7 +102,7 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock) -> dict:
     yield new_user
 
 @describe(""" Checks that a route requires authorization for access. """)
-def check_authorized_route(request_type: str, route: str, verified_new_user: dict, json_payload: dict = {}):
+def check_authorized_route(request_type: str, route: str, authorized_user: dict, client: TestClient, json_payload: dict = {}):
     request_func = {
         "get": client.get,
         "post": client.post,
@@ -110,7 +111,7 @@ def check_authorized_route(request_type: str, route: str, verified_new_user: dic
     }[request_type.lower()]
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
+        headers={"Authorization": f"Bearer {authorized_user['access_token']}"},
         json=json_payload
     )
     # The response should be any 2xx response code
@@ -125,7 +126,7 @@ def check_authorized_route(request_type: str, route: str, verified_new_user: dic
     assert response.status_code // 100 != 2
 
 @describe(""" Checks that a route requires a verified user for access. """)
-def check_verified_route(request_type: str, route: str, verified_new_user: dict, new_user: dict, json_payload: dict = {}):
+def check_verified_route(request_type: str, route: str, verified_user: dict, unverified_user: dict, client: TestClient, json_payload: dict = {}):
     request_func = {
         "get": client.get,
         "post": client.post,
@@ -134,7 +135,7 @@ def check_verified_route(request_type: str, route: str, verified_new_user: dict,
     }[request_type.lower()]
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
+        headers={"Authorization": f"Bearer {verified_user['access_token']}"},
         json=json_payload
     )
     # The response should be any 2xx response code
@@ -142,7 +143,7 @@ def check_verified_route(request_type: str, route: str, verified_new_user: dict,
     # Now send an unverified request
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {new_user['access_token']}"},
+        headers={"Authorization": f"Bearer {unverified_user['access_token']}"},
         json=json_payload
     )
     # The response should not be a 2xx response code

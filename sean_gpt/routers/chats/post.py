@@ -6,8 +6,8 @@ from sqlmodel import select
 
 from ..users.util import AuthenticatedUserDep
 from ...database import SessionDep
-from ...model.chats.chat import ChatRead, Chat
-from ...model.chats.message import MessageRead, Message, MessageCreate
+from ...model.chat import ChatRead, Chat
+from ...model.message import MessageRead, Message, MessageCreate
 from ...model.ai import AI
 from ...ai import default_ai
 from .util import get_chat, create_chat

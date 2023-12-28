@@ -5,8 +5,8 @@ from fastapi import Depends, APIRouter
 from sqlmodel import select
 
 from ...database import SessionDep
-from ...model.chats.chat import Chat, ChatRead
-from ...model.chats.message import Message, MessageRead
+from ...model.chat import Chat, ChatRead
+from ...model.message import Message, MessageRead
 from ..users.util import AuthenticatedUserDep
 from .util import get_chat
 

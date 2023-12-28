@@ -1,0 +1,14 @@
+from typing import Annotated
+
+from twilio.rest import Client
+from fastapi import Depends
+
+from sean_gpt import settings
+
+def get_twilio_client():
+    if settings.debug:
+        return Client(settings.twilio_test_sid, settings.twilio_test_auth_token)
+    else:
+        return Client(settings.twilio_sid, settings.twilio_auth_token)
+
+TwilioClientDep = Annotated[Client, Depends(get_twilio_client)]

@@ -8,8 +8,8 @@ from ..users.util import AuthenticatedUserDep
 from ...database import SessionDep
 from ...ai import default_ai
 from ...model.ai import AI
-from ...model.chats.chat import Chat, ChatRead
-from ...model.chats.message import Message, MessageRead
+from ...model.chat import Chat, ChatRead
+from ...model.message import Message, MessageRead
 
 # Retrieve a chat record without messages
 def get_chat(chat_id: UUID, current_user: AuthenticatedUserDep, session: SessionDep) -> ChatRead:

@@ -19,8 +19,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(chats.router)
-app.include_router(sms.router)
 app.include_router(users.router)
 
 # Mount this last so that it doesn't override other routes

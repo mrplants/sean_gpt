@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ...model.authentication.user import UserRead
+from ...model.authenticated_user import UserRead
 from .util import AuthenticatedUserDep
 
 router = APIRouter()

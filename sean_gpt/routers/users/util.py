@@ -5,13 +5,13 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlmodel import select, Session
 
-from ...model.authentication.user import UserRead, AuthenticatedUser
-from ...model.authentication.token import TokenData
+from ...model.authenticated_user import UserRead, AuthenticatedUser
+from ...model.access_token import TokenData
 from ...config import settings
 from ...database import db_engine
 from ...auth_util import verify_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
 
 def get_user(phone: str) -> AuthenticatedUser | None:
     """ Gets a user from the database.

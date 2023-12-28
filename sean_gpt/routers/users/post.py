@@ -1,19 +1,20 @@
 from datetime import timedelta
 from typing import Annotated
-import logging
+import secrets
 
-from fastapi import APIRouter, HTTPException, status, Security
+from fastapi import APIRouter, HTTPException, status, Security, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
-from ...model.authentication.token import Token
 from ...config import settings
-from .util import authenticate_user
-from ...auth_util import create_access_token
+from .util import authenticate_user, AuthenticatedUserDep
+from ...auth_util import create_access_token, get_password_hash
 from ...util.describe import describe
-from ...model.authentication.user import UserRead, AuthenticatedUser
+from ...model.authenticated_user import UserRead, AuthenticatedUser, UserCreate
+from ...model.access_token import AccessToken
+from ...model.verification_token import VerificationToken
 from ...database import SessionDep
-from ...auth_util import get_password_hash
+from ...sms import TwilioClientDep
 
 router = APIRouter()
 
@@ -28,9 +29,9 @@ Returns:
           UserRead: The user's information.
 """)
 @router.post("/")
-def create_user(phone: str, password: str, referral_code: str, session: SessionDep) -> UserRead:
+def create_user(*, user: UserCreate, referral_code: str = Body(), session: SessionDep) -> UserRead:
     # Check if the user exists
-    select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == phone)
+    select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == user.phone)
     existing_user = session.exec(select_user).first()
     if existing_user:
         raise HTTPException(
@@ -46,27 +47,27 @@ def create_user(phone: str, password: str, referral_code: str, session: SessionD
             detail="Referral code does not exist",
         )
     # Create the user
-    user = AuthenticatedUser(phone=phone, hashed_password=get_password_hash(password))
+    user = AuthenticatedUser(phone=user.phone, hashed_password=get_password_hash(user.password))
     # Add the user to the database
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
 
-@router.post("/token", response_model=Token)
+@describe(""" Authenticates a user and returns an OAuth2.0 access token.
+
+Note the itentional swap of username and phone.  This is because the user's
+phone is used as their username, but the OAuth2.0 spec uses the term
+'username' instead of 'phone'.
+
+Args:
+    form_data (OAuth2PasswordRequestForm): The form data containing the username and password.
+
+Returns:
+    Token: The OAuth2.0 access token.
+""")
+@router.post("/token", response_model=AccessToken)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Security()]):
-    """ Authenticates a user and returns an OAuth2.0 access token.
-
-    Note the itentional swap of username and phone.  This is because the user's
-    phone is used as their username, but the OAuth2.0 spec uses the term
-    'username' instead of 'phone'.
-
-    Args:
-        form_data (OAuth2PasswordRequestForm): The form data containing the username and password.
-    
-    Returns:
-        Token: The OAuth2.0 access token.
-    """
     user = authenticate_user(phone=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(
@@ -79,3 +80,25 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         data={"sub": user.phone}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@describe(""" Requests a verification token be texted to the user's phone. """)
+@router.post("/request_phone_verification")
+def request_phone_verification(session: SessionDep, current_user: AuthenticatedUserDep, sms_client: TwilioClientDep):
+    # Check if the user is already verified
+    if current_user.verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User already verified",
+        )
+    # Generate a verification token
+    verification_token = VerificationToken(user_id=current_user.id)
+    # Add the verification token to the database
+    session.add(verification_token)
+    session.commit()
+    session.refresh(verification_token)
+    # Send the verification token to the user
+    sms_client.messages.create(
+        body=settings.
+        from_=settings.twilio_sid,
+        to=current_user.phone,
+    )

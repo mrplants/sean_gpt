@@ -34,7 +34,7 @@ def admin_auth_token(client: TestClient) -> str:
 def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     # Get the admin user
     response = client.get(
-        "/users/me",
+        "/users/",
         headers={"Authorization": f"Bearer {admin_auth_token}"}
     )
     return response.json() | {"access_token": admin_auth_token}
@@ -58,12 +58,13 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     response_user = client.post(
         "/users/",
         json={
-            "phone": new_user_phone,
-            "password": new_user_password,
+            "user": {
+                "phone": new_user_phone,
+                "password": new_user_password,
+            },
             "referral_code": referral_code
         }
     )
-    print(f'status_code: {response_user.status_code}')
     # Get the new user's auth token
     response_token = client.post(
         "/users/token",
@@ -73,7 +74,6 @@ def new_user(referral_code: str, client: TestClient) -> dict:
             "password": new_user_password,
         },
     )
-    print(response_user.json() | response_token.json() | {"password": new_user_password})
     yield response_user.json() | response_token.json() | {"password": new_user_password}
     # TODO: Delete the new user as cleanup
 
@@ -91,7 +91,7 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: Test
         f"/users/request_phone_verification",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
-    code_message_regex = constants.PHONE_VERIFICATION_MESSAGE.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, mock_twilio_sms_create.call_args[1]["body"]).group(1)
     # Verify the user
     response_token = client.put(

@@ -74,7 +74,11 @@ def new_user(referral_code: str, client: TestClient) -> dict:
         },
     )
     yield response_user.json() | response_token.json() | {"password": new_user_password}
-    # TODO: Delete the new user as cleanup
+    # Delete the new user as cleanup
+    client.delete(
+        "/users/",
+        headers={"Authorization": f"Bearer {response_token.json()['access_token']}"}
+    )
 
 @describe(""" Test fixture to mock the Twilio SMS function. """)
 @pytest.fixture(scope="module")

@@ -8,10 +8,6 @@
 ############################
 # PUT (protected):  Verify a user's phone
 
-# TODO: Missing tests
-# - Test that a verification token will expire.
-# - Test that a verification token is deleted after use.
-
 from fastapi.testclient import TestClient
 
 from sean_gpt.config import constants
@@ -104,3 +100,10 @@ def test_phone_verification_incorrect_code(new_user: dict, client: TestClient, m
     assert response.status_code == 400
     assert response.headers["content-type"] == "application/json"
     assert response.json()["detail"] == "Unable to verify phone:  Invalid verification code."
+
+@describe(""" Test that a verification token will expire. """)
+def test_verification_token_expiration(new_user: dict, client: TestClient):
+    # Cannot implement this test because there is no endpoint to view the
+    # verification token or its expiration.  This would negate the purpose of
+    # the verification token.
+    pass

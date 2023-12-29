@@ -119,6 +119,6 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
     # Send the verification token to the user
     sms_client.messages.create(
         body=constants.phone_verification_message.format(token_code),
-        from_=settings.twilio_sid,
+        from_=settings.twilio_phone_number,
         to=current_user.phone,
     )

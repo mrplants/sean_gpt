@@ -5,9 +5,6 @@
 # GET (protected):  Get a user's info
 # DELETE (protected):  Delete a user's account
 
-# TODO: Missing tests:
-# - Test that the referrer's id is hooked correctly to the new user
-
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe

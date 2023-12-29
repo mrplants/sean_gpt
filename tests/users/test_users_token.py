@@ -4,6 +4,7 @@
 # POST (protected):  Login and retrieve a user's auth token
 
 from fastapi.testclient import TestClient
+from jose import jwt
 
 from sean_gpt.config import settings
 from sean_gpt.util.describe import describe
@@ -13,11 +14,8 @@ from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
-    check_authorized_route("POST", "/users/token", {
-        "grant_type": "password",
-        "username": verified_new_user["phone"],
-        "password": verified_new_user["password"],
-    }, authorized_user=verified_new_user, client=client)
+    # This endopint is not a verified or authorized route.
+    pass
 
 @describe(""" Test that an authorization token can be generated. """)
 def test_generate_token(client: TestClient):
@@ -49,12 +47,12 @@ def test_token_expiration(admin_auth_token: str, client: TestClient):
     # The JWT expiration can be decoded and checked without the secret key.
     # Decode the token without verification
     unverified_claims = jwt.get_unverified_claims(admin_auth_token)
-    assert unverified_claims["exp"] - unverified_claims["iat"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    assert unverified_claims["exp"] - unverified_claims["iat"] == settings.access_token_expire_minutes * 60
     # Without waiting the full expiration time, it is not possible to write a
     # practical test for this.  Instead, we will perform a verified check
     # that the token will expire.
     decoded = jwt.decode(admin_auth_token, settings.secret_key, algorithms=[settings.algorithm])
-    assert decoded["exp"] - decoded["iat"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    assert decoded["exp"] - decoded["iat"] == settings.access_token_expire_minutes * 60
 
 @describe(""" Test that an authorization token will not be generated with an incorrect password. """)
 def test_generate_token_incorrect_password(client: TestClient):
@@ -68,10 +66,12 @@ def test_generate_token_incorrect_password(client: TestClient):
         },
     )
     # The response should be:
-    # HTTP/1.1 400 Bad Request
+    # HTTP/1.1 401 Unauthorized
     # Content-Type: application/json
     # 
-    # {"detail":"Unable to validate credentials"}
-    assert response.status_code == 400
+    # {
+    # "detail": "Incorrect username or password"
+    # }
+    assert response.status_code == 401
     assert response.headers["content-type"] == "application/json"
     assert response.json() == {"detail": "Incorrect username or password"}

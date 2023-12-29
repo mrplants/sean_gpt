@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: fastapi-backend
-        image: seangptacrkfswsn.azurecr.io/sean_gpt_backend
+        image: sean_gpt_backend
         imagePullPolicy: IfNotPresent
         envFrom:
         - secretRef:

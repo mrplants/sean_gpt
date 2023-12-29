@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     twilio_test_auth_token: str
     twilio_sid: str
     twilio_auth_token: str
+    twilio_phone_number: str
 
 settings = Settings()
 

@@ -15,7 +15,7 @@ from sean_gpt.util.describe import describe
 from ..util import *
 
 @describe(""" Test fixture to provide an admin auth token. """)
-@pytest.fixture(scope="module")
+@pytest.fixture
 def admin_auth_token(client: TestClient) -> str:
     # Generate a token
     response = client.post(
@@ -29,7 +29,7 @@ def admin_auth_token(client: TestClient) -> str:
     return response.json()["access_token"]
 
 @describe(""" Test fixture to provide an admin user. """)
-@pytest.fixture(scope="module")
+@pytest.fixture
 def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     # Get the admin user
     response = client.get(
@@ -39,7 +39,7 @@ def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     return response.json() | {"access_token": admin_auth_token}
 
 @describe(""" Test fixture to provide a valid referral code. """)
-@pytest.fixture(scope="function")
+@pytest.fixture
 def referral_code(admin_auth_token: str, client: TestClient) -> str:
     # Get a referral code
     response = client.get(
@@ -49,7 +49,7 @@ def referral_code(admin_auth_token: str, client: TestClient) -> str:
     return response.json()["referral_code"]
 
 @describe(""" Test fixture to provide a new user and their auth token. """)
-@pytest.fixture(scope="function")
+@pytest.fixture
 def new_user(referral_code: str, client: TestClient) -> dict:
     # Create a new user with random phone and password
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
@@ -81,13 +81,13 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     )
 
 @describe(""" Test fixture to mock the Twilio SMS function. """)
-@pytest.fixture(scope="module")
+@pytest.fixture
 def mock_twilio_sms_create(client: TestClient) -> Mock:
     with patch('twilio.rest.api.v2010.account.message.MessageList.create') as mock_message_create:
         yield mock_message_create
 
 @describe(""" Test fixture to provide a verified new user and their auth token. """)
-@pytest.fixture(scope="function")
+@pytest.fixture
 def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient) -> dict:
     # Request new user verification code
     client.post(

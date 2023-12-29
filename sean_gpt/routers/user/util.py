@@ -8,8 +8,10 @@ from sqlmodel import select, Session
 from ...model.authenticated_user import UserRead, AuthenticatedUser
 from ...model.access_token import AccessTokenData
 from ...config import settings
-from ...database import db_engine
+from ...database import get_db_engine
 from ...auth_util import verify_password
+from ...util.describe import describe
+from ...database import SessionDep
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/token")
 
@@ -22,6 +24,7 @@ def get_user(phone: str) -> AuthenticatedUser | None:
     Returns:
         AuthenticatedUser: The user with the specified username or None.
     """
+    db_engine = get_db_engine()
     with Session(db_engine) as session:
         return session.exec(select(AuthenticatedUser).where(AuthenticatedUser.phone == phone)).first()
 
@@ -74,3 +77,17 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Authentic
     return user
 
 AuthenticatedUserDep = Annotated[UserRead, Security(get_current_user)]
+
+def current_user_verified(user: AuthenticatedUserDep):
+    """ Checks if the user is verified.
+
+    Raises:
+        HTTPException: If the user is not verified.
+
+    Args:
+        user (AuthenticatedUserDep): The user to check.
+    """
+    if not user.is_phone_verified:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Phone is not verified.")
+
+IsVerifiedUserDep = Depends(current_user_verified)

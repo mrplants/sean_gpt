@@ -14,13 +14,29 @@ from .model.chat import Chat
 from .model.ai import AI
 from .model.verification_token import VerificationToken
 
-# dialect+driver://username:password@host:port/database
-database_url = f"{settings.api_db_dialect}{settings.api_db_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.api_db_host}:{settings.api_db_port}/{settings.api_db_name}"
-db_engine = create_engine(database_url, echo=settings.debug)
+# Module-level variable to store the database engine instance
+_db_engine = None
 
-@describe(""" Fill the database with the initial data. """)
-def fill_database():
-    """ Fill the database with the initial data."""
+@describe(
+""" Resets the database connection. """)
+def reset_db_connection():
+    global _db_engine
+    _db_engine = None
+
+@describe(
+""" Construct the database URL from the settings. """)
+def get_db_engine():
+    global _db_engine
+    if _db_engine is None:
+        # dialect+driver://username:password@host:port/database
+        database_url = f"{settings.api_db_dialect}{settings.api_db_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.api_db_host}:{settings.api_db_port}/{settings.api_db_name}"
+        _db_engine = create_engine(database_url, echo=settings.debug)
+    return _db_engine
+
+@describe(
+""" Fill the database with the initial data. """)
+def create_admin_if_necessary():
+    db_engine = get_db_engine()
     with Session(db_engine) as session:
         # Create the admin user
         admin_user = AuthenticatedUser(
@@ -38,11 +54,15 @@ def fill_database():
             session.commit()
 
 @describe(""" Create and initialize the tables in the database. """)
-def create_tables():
+def create_tables_if_necessary():
+    db_engine = get_db_engine()
     SQLModel.metadata.create_all(db_engine)
-    fill_database()
+    create_admin_if_necessary()
 
+@describe(
+""" FastAPI dependency to get a database session. """)
 def get_session():
+    db_engine = get_db_engine()
     with Session(db_engine) as session:
         yield session
 

@@ -1,55 +1,33 @@
 from uuid import UUID
 from typing import List, Annotated
 
-from fastapi import Depends, APIRouter
+from fastapi import APIRouter
 from sqlmodel import select
 
 from ...database import SessionDep
 from ...model.chat import Chat, ChatRead
-from ...model.message import Message, MessageRead
 from ..user.util import AuthenticatedUserDep
-from .util import get_chat
+from ...util.describe import describe
 
-router = APIRouter()
+router = APIRouter(prefix="/chat")
 
-@router.get("/")
-def get_chats(current_user: AuthenticatedUserDep, session: SessionDep) -> List[ChatRead]:
-    """ Gets a list of user's chat ids from the database.
-    
-    Args:
-        current_user (AuthenticatedUserDep): The current user.
-    
-    Returns:
-        A list of chat ids associated with this user.
-    """
-    chats = session.exec(select(Chat).where(Chat.user_id == current_user.id)).all()
-    return chats
+@describe(
+""" Gets a filtered list of chats for the current user.
 
-# Retrieve a single chat recrod without messages
-@router.get("/{chat_id}")
-def get_chat(chat: ChatRead = Depends(get_chat)) -> ChatRead:
-    """ Gets a chat with the specified chat id from the database.
-    
-    Args:
-        chat (ChatRead): The chat to get.
-    
-    Returns:
-        A chat associated with this chat id and user.
-    """
-    return chat
+Args:
+    name (str): The name of the chat to filter by.
+    id (UUID): The id of the chat to filter by.
+    current_user (AuthenticatedUserDep): The current user.
+    session (SessionDep): The database session.
 
-@router.get("/{chat_id}/messages")
-def get_chat_messages(*, chat: ChatRead = Depends(get_chat), session: SessionDep) -> List[MessageRead]:
-    """ Gets the chat messages with the specified chat id from the database.
-
-    Raises HTTPException(404) if the chat does not exist or the user does not have access to the chat.
-    
-    Args:
-        chat (ChatRead): The chat to get messages from.
-        session (SessionDep): The database session.
-    
-    Returns:
-        A list of messages associated with this chat and user.
-    """
-    messages = session.exec(select(Message).where(Message.chat_id == chat.id)).all()
-    return messages
+Returns:
+    A list of chats.
+""")
+@router.get("")
+def get_chats(*, name: None|str = None, id: None|UUID = None, current_user: AuthenticatedUserDep, session: SessionDep) -> List[ChatRead]:
+    query = select(Chat).where(Chat.user_id == current_user.id)
+    if name:
+        query = query.where(Chat.name == name)
+    if id:
+        query = query.where(Chat.id == id)
+    return session.exec(query).all()

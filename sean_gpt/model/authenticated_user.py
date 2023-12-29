@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 import uuid
 
@@ -22,3 +22,4 @@ class AuthenticatedUser(UserBase, table=True):
     hashed_password: str
 
     verification_token: Optional["VerificationToken"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})
+    chats: List["Chat"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})

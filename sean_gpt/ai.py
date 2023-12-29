@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 
 from .model.ai import AI
-from .database import db_engine
+from .database import get_db_engine
 
 DEFAULT_AI_MODEL = "gpt-4-1106-preview"
 
@@ -15,6 +15,7 @@ def get_ai(name: str) -> AI | None:
     Returns:
         AI: The AI with the specified name or None.
     """
+    db_engine = get_db_engine()
     with Session(db_engine) as session:
         return session.exec(select(AI).where(AI.name == name)).first()
 
@@ -28,6 +29,7 @@ def create_ai(name: str) -> AI:
     Returns:
         AI: The created AI.
     """
+    db_engine = get_db_engine()
     with Session(db_engine) as session:
         ai = AI(name=name)
         session.add(ai)

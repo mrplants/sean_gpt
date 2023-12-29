@@ -4,7 +4,7 @@ from ...model.authenticated_user import UserRead
 from .util import AuthenticatedUserDep
 from ...util.describe import describe
 
-router = APIRouter()
+router = APIRouter(prefix="/user")
 
 @describe(""" Gets the current user.
 
@@ -14,7 +14,7 @@ Args:
 Returns:
     UserRead: The current user.
 """)
-@router.get("/")
+@router.get("")
 def read_users_me(current_user: AuthenticatedUserDep) -> UserRead:
     return current_user
 

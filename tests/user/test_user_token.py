@@ -1,6 +1,6 @@
-################
+###############
 # /user/token #
-################
+###############
 # POST (protected):  Login and retrieve a user's auth token
 
 from fastapi.testclient import TestClient

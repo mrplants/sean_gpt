@@ -1,6 +1,6 @@
-###################
+##################
 # /user/password #
-###################
+##################
 # PUT (protected): Change the user's password
 
 from fastapi.testclient import TestClient

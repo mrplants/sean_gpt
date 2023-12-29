@@ -1,6 +1,6 @@
-########################
+#######################
 # /user/referral_code #
-########################
+#######################
 # GET (protected, verified):  Get a user's referral code
 
 from fastapi.testclient import TestClient

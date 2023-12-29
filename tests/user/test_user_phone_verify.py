@@ -1,6 +1,6 @@
-#####################################
+####################################
 # /user/request_phone_verification #
-#####################################
+####################################
 # POST (protected):  Request a phone verification code sent to the user's phone
 
 ############################
@@ -57,7 +57,7 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
     assert response.status_code == 204
     # Check that the user's phone is verified
     response = client.get(
-        "/user/",
+        "/user",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     assert response.json()["is_phone_verified"] == True

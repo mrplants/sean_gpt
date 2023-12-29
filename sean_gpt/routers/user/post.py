@@ -17,7 +17,7 @@ from ...model.verification_token import VerificationToken
 from ...database import SessionDep
 from ...sms import TwilioClientDep
 
-router = APIRouter()
+router = APIRouter(prefix="/user")
 
 @describe(""" Creates a new user.
 
@@ -29,7 +29,7 @@ Args:
 Returns:
           UserRead: The user's information.
 """)
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_user(*, user: UserCreate, referral_code: str = Body(), session: SessionDep) -> UserRead:
     # Check if the user exists
     select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == user.phone)

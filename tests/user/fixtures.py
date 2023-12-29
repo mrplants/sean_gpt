@@ -33,7 +33,7 @@ def admin_auth_token(client: TestClient) -> str:
 def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     # Get the admin user
     response = client.get(
-        "/user/",
+        "/user",
         headers={"Authorization": f"Bearer {admin_auth_token}"}
     )
     return response.json() | {"access_token": admin_auth_token}
@@ -55,7 +55,7 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
     response_user = client.post(
-        "/user/",
+        "/user",
         json={
             "user": {
                 "phone": new_user_phone,
@@ -76,7 +76,7 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     yield response_user.json() | response_token.json() | {"password": new_user_password}
     # Delete the new user as cleanup
     client.delete(
-        "/user/",
+        "/user",
         headers={"Authorization": f"Bearer {response_token.json()['access_token']}"}
     )
 
@@ -134,7 +134,7 @@ def check_verified_route(request_type: str, route: str, verified_user: dict, cli
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
     unverified_user = client.post(
-        "/user/",
+        "/user",
         json={
             "user": {
                 "phone": new_user_phone,

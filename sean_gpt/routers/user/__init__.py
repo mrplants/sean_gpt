@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from . import post, delete, get, put
 
 router = APIRouter(
-    prefix="/user",
     tags=["Authentication"],
 )
 

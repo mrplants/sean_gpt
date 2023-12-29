@@ -11,7 +11,7 @@ from ...auth_util import verify_password, get_password_hash
 from ...database import SessionDep
 from ...model.authenticated_user import AuthenticatedUser
 
-router = APIRouter()
+router = APIRouter(prefix="/user")
 
 class PasswordChangeRequest(BaseModel):
     old_password: str

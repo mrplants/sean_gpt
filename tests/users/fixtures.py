@@ -19,7 +19,7 @@ from ..util import *
 def admin_auth_token(client: TestClient) -> str:
     # Generate a token
     response = client.post(
-        f"/users/token",
+        f"/user/token",
         data={
             "grant_type": "password",
             "username": settings.admin_phone,
@@ -33,7 +33,7 @@ def admin_auth_token(client: TestClient) -> str:
 def admin_user(admin_auth_token: str, client: TestClient) -> dict:
     # Get the admin user
     response = client.get(
-        "/users/",
+        "/user/",
         headers={"Authorization": f"Bearer {admin_auth_token}"}
     )
     return response.json() | {"access_token": admin_auth_token}
@@ -43,7 +43,7 @@ def admin_user(admin_auth_token: str, client: TestClient) -> dict:
 def referral_code(admin_auth_token: str, client: TestClient) -> str:
     # Get a referral code
     response = client.get(
-        "/users/referral_code",
+        "/user/referral_code",
         headers={"Authorization": f"Bearer {admin_auth_token}"}
     )
     return response.json()["referral_code"]
@@ -55,7 +55,7 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
     response_user = client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": new_user_phone,
@@ -66,7 +66,7 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     )
     # Get the new user's auth token
     response_token = client.post(
-        "/users/token",
+        "/user/token",
         data={
             "grant_type": "password",
             "username": new_user_phone,
@@ -76,7 +76,7 @@ def new_user(referral_code: str, client: TestClient) -> dict:
     yield response_user.json() | response_token.json() | {"password": new_user_password}
     # Delete the new user as cleanup
     client.delete(
-        "/users/",
+        "/user/",
         headers={"Authorization": f"Bearer {response_token.json()['access_token']}"}
     )
 
@@ -91,14 +91,14 @@ def mock_twilio_sms_create(client: TestClient) -> Mock:
 def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient) -> dict:
     # Request new user verification code
     client.post(
-        f"/users/request_phone_verification",
+        f"/user/request_phone_verification",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, mock_twilio_sms_create.call_args[1]["body"]).group(1)
     # Verify the user
     response_token = client.put(
-        f"/users/is_phone_verified",
+        f"/user/is_phone_verified",
         headers={"Authorization": f"Bearer {new_user['access_token']}"},
         json={"phone_verification_code": phone_verification_code}
     )
@@ -134,7 +134,7 @@ def check_verified_route(request_type: str, route: str, verified_user: dict, cli
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
     unverified_user = client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": new_user_phone,
@@ -145,7 +145,7 @@ def check_verified_route(request_type: str, route: str, verified_user: dict, cli
     ).json()
     # Get the new user's auth token
     unverified_user = unverified_user | client.post(
-        "/users/token",
+        "/user/token",
         data={
             "grant_type": "password",
             "username": new_user_phone,

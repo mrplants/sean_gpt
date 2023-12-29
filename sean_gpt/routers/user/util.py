@@ -11,7 +11,7 @@ from ...config import settings
 from ...database import db_engine
 from ...auth_util import verify_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/token")
 
 def get_user(phone: str) -> AuthenticatedUser | None:
     """ Gets a user from the database.

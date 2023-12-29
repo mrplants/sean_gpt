@@ -1,5 +1,5 @@
 ################
-# /users/token #
+# /user/token #
 ################
 # POST (protected):  Login and retrieve a user's auth token
 
@@ -21,7 +21,7 @@ def test_verified_authorized_routes(verified_new_user: dict, client: TestClient)
 def test_generate_token(client: TestClient):
     # Generate a token
     response = client.post(
-        "/users/token",
+        "/user/token",
         data={
             "grant_type": "password",
             "username": settings.admin_phone,
@@ -58,7 +58,7 @@ def test_token_expiration(admin_auth_token: str, client: TestClient):
 def test_generate_token_incorrect_password(client: TestClient):
     # Generate a token
     response = client.post(
-        "/users/token",
+        "/user/token",
         data={
             "grant_type": "password",
             "username": settings.admin_phone,

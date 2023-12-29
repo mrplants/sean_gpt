@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, Depends
 from sqlmodel import select
 
-from ..users.util import AuthenticatedUserDep
+from ..user.util import AuthenticatedUserDep
 from ...database import SessionDep
 from ...ai import default_ai
 from ...model.ai import AI

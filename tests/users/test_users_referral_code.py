@@ -1,5 +1,5 @@
 ########################
-# /users/referral_code #
+# /user/referral_code #
 ########################
 # GET (protected, verified):  Get a user's referral code
 
@@ -12,14 +12,14 @@ from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
-    check_authorized_route("GET", "/users/referral_code", authorized_user=verified_new_user, client=client)
-    check_verified_route("GET", "/users/referral_code", verified_user=verified_new_user, client=client)
+    check_authorized_route("GET", "/user/referral_code", authorized_user=verified_new_user, client=client)
+    check_verified_route("GET", "/user/referral_code", verified_user=verified_new_user, client=client)
 
 @describe(""" Test that a referral code can be generated. """)
 def test_referral_code_generation(admin_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
-        f"/users/referral_code",
+        f"/user/referral_code",
         headers={"Authorization": f"Bearer {admin_user['access_token']}"}
     )
     # The response should be:
@@ -37,7 +37,7 @@ def test_referral_code_generation(admin_user: dict, client: TestClient):
 def test_referral_code_generation_unverified(new_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
-        f"/users/referral_code",
+        f"/user/referral_code",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     # The response should be:

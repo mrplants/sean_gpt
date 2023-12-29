@@ -1,5 +1,5 @@
 ###########
-# /users/ #
+# /user/ #
 ###########
 # POST (protected):  Create a user
 # GET (protected):  Get a user's info
@@ -14,15 +14,15 @@ from ..util import *
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(referral_code: str, verified_new_user: dict, client: TestClient):
-    check_authorized_route("POST", "/users/", json={
+    check_authorized_route("POST", "/user/", json={
         "user": {
             "phone": f"+{random.randint(10000000000, 20000000000)}",
             "password": f"test{random.randint(0, 1000000)}",
         },
         "referral_code": referral_code
     }, authorized_user=verified_new_user, client=client)
-    check_authorized_route("GET", "/users/", authorized_user=verified_new_user, client=client)
-    check_authorized_route("DELETE", "/users/", authorized_user=verified_new_user, client=client)
+    check_authorized_route("GET", "/user/", authorized_user=verified_new_user, client=client)
+    check_authorized_route("DELETE", "/user/", authorized_user=verified_new_user, client=client)
 
 @describe(""" Test that a new account can be created. """)
 def test_new_account_creation(admin_user: dict, client: TestClient):
@@ -31,7 +31,7 @@ def test_new_account_creation(admin_user: dict, client: TestClient):
     # Create a new user with random phone and password
     test_new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     response = client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": test_new_user_phone,
@@ -62,7 +62,7 @@ def test_new_account_creation_incorrect_referral_code(client: TestClient):
     # Create a new user with random phone and password
     test_new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     response = client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": test_new_user_phone,
@@ -87,7 +87,7 @@ def test_new_account_creation_existing_phone(referral_code: str, client: TestCli
     # Create a new user with random phone and password
     test_new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": test_new_user_phone,
@@ -98,7 +98,7 @@ def test_new_account_creation_existing_phone(referral_code: str, client: TestCli
     )
     # Create a new user with the same phone
     response = client.post(
-        "/users/",
+        "/user/",
         json={
             "user": {
                 "phone": test_new_user_phone,
@@ -121,7 +121,7 @@ def test_new_account_creation_existing_phone(referral_code: str, client: TestCli
 @describe(""" Test that a user's info can be retrieved. """)
 def test_get_user_info(new_user: dict, client: TestClient):
     response = client.get(
-        "/users/",
+        "/user/",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     # The response should be:
@@ -144,7 +144,7 @@ def test_get_user_info(new_user: dict, client: TestClient):
 @describe(""" Test that a user's account can be deleted. """)
 def test_delete_user(verified_new_user: dict, client: TestClient):
     response = client.delete(
-        "/users/",
+        "/user/",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"}
     )
     # The response should be:
@@ -152,7 +152,7 @@ def test_delete_user(verified_new_user: dict, client: TestClient):
     assert response.status_code == 204
     # Check that the user's account was deleted
     response = client.get(
-        "/users/",
+        "/user/",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"}
     )
     # The response should be:

@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from ..config import settings
 
 class VerificationTokenBase(SQLModel):
-    token_hash: str = Field(index=True, unique=True)
+    code_hash: str = Field(index=True, unique=True)
     expiration: int = Field(default_factory=lambda: int(datetime.now().timestamp()) + settings.verification_token_expire_minutes)
     user_id: UUID = Field(foreign_key="authenticateduser.id")
 

@@ -26,7 +26,7 @@ def test_verified_authorized_routes(mock_twilio_sms_create: Mock, new_user: dict
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
     code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
-    check_authorized_route("PUT", "/users/is_phone_verified", {
+    check_authorized_route("PUT", "/users/is_phone_verified", json={
         "phone_verification_code": phone_verification_code
     }, authorized_user=new_user, client=client)
 
@@ -61,7 +61,7 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
     assert response.status_code == 204
     # Check that the user's phone is verified
     response = client.get(
-        "/users/me",
+        "/users/",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     assert response.json()["is_phone_verified"] == True

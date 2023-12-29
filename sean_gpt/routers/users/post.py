@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Annotated
 import secrets
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status, Security, Body
 from fastapi.security import OAuth2PasswordRequestForm
@@ -86,16 +87,23 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 @describe(""" Requests a verification token be texted to the user's phone. """)
 @router.post("/request_phone_verification")
 def request_phone_verification(session: SessionDep, current_user: AuthenticatedUserDep, sms_client: TwilioClientDep):
+    session.add(current_user)
     # Check if the user is already verified
     if current_user.is_phone_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already verified",
         )
+    # Check if the user has an unexpired verification token
+    if current_user.verification_token and current_user.verification_token.expiration > datetime.now().timestamp():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot request another verification code prior to expiration ({settings.verification_token_expire_minutes} minutes).",
+        )
     # Generate a verification token
-    token_code = secrets.token_urlsafe(6)
+    token_code = secrets.token_urlsafe(8)
     verification_token = VerificationToken(
-        token_hash=get_password_hash(token_code),
+        code_hash=get_password_hash(token_code),
         user_id=current_user.id)
     # Add the verification token to the database
     session.add(verification_token)

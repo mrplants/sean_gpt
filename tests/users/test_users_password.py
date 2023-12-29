@@ -51,7 +51,7 @@ def test_password_change(new_user: dict, client: TestClient):
             "password": new_user["password"],
         },
     )
-    assert response.status_code == 400, f"Status should be 400, not {response.status_code}. Response: {response.text}"
+    assert response.status_code == 401, f"Status should be 401, not {response.status_code}. Response: {response.text}"
 
 
 @describe(""" Test that a user's password cannot be changed with an incorrect password. """)
@@ -71,7 +71,7 @@ def test_password_change_incorrect_password(new_user: dict, client: TestClient):
     # Content-Type: application/json
     #
     # {
-    # "detail": "Unable to validate credentials."
+    # "detail": "Unable to change password:  Incorrect password."
     # }
     assert response.status_code == 400
     assert response.headers["content-type"] == "application/json"

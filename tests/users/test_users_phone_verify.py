@@ -67,8 +67,8 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
     assert response.json()["is_phone_verified"] == True
 
 @describe(""" Test that a user's phone cannot be verified with an incorrect verification code. """)
-def test_phone_verification_incorrect_code(new_user: dict, client: TestClient):
-    # Pass an incorrect verification code
+def test_phone_verification_incorrect_code(new_user: dict, client: TestClient, mock_twilio_sms_create: Mock):
+    # Attempt to verify a user with no verification code
     response = client.put(
         "/users/is_phone_verified",
         headers={"Authorization": f"Bearer {new_user['access_token']}"},
@@ -79,8 +79,28 @@ def test_phone_verification_incorrect_code(new_user: dict, client: TestClient):
     # Content-Type: application/json
     #
     # {
-    # "detail": "Unable to verify phone:  Incorrect verification code."
+    # "detail": "Unable to verify phone:  Invalid verification code."
     # }
     assert response.status_code == 400
     assert response.headers["content-type"] == "application/json"
-    assert response.json()["detail"] == "Unable to verify phone:  Incorrect verification code."
+    assert response.json()["detail"] == "Unable to verify phone:  Invalid verification code."
+    # Request a verification code and then attempt to verify the user with an incorrect verification code
+    client.post(
+        "/users/request_phone_verification",
+        headers={"Authorization": f"Bearer {new_user['access_token']}"}
+    )
+    response = client.put(
+        "/users/is_phone_verified",
+        headers={"Authorization": f"Bearer {new_user['access_token']}"},
+        json={"phone_verification_code": "incorrect_code"}
+    )
+    # The response should be:
+    # HTTP/1.1 400 Bad Request
+    # Content-Type: application/json
+    #
+    # {
+    # "detail": "Unable to verify phone:  Invalid verification code."
+    # }
+    assert response.status_code == 400
+    assert response.headers["content-type"] == "application/json"
+    assert response.json()["detail"] == "Unable to verify phone:  Invalid verification code."

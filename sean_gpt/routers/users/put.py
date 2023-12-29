@@ -33,7 +33,6 @@ def change_password(
     current_user: AuthenticatedUserDep,
     session: SessionDep
     ):
-    print(f'current_user: {current_user}')
     # We know that the authentication token is valid because the user is authenticated.
     # Check the old password
     if not verify_password(change_request.old_password, current_user.hashed_password):
@@ -76,6 +75,12 @@ def verify_phone(*,
     ):
     session.add(current_user)
     # We know that the authentication token is valid because the user is authenticated.
+    # Check that the user has a verification token
+    if not current_user.verification_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to verify phone:  Invalid verification code."
+        )
     # Check the verification code using the cryptographic hash comparison function
     print(f'current_user.verification_token: {current_user.verification_token}')
     if not verify_password(phone_verification_code, current_user.verification_token.code_hash):

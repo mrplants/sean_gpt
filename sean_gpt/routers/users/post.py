@@ -109,6 +109,13 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
     session.add(verification_token)
     session.commit()
     session.refresh(verification_token)
+    session.refresh(current_user)
+    # Check that the verification token was added to the user
+    if not current_user.verification_token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to add verification token to user.",
+        )
     # Send the verification token to the user
     sms_client.messages.create(
         body=constants.phone_verification_message.format(token_code),

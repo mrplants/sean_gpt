@@ -125,7 +125,30 @@ def check_authorized_route(request_type: str, route: str, authorized_user: dict,
     assert response.status_code // 100 != 2, f"Expected status code NOT 2xx, got {response.status_code}. Response body: {response.content}"
 
 @describe(""" Checks that a route requires a verified user for access. """)
-def check_verified_route(request_type: str, route: str, verified_user: dict, unverified_user: dict, client: TestClient, **request_args):
+def check_verified_route(request_type: str, route: str, verified_user: dict, client: TestClient, **request_args):
+    # First, create an unverified user from the referral code of the verified user
+    new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
+    new_user_password = f"test{random.randint(0, 1000000)}"
+    unverified_user = client.post(
+        "/users/",
+        json={
+            "user": {
+                "phone": new_user_phone,
+                "password": new_user_password,
+            },
+            "referral_code": verified_user['referral_code']
+        }
+    ).json()
+    # Get the new user's auth token
+    unverified_user = unverified_user | client.post(
+        "/users/token",
+        data={
+            "grant_type": "password",
+            "username": new_user_phone,
+            "password": new_user_password,
+        },
+    ).json() | {"password": new_user_password}
+
     request_func = {
         "get": client.get,
         "post": client.post,

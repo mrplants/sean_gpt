@@ -322,7 +322,7 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     assert twilio_chat_messages[2]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
     assert twilio_chat_messages[2]['content'] == "This is an interruption message.", f"Expected second message to be 'This is an interruption message.', got {twilio_chat_messages[1]['content']}"
     assert twilio_chat_messages[3]['role'] == 'assistant', f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}"
-    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message." + '…', f"Expected third message to be '{outgoing_msg[:159]}…', got {twilio_chat_messages[2]['content']}"     
+    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message.", f"Expected third message to be 'This is the response to the interruption message.', got {twilio_chat_messages[2]['content']}"     
 
 @describe(
 """ Tests that only SMS is supported.

@@ -1,10 +1,12 @@
+import uuid
+
 from fastapi import APIRouter
 from fastapi.responses import Response
 from sqlmodel import select
 from openai import AsyncOpenAI
 import twilio.twiml.messaging_response as twiml
 
-from ...database import SessionDep
+from ...database import SessionDep, RedisConnectionDep
 from ...model.twilio_message import TwilioMessage
 from ...model.chat import Chat
 from ...model.message import Message
@@ -28,7 +30,14 @@ Returns:
     TwiML.  The TwiML response.
 """)
 @router.post("")
-async def twilio_webhook(incoming_message: TwilioMessage, current_user: TwilioGetUserDep, session: SessionDep):
+async def twilio_webhook(
+    incoming_message: TwilioMessage,
+    current_user: TwilioGetUserDep,
+    session: SessionDep,
+    redis_conn: RedisConnectionDep):
+    # Create a request ID.  It will be thrown away at the end, but used to
+    # identify the request in the redis interrupts.
+    request_id = str(uuid.uuid4())
     # - If the current_user could not be found, return a static message requesting referral code
     if not current_user:
         twiml_response = twiml.MessagingResponse()
@@ -37,6 +46,14 @@ async def twilio_webhook(incoming_message: TwilioMessage, current_user: TwilioGe
                         media_type="application/xml")
     # - Retrieve the user's twilio chat
     twilio_chat = session.exec(select(Chat).where(Chat.id == current_user.twilio_chat_id)).first()
+    # Subscribe to stream interrupt events
+    interrupt_channel_name = f'interrupt channel for chat with ID: {twilio_chat.id}'
+    interrupt_pubsub = redis_conn.pubsub()
+    await interrupt_pubsub.subscribe(interrupt_channel_name)
+    # Check if the assistant is already responding
+    if twilio_chat.is_assistant_responding:
+        # Interrupt the other stream
+        await redis_conn.publish(interrupt_channel_name, request_id)
     session.add(twilio_chat)
     twilio_chat.is_assistant_responding = True
     session.commit()
@@ -79,6 +96,13 @@ async def twilio_webhook(incoming_message: TwilioMessage, current_user: TwilioGe
     partial_response = ""
     requires_redirect = False
     async for chunk in response_stream:
+        # Check the interrupt channel for interrupts
+        message = await interrupt_pubsub.get_message(ignore_subscribe_messages=True)
+        if message and message['data'].decode('utf-8') != request_id:
+            # Stop the stream and return early (without removing the is_assistant_responding flag.)
+            # The interrupting stream is now respondible for that flag
+            # Return no message or redirect.  The interrupting stream is in control.
+            return twiml.MessagingResponse()
         partial_response += chunk.choices[0].delta.content or ""
         # Check if the partial response is over the character limit
         if len(partial_response) > settings.twilio_max_message_characters:

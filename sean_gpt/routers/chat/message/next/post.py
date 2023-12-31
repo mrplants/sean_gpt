@@ -1,4 +1,4 @@
-import logging
+import uuid
 
 from fastapi import APIRouter, Body, Header, HTTPException
 from fastapi.responses import StreamingResponse
@@ -36,6 +36,9 @@ async def next_message(
     current_user: AuthenticatedUserDep,
     session: SessionDep,
     redis_conn: RedisConnectionDep):
+    # Create a request ID.  It will be thrown away at the end, but used to
+    # identify the request in the redis interrupts.
+    request_id = str(uuid.uuid4())
     # Get the chat
     chat = session.exec(select(Chat).where(Chat.id == x_chat_id)).first()
     # Ensure that the user is a member of the chat
@@ -48,7 +51,7 @@ async def next_message(
     # Check if the assistant is already responding
     if chat.is_assistant_responding:
         # Interrupt the other stream
-        await redis_conn.publish(interrupt_channel_name, 'INTERRUPT')
+        await redis_conn.publish(interrupt_channel_name, request_id)
     # Indicate that the assistant is responding
     session.add(chat)
     chat.is_assistant_responding = True
@@ -69,7 +72,7 @@ async def next_message(
         async for chunk in response_stream:
             # Check the interrupt channel for interrupts
             message = await interrupt_pubsub.get_message(ignore_subscribe_messages=True)
-            if message and message['data'] == b'INTERRUPT':
+            if message and message['data'].decode('utf-8') != request_id:
                 # Stop the stream and return early (without removing the is_assistant_responding flag.)
                 # The interrupting stream is now respondible for that flag
                 yield f'data: \n\n'

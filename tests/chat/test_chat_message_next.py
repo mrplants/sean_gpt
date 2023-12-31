@@ -219,7 +219,7 @@ def test_stream_interruption(verified_new_user: dict, client: TestClient):
                     "role": "user"})
     # - Now send a new interruption message to the "next-message" endpoint.
     with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
-        mock_openai_api.side_effect = async_create_mock_streaming_openai_api("Message response", delay=0.001)
+        mock_openai_api.side_effect = async_create_mock_streaming_openai_api("Message 2 response", delay=0.001)
         # Create a message.  The response will be streamed via SSE.
         request_kwargs = {
             "headers": {"Authorization": "Bearer " + verified_new_user["access_token"],
@@ -228,8 +228,7 @@ def test_stream_interruption(verified_new_user: dict, client: TestClient):
             "json": {"content": "Message 2"}
         }
         # The first message will be sent and then the response will be streamed.
-        for _ in stream_response("post","/chat/message/next",request_kwargs,client):
-            pass
+        message_2_response = ''.join(stream_response("post","/chat/message/next",request_kwargs,client))
     # Check that the messages were passed into the openai API in ascending order
     # of chat_index.
     openai_create_kwargs = mock_openai_api.call_args.kwargs
@@ -241,6 +240,8 @@ def test_stream_interruption(verified_new_user: dict, client: TestClient):
     while not results_queue.empty():
         results.append(results_queue.get())
     assert ''.join(results) != expected_response, "Check that the first response was interrupted."
+    # Verify that the second response was not interrupted.
+    assert message_2_response == "Message 2 response", "Check that the second response was not interrupted."
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_and_authorized(verified_new_user, client):

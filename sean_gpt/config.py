@@ -41,7 +41,8 @@ class Settings(BaseSettings):
 
     twilio_welcome_message: str
     twilio_request_referral_message: str
-    twilio_only_sms_message: str
+    twilio_no_whatsapp_message: str
+    twilio_no_mms_message: str
     twilio_ai_system_message: str
     twilio_max_message_characters: int
 

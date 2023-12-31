@@ -1,9 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Any
 
-from .config import settings
 from sqlmodel import create_engine, SQLModel, Session, select
 from fastapi import Depends
+import aioredis
 
+from .config import settings
 from .auth_util import get_password_hash
 from .util.describe import describe
 
@@ -16,6 +17,7 @@ from .model.verification_token import VerificationToken
 
 # Module-level variable to store the database engine instance
 _db_engine = None
+_redis_pool = None
 
 @describe(
 """ Resets the database connection. """)
@@ -65,5 +67,12 @@ def get_session():
     db_engine = get_db_engine()
     with Session(db_engine) as session:
         yield session
+
+@describe(
+""" FastAPI dependency to get a redis connection. """)
+def get_redis_connection():
+    return aioredis.from_url(f"redis://{settings.redis_host}")
+
+RedisConnectionDep = Annotated[Any, Depends(get_redis_connection)]
 
 SessionDep = Annotated[Session, Depends(get_session)]

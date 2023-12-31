@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from sean_gpt.config import settings, constants
 from sean_gpt.util.describe import describe
-from ..util import *
+from ..fixtures import *
 
 @describe(""" Test fixture to provide an admin auth token. """)
 @pytest.fixture
@@ -80,12 +80,6 @@ def new_user(referral_code: str, client: TestClient) -> dict:
         headers={"Authorization": f"Bearer {response_token.json()['access_token']}"}
     )
 
-@describe(""" Test fixture to mock the Twilio SMS function. """)
-@pytest.fixture
-def mock_twilio_sms_create(client: TestClient) -> Mock:
-    with patch('twilio.rest.api.v2010.account.message.MessageList.create') as mock_message_create:
-        yield mock_message_create
-
 @describe(""" Test fixture to provide a verified new user and their auth token. """)
 @pytest.fixture
 def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient) -> dict:
@@ -105,31 +99,33 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: Test
     yield new_user
 
 @describe(""" Checks that a route requires authorization for access. """)
-def check_authorized_route(request_type: str, route: str, authorized_user: dict, client: TestClient, **request_args):
+def check_authorized_route(request_type: str, route: str, authorized_user: dict, client: TestClient, **request_kwargs):
     request_func = {
         "get": client.get,
         "post": client.post,
         "put": client.put,
         "delete": client.delete
     }[request_type.lower()]
+    headers = {"Authorization": f"Bearer {authorized_user['access_token']}"} | request_kwargs.get("headers", {})
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {authorized_user['access_token']}"},
-        **request_args
+        headers=headers,
+        **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
     # The response should be any 2xx response code
     assert response.status_code // 100 == 2, f"Expected status code 2xx, got {response.status_code}. Response body: {response.content}"
     # Now send an unauthorized request
+    headers = {"Authorization": f"Bearer invalid_token"} | request_kwargs.get("headers", {})
     response = client.post(
         route,
-        headers={"Authorization": f"Bearer invalid_token"},
-        **request_args
+        headers=headers,
+        **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
     # The response should not be a 2xx response code
     assert response.status_code // 100 != 2, f"Expected status code NOT 2xx, got {response.status_code}. Response body: {response.content}"
 
 @describe(""" Checks that a route requires a verified user for access. """)
-def check_verified_route(request_type: str, route: str, verified_user: dict, client: TestClient, **request_args):
+def check_verified_route(request_type: str, route: str, verified_user: dict, client: TestClient, **request_kwargs):
     # First, create an unverified user from the referral code of the verified user
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
@@ -159,18 +155,20 @@ def check_verified_route(request_type: str, route: str, verified_user: dict, cli
         "put": client.put,
         "delete": client.delete
     }[request_type.lower()]
+    headers = {"Authorization": f"Bearer {verified_user['access_token']}"} | request_kwargs.get("headers", {})
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {verified_user['access_token']}"},
-        **request_args
+        headers=headers,
+        **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
     # The response should be any 2xx response code
     assert response.status_code // 100 == 2, f"Expected status code 2xx, got {response.status_code}. Response body: {response.text}"
     # Now send an unverified request
+    headers = {"Authorization": f"Bearer {unverified_user['access_token']}"} | request_kwargs.get("headers", {})
     response = request_func(
         route,
-        headers={"Authorization": f"Bearer {unverified_user['access_token']}"},
-        **request_args
+        headers=headers,
+        **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
     # The response should not be a 2xx response code
     assert response.status_code // 100 != 2, f"Expected status code NOT 2xx, got {response.status_code}. Response body: {response.text}"

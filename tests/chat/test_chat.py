@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient
 from sean_gpt.util.describe import describe
 
 from ..user.fixtures import *
-from ..util import *
+from ..fixtures import *
 
 @describe(
 """ Test that a user can create a chat. 
@@ -324,4 +324,17 @@ def test_verified_authorized_routes(verified_new_user: dict, client: TestClient)
         "name": test_chat_name
     }, verified_user=verified_new_user, client=client)
     check_verified_route("GET", "/chat", verified_user=verified_new_user, client=client)
-    # TODO: Check PUT and DELETE routes.  Unable to currently because headers are not working with these helper methods.
+    # Check the PUT route
+    # First, create the chat
+    chat = client.post("/chat",
+                       headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
+                       json={}).json()
+    check_verified_route("PUT", "/chat", json={
+        "name": test_chat_name
+    }, verified_user=verified_new_user, client=client, headers={
+        "X-Chat-ID": chat["id"]
+    })
+    # Now check the DELETE route
+    check_verified_route("DELETE", "/chat", verified_user=verified_new_user, client=client, headers={
+        "X-Chat-ID": chat["id"]
+    })

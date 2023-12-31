@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-from ..util import *
+from ..fixtures import *
 
 @describe(""" Test that a new account can be created. """)
 def test_new_account_creation(admin_user: dict, client: TestClient):

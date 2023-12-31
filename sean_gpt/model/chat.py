@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import uuid
 from uuid import UUID
 
@@ -15,6 +15,8 @@ class ChatBase(ChatCreate):
 
 class Chat(ChatBase, table=True):
     user: "AuthenticatedUser" = Relationship(back_populates="chats")
+
+    messages: List["Message"] = Relationship(back_populates="chat", sa_relationship_kwargs={"cascade": "all, delete"})
 
 class ChatRead(ChatBase):
     id: UUID

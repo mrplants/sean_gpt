@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     api_db_user: str
     api_db_password: str
 
+    redis_host: str
+
     openai_api_url: str
     openai_api_key: str
 
@@ -36,6 +38,8 @@ class Settings(BaseSettings):
     twilio_sid: str
     twilio_auth_token: str
     twilio_phone_number: str
+
+    chat_history_length: int
 
 settings = Settings()
 

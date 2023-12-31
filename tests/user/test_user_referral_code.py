@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
-from ..util import *
+from ..fixtures import *
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):

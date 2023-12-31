@@ -5,11 +5,14 @@
 #   Create a new message in a chat. Chat UUID in header.
 # GET (protected, verified)
 #   Get a paged list of chats. Filters in query string. Chat UUID in header.
+#
+# TODO: missing tests
+# - default values for limit and offset
 
 from sean_gpt.util.describe import describe
 
 from ..user.fixtures import *
-from ..util import *
+from ..fixtures import *
 from .util import *
 
 @describe(
@@ -68,7 +71,7 @@ def test_create_message_user(verified_new_user, client):
     # }
     assert response.status_code == 201, f"Status should be 201, not {response.status_code}. Response: {response.text}"
     assert type(response.json()["id"]) == str
-    assert response.json()["content"] == "Hello, world! This is my first message in a chat."
+    assert response.json()["content"] == "Hello, world! This is my second message in a chat."
     assert response.json()["role"] == "user"
     assert response.json()["chat_id"] == chat["id"]
     assert type(response.json()["created_at"]) == int
@@ -215,7 +218,7 @@ def test_get_messages(verified_new_user, client):
     # [...]
     assert response.status_code == 200, f"Status should be 200, not {response.status_code}. Response: {response.text}"
     assert type(response.json()) == list
-    assert len(response.json()) == 5
+    assert len(response.json()) == 7
     # Now test starting after the end of the list
     response = client.get("/chat/message",
                           headers={"Authorization": "Bearer " + verified_new_user["access_token"],
@@ -243,3 +246,57 @@ def test_get_messages(verified_new_user, client):
                           params={"limit": 1, "offset": -1})
     # The response should be:
     # HTTP/1.1 422 Unprocessable Entity
+
+@describe(
+""" Tests that a user cannot create a message in a chat that they do not own.
+
+Args:
+    verified_new_user (dict):  A verified user.
+    verified_user (dict):  A verified user.
+    client (TestClient):  A test client.
+""")
+def test_create_message_unauthorized(verified_new_user, admin_user, client):
+    # Create a chat
+    chat = client.post("/chat",
+                       headers={"Authorization": "Bearer " + admin_user["access_token"],},
+                       json={}).json()
+    # Create a message
+    response = client.post("/chat/message",
+                           headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                                    "X-Chat-ID": chat["id"]
+                                    },
+                           json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
+    # The response should be:
+    # HTTP/1.1 404 Not Found
+    assert response.status_code == 404, f"Status should be 404, not {response.status_code}. Response: {response.text}"
+
+@describe(
+""" Tests that a user cannot create a message in a chat that does not exist.
+
+Args:
+    verified_new_user (dict):  A verified user.
+    client (TestClient):  A test client.
+""")
+def test_create_message_not_found(verified_new_user, client):
+    # Create a message
+    response = client.post("/chat/message",
+                           headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                                    "X-Chat-ID": "00000000-0000-0000-0000-000000000000"
+                                    },
+                           json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
+    # The response should be:
+    # HTTP/1.1 404 Not Found
+    assert response.status_code == 404, f"Status should be 404, not {response.status_code}. Response: {response.text}"
+
+@describe(""" Test the verified and authorized routes. """)
+def test_verified_and_authorized(verified_new_user, client):
+    # First, create a chat for messages
+    chat = client.post("/chat",
+                       headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
+                       json={}).json()
+    # Check the routes
+    check_verified_route("post", "/chat/message", verified_new_user, client,
+                         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"},
+                         headers={"X-Chat-ID": chat["id"]})
+    check_verified_route("get", "/chat/message", verified_new_user, client,
+                         headers={"X-Chat-ID": chat["id"]})

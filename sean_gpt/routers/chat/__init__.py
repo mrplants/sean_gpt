@@ -2,11 +2,9 @@ from fastapi import APIRouter
 
 from . import get, post, put, delete
 from . import message
-from ..user.util import IsVerifiedUserDep
 
 router = APIRouter(
     tags=["Chat Completion"],
-    dependencies=[IsVerifiedUserDep],
 )
 
 router.include_router(get.router)

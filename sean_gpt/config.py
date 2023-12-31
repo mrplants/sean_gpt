@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     twilio_auth_token: str
     twilio_phone_number: str
 
+    twilio_welcome_message: str
+    twilio_request_referral_message: str
+    twilio_only_sms_message: str
+
     chat_history_length: int
 
 settings = Settings()

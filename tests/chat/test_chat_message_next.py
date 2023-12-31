@@ -18,7 +18,6 @@ from unittest.mock import patch, AsyncMock
 import multiprocessing as mp
 import threading as th
 from queue import Queue
-import logging
 
 from sean_gpt.util.describe import describe
 

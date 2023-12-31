@@ -3,7 +3,7 @@ from typing import Annotated
 import secrets
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status, Security, Body
+from fastapi import APIRouter, HTTPException, status, Security, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
@@ -14,6 +14,9 @@ from ...util.describe import describe
 from ...model.authenticated_user import UserRead, AuthenticatedUser, UserCreate
 from ...model.access_token import AccessToken
 from ...model.verification_token import VerificationToken
+from ...model.chat import Chat
+from ...model.ai import AI
+from ...ai import default_ai
 from ...database import SessionDep
 from ...sms import TwilioClientDep
 
@@ -30,7 +33,7 @@ Returns:
           UserRead: The user's information.
 """)
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_user(*, user: UserCreate, referral_code: str = Body(), session: SessionDep) -> UserRead:
+def create_user(*, user: UserCreate, referral_code: str = Body(), ai:AI = Depends(default_ai), session: SessionDep) -> UserRead:
     # Check if the user exists
     select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == user.phone)
     existing_user = session.exec(select_user).first()
@@ -51,6 +54,11 @@ def create_user(*, user: UserCreate, referral_code: str = Body(), session: Sessi
     user = AuthenticatedUser(phone=user.phone,
                              hashed_password=get_password_hash(user.password),
                              referrer_user_id=existing_referral.id)
+    # Create the user's unique Twilio-only chat (all users have one)
+    twilio_chat = Chat(user_id=user.id, name="Phone Chat", assistant_id=ai.id)
+    user.twilio_chat_id = twilio_chat.id
+    # Add the user's unique Twilio-only chat to the database
+    session.add(twilio_chat)
     # Add the user to the database
     session.add(user)
     session.commit()

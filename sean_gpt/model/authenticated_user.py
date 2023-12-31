@@ -16,9 +16,11 @@ class UserBase(SQLModel):
     
 class UserRead(UserBase):
     id: UUID
+    twilio_chat_id: str
 
 class AuthenticatedUser(UserBase, table=True):
     id: Optional[UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    twilio_chat_id: Optional[str] = None
     hashed_password: str
 
     verification_token: Optional["VerificationToken"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete"})

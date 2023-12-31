@@ -242,3 +242,14 @@ def test_stream_interruption(verified_new_user: dict, client: TestClient):
     while not results_queue.empty():
         results.append(results_queue.get())
     assert ''.join(results) != expected_response, "Check that the first response was interrupted."
+
+@describe(""" Test the verified and authorized routes. """)
+def test_verified_and_authorized(verified_new_user, client):
+    # First, create a chat for messages
+    chat = client.post("/chat",
+                       headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
+                       json={}).json()
+    # Check the routes
+    check_verified_route("post", "/chat/message/next", verified_new_user, client,
+                         json={"content": "Hello, world! This is my first message in a chat."},
+                         headers={"X-Chat-ID": chat["id"]})

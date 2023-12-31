@@ -20,6 +20,14 @@
 # 
 # A user only has one Chat via their phone number.  It uses a reserved chat name
 # that is setup when they create an account.
+#
+# TODO: Missing Tests
+# - Test that a user created via SMS has no password hash.
+# - Test that a user with no password hash is prompted to reset their password.
+# - Test that a user resetting their password is sent a temporary password via SMS.
+# - Test that the temporary password expires.
+# - Test that a user with a temporary password is prompted to reset their password.
+
 from unittest.mock import patch, Mock
 import xml.etree.ElementTree as ET
 import random

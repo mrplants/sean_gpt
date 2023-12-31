@@ -142,8 +142,8 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
     # Check that the text of the 'Message' element is the outgoing message
     # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis emoji appended.
-    expected_message = outgoing_msg[:settings.twilio_max_message_characters] + '…'
-    assert root[0].text == expected_message, f"Expected first child element text to be '{expected_message}…', got {root[0].text}"
+    expected_message = outgoing_msg[:settings.twilio_max_message_characters-1] + '…'
+    assert root[0].text == expected_message, f"Expected first child element text to be '{expected_message}', got {root[0].text}"
 
     # Check that the second child element is 'Redirect'
     assert root[1].tag == 'Redirect', f"Expected second child element to be 'Redirect', got {root[1].tag}"

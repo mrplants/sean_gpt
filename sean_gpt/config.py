@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 
     openai_api_url: str
     openai_api_key: str
+    default_ai_model: str
 
     twilio_test_sid: str
     twilio_test_auth_token: str

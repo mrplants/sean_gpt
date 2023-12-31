@@ -1,9 +1,8 @@
 from sqlmodel import Session, select
 
+from .config import settings
 from .model.ai import AI
 from .database import get_db_engine
-
-DEFAULT_AI_MODEL = "gpt-4-1106-preview"
 
 def get_ai(name: str) -> AI | None:
     """ Gets an AI from the database.
@@ -43,4 +42,4 @@ def default_ai() -> AI:
     Returns:
         The default AI model.
     """
-    return get_ai(DEFAULT_AI_MODEL) or create_ai(DEFAULT_AI_MODEL)
+    return get_ai(settings.default_ai_model) or create_ai(settings.default_ai_model)

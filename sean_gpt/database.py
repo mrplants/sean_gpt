@@ -17,7 +17,6 @@ from .model.verification_token import VerificationToken
 
 # Module-level variable to store the database engine instance
 _db_engine = None
-_redis_pool = None
 
 @describe(
 """ Resets the database connection. """)
@@ -51,6 +50,13 @@ def create_admin_if_necessary():
         select_admin = select(AuthenticatedUser).where(AuthenticatedUser.phone == settings.admin_phone)
         existing_admin_user = session.exec(select_admin).first()
         if not existing_admin_user:
+            # Create the admin's unique twilio chat
+            # Since the database is being created, need to also create the default AI model
+            ai = AI(name=settings.default_ai_model)
+            session.add(ai)
+            twilio_chat = Chat(user_id=admin_user.id, name="Phone Chat", assistant_id=ai.id)
+            session.add(twilio_chat)
+            admin_user.twilio_chat_id = twilio_chat.id
             # Add the admin user to the database
             session.add(admin_user)
             session.commit()

@@ -20,14 +20,9 @@
 # 
 # A user only has one Chat via their phone number.  It uses a reserved chat name
 # that is setup when they create an account.
-#
-# TODO: Missing Tests
-# - Test that a user created via SMS has no password hash.
-# - Test that a user with no password hash is prompted to reset their password.
-# - Test that a user resetting their password is sent a temporary password via SMS.
-# - Test that the temporary password expires.
-# - Test that a user with a temporary password is prompted to reset their password.
-
+# TODO Missing Tests
+# - Test that the openai message break character works "|"
+# - Test that the welcome message includes a contact card for the AI (or link to one)
 from unittest.mock import patch, Mock
 import xml.etree.ElementTree as ET
 import random
@@ -63,13 +58,24 @@ def test_twilio_validated(client: TestClient):
 """ Tests that chat messages are saved.
 
 Both the incoming message and each response message must be saved to the Chat in
-the database.
+the database.  Note that there must be at least one chat in the user's twilio
+chat, otherwise the user will receive the welcome message (first message is ignored).
 
 Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
 def test_messages_saved(verified_new_user: dict, client: TestClient):
+    # Create a message in the Twilio chat
+    client.post("/chat/message",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}",
+            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+        },
+        json={
+            "role": "user",
+            "content": "This is an initial message."
+        })
     incoming_msg = "This is a test incoming user message."
     outgoing_msg = "This is a test outgoing assistant response message."
     send_text(client,
@@ -82,12 +88,16 @@ def test_messages_saved(verified_new_user: dict, client: TestClient):
             "Authorization": f"Bearer {verified_new_user['access_token']}",
             "X-Chat-ID": verified_new_user["twilio_chat_id"]
         },
-        params={"limit": 1, "offset": 0}).json()
+        params={"limit": 5, "offset": 0}).json()
     # Check that the messages are correct
     assert saved_messages[0]['role'] == 'user'
-    assert saved_messages[0]['content'] == incoming_msg
-    assert saved_messages[0]['role'] == 'assistant'
-    assert saved_messages[0]['content'] == outgoing_msg
+    assert saved_messages[0]['content'] == 'This is an initial message.'
+    assert saved_messages[1]['role'] == 'user'
+    assert saved_messages[1]['content'] == incoming_msg
+    assert saved_messages[2]['role'] == 'assistant'
+    assert saved_messages[2]['content'] == outgoing_msg
+    # check that only two messages exist
+    assert len(saved_messages) == 3, f"Expected only three messages, got {len(saved_messages)}"
     
 @describe(
 """ Tests that all multi-messages contain a redirect and multi-part indication.
@@ -101,9 +111,20 @@ Args:
     client (TestClient):  A test client.
 """)
 def test_multi_message(verified_new_user: dict, client: TestClient):
-    # The response message must be greater 160 charactere to trigger a
-    # multi-message response.  Make a message that is 161 characters long.
-    outgoing_msg = ''.join(['a' for _ in range(161)])
+    # Create a message in the Twilio chat so that we don't get the welcome
+    # message.
+    client.post("/chat/message",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}",
+            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+        },
+        json={
+            "role": "user",
+            "content": "This is an initial message."
+        })
+    # The response message must be greater X charactere to trigger a
+    # multi-message response.  Make a message that is X+1 characters long.
+    outgoing_msg = ''.join(['a' for _ in range(settings.twilio_max_message_characters+1)])
     # When this occurs, an ellipsis emoji is appended to the end of the message.
     # This takes only one character.
     response = send_text(client,
@@ -119,15 +140,16 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
     assert root[0].tag == 'Message', f"Expected first child element to be 'Message', got {root[0].tag}"
 
     # Check that the text of the 'Message' element is the outgoing message
-    # Note that it should be only the first 159 characters of the outgoing
+    # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis emoji appended.
-    assert root[0].text == outgoing_msg[:159] + '…', f"Expected first child element text to be '{outgoing_msg[:159]}…', got {root[0].text}"
+    expected_message = outgoing_msg[:settings.twilio_max_message_characters] + '…'
+    assert root[0].text == expected_message, f"Expected first child element text to be '{expected_message}…', got {root[0].text}"
 
     # Check that the second child element is 'Redirect'
     assert root[1].tag == 'Redirect', f"Expected second child element to be 'Redirect', got {root[1].tag}"
 
     # Check that the text of the 'Redirect' element is the SMS endpoint
-    assert root[1].text == './sms', f"Expected second child element text to be './sms', got {root[1].text}"
+    assert root[1].text == './', f"Expected second child element text to be './', got {root[1].text}"
 
     # Check that there are no more child elements
     assert len(root) == 2, f"Expected only two child elements, got {len(root)}"
@@ -180,6 +202,8 @@ def test_account_created(referral_code:str, client: TestClient):
     with Session(db_engine) as session:
         user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.phone == random_phone_number)).first()
     assert user is not None, 'User not created after valid referral.'
+    assert user.is_phone_verified, 'User should be phone verified.'
+    assert user.hashed_password == "", 'User should have no password hash.'
 
 @describe(
 """ Tests that an account is not created for new users without a valid referral.
@@ -211,17 +235,27 @@ Args:
     client (TestClient):  A test client.
 """)
 def test_system_message(verified_new_user: dict, client: TestClient):
+    # Create a message in the Twilio chat
+    client.post("/chat/message",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}",
+            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+        },
+        json={
+            "role": "user",
+            "content": "This is an initial message."
+        })
     # Send a text to the endpoint
     # Use our own patch for the openai endpoint so we can retrieve the system message
     with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
         mock_openai_api.side_effect = async_create_mock_streaming_openai_api("assistant message response", delay=0.001)
-    response = send_text(client, from_number=verified_new_user["phone"])
-    # Check that the correct system message was sent to the openai endpoint
-    # The first message is the system message.
-    # Check that it has role=system and content=settings.twilio_system_message
-    system_message = mock_openai_api.call_kwargs['messages'][0]
-    assert system_message['role'] == 'system', f"Expected system message to have role='system', got {system_message['role']}"
-    assert system_message['content'] == settings.twilio_system_message, f"Expected system message to be '{settings.twilio_system_message}', got {response.json()['openai_request']['prompt']}"
+        send_text(client, from_number=verified_new_user["phone"], patch_openai_api=False)
+        # Check that the correct system message was sent to the openai endpoint
+        # The first message is the system message.
+        # Check that it has role=system and content=settings.twilio_system_message
+        system_message = mock_openai_api.call_args.kwargs['messages'][0]
+        assert system_message['role'] == 'system', f"Expected system message to have role='system', got {system_message['role']}"
+        assert system_message['content'] == settings.twilio_ai_system_message, f"Expected system message to be the system message, got {system_message['content']}"
 
 @describe(
 """ Tests that interrupted multi-message responses stop sending messages.
@@ -236,6 +270,16 @@ Args:
     client (TestClient):  A test client.
 """)
 def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
+    # Create a message in the Twilio chat
+    client.post("/chat/message",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}",
+            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+        },
+        json={
+            "role": "user",
+            "content": "First message to ignore welcome message."
+        })
     # The response message must be greater 160 charactere to trigger a
     # multi-message response.  Make a message that is 161 characters long.
     outgoing_msg = ''.join(['a' for _ in range(161)])
@@ -254,9 +298,10 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     # - Wait a short period of time
     time.sleep(1)
     # - Now send a new interruption message.  This one doesn't ahve to be asynchronous.
-    second_message = send_text(client,
-                                 body="This is an interruption message.",
-                                 from_number=verified_new_user["phone"])
+    send_text(client,
+              body="This is an interruption message.",
+              openai_response= "This is the response to the interruption message.",
+              from_number=verified_new_user["phone"])
     first_message_thread.join()
     # Check that the user's twilio chat has three messages:
     # - The first message from the user
@@ -269,26 +314,105 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
             "X-Chat-ID": verified_new_user["twilio_chat_id"]
         },
         params={"limit": 10, "offset": 0}).json()
-    assert len(twilio_chat_messages) == 3, f"Expected 3 messages in the twilio chat, got {len(twilio_chat_messages)}"
-    assert twilio_chat_messages[0]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
-    assert twilio_chat_messages[0]['content'] == "This is an initial message.", f"Expected first message to be 'This is an initial message.', got {twilio_chat_messages[0]['content']}"
-    assert twilio_chat_messages[1]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
-    assert twilio_chat_messages[1]['content'] == "This is an interruption message.", f"Expected second message to be 'This is an interruption message.', got {twilio_chat_messages[1]['content']}"
-    assert twilio_chat_messages[2]['role'] == 'assistant', f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}"
-    assert twilio_chat_messages[2]['content'] == outgoing_msg[:159] + '…', f"Expected third message to be '{outgoing_msg[:159]}…', got {twilio_chat_messages[2]['content']}"     
+    print('got here')
+    print(twilio_chat_messages)
+    assert len(twilio_chat_messages) == 4, f"Expected 4 messages in the twilio chat, got {len(twilio_chat_messages)}"
+    assert twilio_chat_messages[1]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
+    assert twilio_chat_messages[1]['content'] == "This is an initial message.", f"Expected first message to be 'This is an initial message.', got {twilio_chat_messages[0]['content']}"
+    assert twilio_chat_messages[2]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
+    assert twilio_chat_messages[2]['content'] == "This is an interruption message.", f"Expected second message to be 'This is an interruption message.', got {twilio_chat_messages[1]['content']}"
+    assert twilio_chat_messages[3]['role'] == 'assistant', f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}"
+    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message." + '…', f"Expected third message to be '{outgoing_msg[:159]}…', got {twilio_chat_messages[2]['content']}"     
 
 @describe(
-""" Tests that only SMS and MMS are supported.
+""" Tests that only SMS is supported.
 
 Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_only_sms_and_mms(verified_new_user: dict, client: TestClient):
-    # Send a text to the endpoint
+def test_only_sms(verified_new_user: dict, client: TestClient):
+    # Send a text to the endpoint (whatsapp)
     response = send_text(client,
                          from_number=f'whatsapp:{verified_new_user["phone"]}',
                          body="This is a test message.")
-    # The response should be a valid twiml message saying that only SMS and MMS
-    # are supported.
-    assert parse_twiml_msg(response) == settings.twilio_only_sms_message, f"Expected message response to be '{settings.twilio_only_sms_message}', got {parse_twiml_msg(response)}"
+    # The response should be a valid twiml message saying that only SMS is
+    # supported.
+    assert parse_twiml_msg(response) == settings.twilio_no_whatsapp_message, f"Expected message response to be '{settings.twilio_no_whatsapp_message}', got {parse_twiml_msg(response)}"
+    # Send a text to the endpoint (MMS)
+    response = send_text(client,
+                         from_number=verified_new_user["phone"],
+                         body="This is a test message.",
+                         valid=False,
+                         num_media=1)
+    # The response should be a valid twiml message saying that only SMS is
+    # supported.
+    assert parse_twiml_msg(response) == settings.twilio_no_mms_message, f"Expected message response to be '{settings.twilio_no_mms_message}', got {parse_twiml_msg(response)}"
+
+@describe(
+""" Tests that the follow-on messages work.
+
+A followon message is defined as the same request sent twice (same message SID)
+A followon message must start with an ellipsis.
+A middle message in a 3-message series must start and end with an ellipsis,
+since it has a redirect.
+Any message with a redirect must end with an ellipsis.
+
+Args:
+    verified_new_user (dict):  A verified user.
+    client (TestClient):  A test client.
+""")
+def test_followon_messages(verified_new_user: dict, client: TestClient):
+    # Start by posting a message to the twilio_chat so that we don't get the
+    # welcome message.
+    client.post("/chat/message",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}",
+            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+        },
+        json={
+            "role": "user",
+            "content": "This is an initial message."
+        })
+    # None of this needs to be asynchronous.
+    # This test will act like a properly functioning twilio client.
+    # When it receives a redirect, it will follow it (only "./" is supported).
+    # First, list the assistant messages.  All but the last should be longer
+    # than max characters to trigger a redirect.
+    assistant_responses = [
+        'a'*(settings.twilio_max_message_characters + 1),
+        'b'*(settings.twilio_max_message_characters + 1),
+        'c'*(settings.twilio_max_message_characters + 1),
+        'd'*(settings.twilio_max_message_characters + 1),
+        "This is the last message.",
+    ]
+    # Since this is a redirect, all messages must have the same message_sid
+    message_sid = 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    for msg_index, assistant_response in enumerate(assistant_responses):
+        response = send_text(client,
+                             openai_response=assistant_response,
+                             from_number=verified_new_user["phone"],
+                             message_sid=message_sid)
+        response_msg = parse_twiml_msg(response)
+        # For the first message, check that it ends with an ellipsis but does not start with one
+        if msg_index == 0:
+            assert response_msg.endswith('…'), f"Expected message response to end with '…', got {response_msg}"
+            assert not response_msg.startswith('…'), f"Expected message response to not start with '…', got {response_msg}"
+        # For the middle messages, check that it starts and ends with an ellipsis
+        elif msg_index < len(assistant_responses) - 1:
+            assert response_msg.startswith('…'), f"Expected message response to start with '…', got {response_msg}"
+            assert response_msg.endswith('…'), f"Expected message response to end with '…', got {response_msg}"
+        # For the last message, check that it starts with, but does not end with an ellipsis
+        else:
+            assert response_msg.startswith('…'), f"Expected message response to start with '…', got {response_msg}"
+            assert not response_msg.endswith('…'), f"Expected message response to not end with '…', got {response_msg}"
+        # Only check for redirects if this is not the last message
+        if msg_index < len(assistant_responses) - 1:
+            # Parse the XML response
+            root = ET.fromstring(response.content)
+            # Check that the second child element is 'Redirect'
+            assert root[1].tag == 'Redirect', f"Expected second child element to be 'Redirect', got {root[1].tag}"
+            # Check that the text of the 'Redirect' element is the SMS endpoint
+            assert root[1].text == './', f"Expected second child element text to be './', got {root[1].text}"
+            # Check that there are no more child elements
+            assert len(root) == 2, f"Expected only two child elements, got {len(root)}"

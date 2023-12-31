@@ -4,6 +4,12 @@
 # POST (protected):  Create a user
 # GET (protected):  Get a user's info
 # DELETE (protected):  Delete a user's account
+#
+# TODO: Missing Tests
+# - Test that a user with no password hash is prompted to reset their password.
+# - Test that a user resetting their password is sent a temporary password via SMS.
+# - Test that the temporary password expires.
+# - Test that a user with a temporary password is prompted to reset their password.
 
 from fastapi.testclient import TestClient
 

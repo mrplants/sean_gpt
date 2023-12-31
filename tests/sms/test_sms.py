@@ -314,8 +314,6 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
             "X-Chat-ID": verified_new_user["twilio_chat_id"]
         },
         params={"limit": 10, "offset": 0}).json()
-    print('got here')
-    print(twilio_chat_messages)
     assert len(twilio_chat_messages) == 4, f"Expected 4 messages in the twilio chat, got {len(twilio_chat_messages)}"
     assert twilio_chat_messages[1]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
     assert twilio_chat_messages[1]['content'] == "This is an initial message.", f"Expected first message to be 'This is an initial message.', got {twilio_chat_messages[0]['content']}"
@@ -343,7 +341,6 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
     response = send_text(client,
                          from_number=verified_new_user["phone"],
                          body="This is a test message.",
-                         valid=False,
                          num_media=1)
     # The response should be a valid twiml message saying that only SMS is
     # supported.

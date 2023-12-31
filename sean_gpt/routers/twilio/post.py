@@ -35,6 +35,18 @@ async def twilio_webhook(
     current_user: TwilioGetUserDep,
     session: SessionDep,
     redis_conn: RedisConnectionDep):
+    # - Verify that this is not a whatsapp message
+    if incoming_message.from_.startswith('whatsapp:'):
+        twiml_response = twiml.MessagingResponse()
+        twiml_response.message(settings.twilio_no_whatsapp_message)
+        return Response(content=twiml_response.to_xml(),
+                        media_type="application/xml")
+    # - Verify that this is not a MMS
+    if incoming_message.num_media > 0:
+        twiml_response = twiml.MessagingResponse()
+        twiml_response.message(settings.twilio_no_mms_message)
+        return Response(content=twiml_response.to_xml(),
+                        media_type="application/xml")
     # Create a request ID.  It will be thrown away at the end, but used to
     # identify the request in the redis interrupts.
     request_id = str(uuid.uuid4())
@@ -93,7 +105,11 @@ async def twilio_webhook(
         stream=True,
     )
     # Create the partial_response
-    partial_response = ""
+    print(f'message with SID: {incoming_message.message_sid}')
+    if await redis_conn.get(f'multi-part message with SID: {incoming_message.message_sid}'):
+        print("multi-part message detected")
+        print(incoming_message.body)
+    partial_response = "…" if await redis_conn.get(f'multi-part message with SID: {incoming_message.message_sid}') else ""
     requires_redirect = False
     async for chunk in response_stream:
         # Check the interrupt channel for interrupts
@@ -107,8 +123,9 @@ async def twilio_webhook(
         # Check if the partial response is over the character limit
         if len(partial_response) > settings.twilio_max_message_characters:
             # Break at the character limit, add an ellipsis emoji, and stop streaming.  Return the message.
-            partial_response = partial_response[:settings.twilio_max_message_characters] + "…"
+            partial_response = partial_response[:settings.twilio_max_message_characters-1] + "…"
             requires_redirect = True
+            await redis_conn.set(f'multi-part message with SID: {incoming_message.message_sid}', 'True', ex=60)
             break
         # Check if the partial response has a message break
         if "|" in partial_response:

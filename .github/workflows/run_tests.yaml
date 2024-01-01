@@ -1,0 +1,34 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches: [ main, development ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10
+
+    - name: Set up pipx
+      run: |
+        python3 -m pip install --user pipx
+        python3 -m pipx ensurepath
+
+    - name: Install Poetry
+      run: |
+        pipx install poetry
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run tests
+      run: |
+        poetry run pytest

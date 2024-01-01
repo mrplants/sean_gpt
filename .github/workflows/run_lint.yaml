@@ -1,11 +1,11 @@
-name: Run Tests
+name: Lint Code
 
 on:
   pull_request:
     branches: [ main, development ]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,6 +14,6 @@ jobs:
     - name: Setup Python environment
       uses: ./.github/actions/setup
 
-    - name: Run tests
+    - name: Run linter
       run: |
-        poetry run pytest
+        poetry run pylint sean_gpt tests

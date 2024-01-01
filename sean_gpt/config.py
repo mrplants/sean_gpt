@@ -1,13 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="env/.env.backend_secrets")
-load_dotenv(dotenv_path="env/.env.db_secrets")
-load_dotenv(dotenv_path="env/.env.local")
-load_dotenv(dotenv_path="env/.env")
-
-# In a production environment, there will be no .env or .env.secrets files,
-# and the values will be set by the environment variables
+load_dotenv(dotenv_path=".env.local")
+load_dotenv(dotenv_path=".env")
+load_dotenv(dotenv_path=".env.secrets")
 
 class Settings(BaseSettings):
     debug: bool = False

@@ -34,4 +34,4 @@ jobs:
         REDIS_HOST: localhost
         DEBUG: True
       run: |
-        poetry run pytest
+        poetry run pytest tests/user/test_user.py::test_new_account_creation

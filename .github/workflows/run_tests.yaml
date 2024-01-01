@@ -29,5 +29,9 @@ jobs:
         TWILIO_TEST_AUTH_TOKEN: ${{ secrets.TWILIO_TEST_AUTH_TOKEN }}
         TWILIO_SID: ${{ secrets.TWILIO_SID }}
         TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+
+        API_DB_HOST: localhost
+        REDIS_HOST: localhost
+        DEBUG: True
       run: |
         poetry run pytest

@@ -16,5 +16,18 @@ jobs:
       uses: ./.github/actions/setup
 
     - name: Run tests
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        ADMIN_PHONE: ${{ secrets.ADMIN_PHONE }}
+        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        API_DB_USER: ${{ secrets.API_DB_USER }}
+        API_DB_PASSWORD: ${{ secrets.API_DB_PASSWORD }}
+        TWILIO_TEST_SID: ${{ secrets.TWILIO_TEST_SID }}
+        TWILIO_TEST_AUTH_TOKEN: ${{ secrets.TWILIO_TEST_AUTH_TOKEN }}
+        TWILIO_SID: ${{ secrets.TWILIO_SID }}
+        TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
       run: |
         poetry run pytest

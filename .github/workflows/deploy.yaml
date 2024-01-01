@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Kubectl
+      uses: azure/setup-kubectl@v1
+
+    - name: Configure Kubernetes context
+      run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Update secrets
+      run: # TODO
+
+    - name: Update database
+      run: # TODO
+    
+    - name: Update backend
+      run: # TODO
+
+    - name: Update frontend
+      run: # TODO

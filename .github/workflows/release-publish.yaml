@@ -1,0 +1,57 @@
+name: Create a Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  process-version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Extract Version from pyproject.toml
+        id: extract-version
+        uses: ./.github/actions/retrieve_version
+        with:
+          pyproject-path: 'pyproject.toml'
+
+      - name: Create Tag
+        run: |
+          version_tag="v${{ steps.extract-version.outputs.version }}"
+          git tag $version_tag
+          git push origin $version_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR Description
+        id: get_pr_description
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            return pr.data.body;
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.extract-version.outputs.version }}"
+          release_name: "Release v${{ steps.extract-version.outputs.version }}"
+          body: ${{ steps.get_pr_description.outputs.result }}
+          draft: false
+          prerelease: false

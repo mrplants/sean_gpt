@@ -3,6 +3,7 @@ name: Backend Tests
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened]
     branches: [ main, development ]
 
 jobs:

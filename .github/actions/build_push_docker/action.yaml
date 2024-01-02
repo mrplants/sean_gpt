@@ -15,9 +15,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Check Out Repository
-      uses: actions/checkout@v2
-
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v1
       with:
@@ -27,6 +24,7 @@ runs:
 
     - name: Build and Push Docker Image
       run: |
+        cd ./deploy/sean_gpt_backend
         docker build -t ${{ inputs.image-name }} .
         docker tag ${{ inputs.image-name }} ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ inputs.tag }}
         docker push ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ inputs.tag }}

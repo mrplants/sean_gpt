@@ -10,6 +10,7 @@ inputs:
 outputs:
   version:
     description: 'The extracted version'
+    value: ${{ steps.extract-version.outputs.version }}
 
 runs:
   using: 'composite'
@@ -18,8 +19,8 @@ runs:
       uses: ./.github/actions/setup
 
     - name: Extract Version from pyproject.toml
+      id: extract-version
       run: |
         version=$(poetry run python -c 'import toml; print(toml.load("${{ inputs.pyproject-path }}")["tool"]["poetry"]["version"])')
-        echo "version=$version" >> $GITHUB_ENV
-        echo "::set-output name=version::$version"
+        echo "version=$version" >> $GITHUB_OUTPUT
       shell: bash

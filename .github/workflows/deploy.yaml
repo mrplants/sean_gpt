@@ -19,14 +19,14 @@ jobs:
     - name: Configure Kubernetes context
       run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-    - name: Update secrets
+    - name: Build the frontend
       run: # TODO
 
-    - name: Update database
-      run: # TODO
-    
-    - name: Update backend
-      run: # TODO
+    - name: Build and push backend Docker image
+      uses: ./.github/actions/build_push_docker
+      with:
+          image-name: 'sean_gpt_backend'
+          tag: 'latest'
 
-    - name: Update frontend
+    - name: Deploy to kubernetes (secrets, database, backend, and frontend)
       run: # TODO

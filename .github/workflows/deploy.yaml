@@ -3,7 +3,7 @@ name: Deploy
 on:
   release:
     types: [created]
-    
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -21,10 +21,10 @@ jobs:
       run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
     - name: Build the frontend
-      run: echo "TODO: Build the frontend"
+      run: echo "TODO- Build the frontend"
 
     - name: Move the compiled frontend to the serving directory
-      run: echo "TODO: Move the compiled frontend to the serving directory"
+      run: echo "TODO- Move the compiled frontend to the serving directory"
 
     - name: Build and push backend Docker image
       uses: ./.github/actions/build_push_docker

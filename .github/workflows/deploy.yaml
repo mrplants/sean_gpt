@@ -13,6 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Get the version
+      id: get_version
+      run: echo "::set-output name=VERSION::$(git describe --tags --abbrev=0)"
+
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1
 
@@ -22,11 +26,14 @@ jobs:
     - name: Build the frontend
       run: # TODO
 
+    - name: Move the compiled frontend to the serving directory
+      run: # TODO
+
     - name: Build and push backend Docker image
       uses: ./.github/actions/build_push_docker
       with:
           image-name: 'sean_gpt_backend'
-          tag: 'latest'
+          tag: ${{ steps.get_version.outputs.VERSION }}
 
     - name: Deploy to kubernetes (secrets, database, backend, and frontend)
       run: # TODO

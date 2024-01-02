@@ -10,16 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Get latest release tag
+      id: get-latest-release
+      run: |
+        LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+        LATEST_TAG=$(echo $LATEST_RELEASE | jq -r .tag_name)
+        echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+    - name: Checkout code at release tag
       uses: actions/checkout@v2
       with:
-        ref: ${{ github.ref }}
-
+        ref: ${{ steps.get-latest-release.outputs.tag }}
+  
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1
 
     - name: Configure Kubernetes context
-      run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
     - name: Build the frontend
       run: echo "TODO- Build the frontend"
@@ -31,7 +40,8 @@ jobs:
       uses: ./.github/actions/build_push_docker
       with:
           image-name: 'sean_gpt_backend'
-          tag: ${{ github.ref }}
+          tag: ${{ steps.get-latest-release.outputs.tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Deploy to kubernetes (secrets, database, backend, and frontend)
       run: echo "TODO"

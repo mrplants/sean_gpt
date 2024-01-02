@@ -58,3 +58,12 @@ jobs:
           body_path: pr_description.md
           draft: false
           prerelease: false
+
+      - name: Rebase development branch
+        run: |
+          git fetch origin development:development
+          git checkout development
+          git rebase main
+          git push origin development
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

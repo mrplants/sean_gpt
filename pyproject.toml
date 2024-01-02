@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sean-gpt"
-version = "0.1.13"
+version = "0.1.14"
 description = ""
 authors = ["Sean F <fitzgerald.sean.t@gmail.com>"]
 readme = "README.md"

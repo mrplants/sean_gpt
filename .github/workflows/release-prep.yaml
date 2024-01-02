@@ -1,15 +1,17 @@
 name: Prepare for Release
 
 on:
+  workflow_dispatch:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened]
+    branches:
+      - main
 
 permissions:
   contents: write
     
 jobs:
   process-version:
-    if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -43,7 +45,7 @@ jobs:
       - name: Check for Auto-Commit
         id: check_autocommit
         run: |
-          if git log -1 --pretty=%B | grep -q "Build package for version"; then
+          if [[ "$(git log -1 --pretty='%cn')" == "GitHub Action" ]]; then
             echo "This commit was made by the workflow. Skipping push to prevent recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -56,7 +58,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Build package for version ${{ steps.extract-version.outputs.version }}"
+          git commit -m "[AUTO-COMMIT] Build package for version ${{ steps.extract-version.outputs.version }}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

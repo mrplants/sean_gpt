@@ -33,22 +33,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get PR Description
-        id: get_pr_description
+      - name: Get PR Description and Write to File
         uses: actions/github-script@v5
         with:
           script: |
+            const fs = require('fs');
             const pr = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number
             });
-            return pr.data.body;
-
-      - name: Write PR Description to File
-        run: |
-          echo "${{ steps.get_pr_description.outputs.result }}" | tr -d '\r' > pr_description.md
-          
+            fs.writeFileSync('pr_description.md', pr.data.body);
+                  
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1

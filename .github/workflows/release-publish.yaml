@@ -78,7 +78,16 @@ jobs:
           asset_path: ./dist/sean_gpt-${{ steps.extract-version.outputs.version }}.tar.gz
           asset_name: sean_gpt-${{ steps.extract-version.outputs.version }}.tar.gz
           asset_content_type: application/octet-stream
-      
+
+  merge-main-into-development:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}   
+
       - name: Merge main into development
         run: |
           git fetch origin

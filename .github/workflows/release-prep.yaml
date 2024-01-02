@@ -14,6 +14,11 @@ jobs:
   test-backend:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}   
+
       - name: test-backend
         uses: ./.github/actions/test-backend
         
@@ -45,6 +50,11 @@ jobs:
   build-package:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}   
+
       - name: Setup Python environment
         uses: ./.github/actions/setup
   

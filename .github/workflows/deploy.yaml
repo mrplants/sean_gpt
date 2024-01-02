@@ -23,10 +23,10 @@ jobs:
       run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
     - name: Build the frontend
-      run: # TODO
+      run: echo "TODO"
 
     - name: Move the compiled frontend to the serving directory
-      run: # TODO
+      run: echo "TODO"
 
     - name: Build and push backend Docker image
       uses: ./.github/actions/build_push_docker
@@ -35,4 +35,4 @@ jobs:
           tag: ${{ steps.get_version.outputs.VERSION }}
 
     - name: Deploy to kubernetes (secrets, database, backend, and frontend)
-      run: # TODO
+      run: echo "TODO"

@@ -1,6 +1,7 @@
 name: Tag on PR Merge
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
 

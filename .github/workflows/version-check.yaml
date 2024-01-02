@@ -1,12 +1,11 @@
-name: PR Version Check
+name: Main - PR Version Check
 
 on:
-  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
-
+    
 jobs:
-  check-version:
+  process-version:
     if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +26,7 @@ jobs:
       - name: Check for Matching Tag on Main
         run: |
           version_tag="v${{ steps.extract-version.outputs.version }}"
-          if git rev-parse "$version_tag" >/dev/null 2>&1; then
+          if git rev-parse "refs/tags/$version_tag" >/dev/null 2>&1; then
             echo "The version tag ($version_tag) already exists on the main branch."
             exit 1
           fi

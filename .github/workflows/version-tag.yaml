@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: write
-    
+
 jobs:
   process-version:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
@@ -23,10 +23,33 @@ jobs:
         with:
           pyproject-path: 'pyproject.toml'
 
-      - name: Apply Tag to Latest PR Commit
+      - name: Create Tag
         run: |
           version_tag="v${{ steps.extract-version.outputs.version }}"
           git tag $version_tag
           git push origin $version_tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR Description
+        id: get_pr_description
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            return pr.data.body;
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ steps.extract-version.outputs.version }}"
+          release_name: "Release v${{ steps.extract-version.outputs.version }}"
+          body: ${{ steps.get_pr_description.outputs.result }}
+          draft: false
+          prerelease: false

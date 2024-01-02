@@ -11,7 +11,13 @@ permissions:
   contents: write
     
 jobs:
-  release-prep:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test-backend
+        uses: ./.github/actions/test-backend
+        
+  check-version:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -36,6 +42,9 @@ jobs:
             exit 1
           fi
 
+  build-package:
+    runs-on: ubuntu-latest
+    steps:
       - name: Setup Python environment
         uses: ./.github/actions/setup
   

@@ -1,0 +1,15 @@
+name: 'Lint Baackend'
+description: 'Run the backend linter'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python environment
+      uses: ./.github/actions/setup
+
+    - name: Run linter
+      run: |
+        poetry run pylint sean_gpt tests
+      shell: bash

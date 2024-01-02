@@ -61,6 +61,7 @@ resource "null_resource" "configure_kubectl_context" {
       echo '${azurerm_kubernetes_cluster.sean_gpt_aks.kube_config_raw}' > ~/.kube/sean-gpt-config
       export KUBECONFIG=~/.kube/sean-gpt-config:~/.kube/config
       kubectl config view --merge --flatten > ~/.kube/merged_config
+      cat ~/.kube/sean-gpt-config | gh secret set KUBECONFIG -Rmrplants/sean_gpt
       mv ~/.kube/merged_config ~/.kube/config
       rm ~/.kube/sean-gpt-config
     EOT

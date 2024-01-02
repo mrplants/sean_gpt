@@ -1,11 +1,8 @@
-name: PR Tagging and Version Checking
+name: Main - PR Version Check
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-
-permissions:
-  contents: write
     
 jobs:
   process-version:
@@ -22,14 +19,6 @@ jobs:
         uses: ./.github/actions/retrieve_version
         with:
           pyproject-path: 'pyproject.toml'
-
-      - name: Apply Tag to Latest PR Commit
-        run: |
-          version_tag="v${{ steps.extract-version.outputs.version }}"
-          git tag $version_tag
-          git push origin $version_tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fetch Tags from Main Branch
         run: git fetch --tags origin main

@@ -80,7 +80,7 @@ jobs:
       
       - name: Merge main into development
         run: |
-          git fetch origin main:main development:development
+          git fetch origin
           git checkout development
           git merge main
           git push origin development

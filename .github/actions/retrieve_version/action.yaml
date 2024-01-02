@@ -1,0 +1,29 @@
+name: 'Sync Version from pyproject.toml'
+description: 'Extracts version from pyproject.toml and sets it as an output'
+
+inputs:
+  pyproject-path:
+    description: 'Relative path to the pyproject.toml file'
+    required: true
+    default: 'pyproject.toml'
+
+outputs:
+  version:
+    description: 'The extracted version'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip
+        pip3 install toml
+      shell: bash
+
+    - name: Extract Version from pyproject.toml
+      run: |
+        version=$(python3 -c 'import toml; print(toml.load("${{ inputs.pyproject-path }}")["tool"]["poetry"]["version"])')
+        echo "version=$version" >> $GITHUB_ENV
+        echo "::set-output name=version::$version"
+      shell: bash

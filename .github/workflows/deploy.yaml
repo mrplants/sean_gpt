@@ -19,7 +19,9 @@ jobs:
       uses: azure/setup-kubectl@v1
 
     - name: Configure Kubernetes context
-      run: echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
     - name: Build the frontend
       run: echo "TODO- Build the frontend"

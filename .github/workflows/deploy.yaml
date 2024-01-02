@@ -34,6 +34,7 @@ jobs:
       with:
           image-name: 'sean_gpt_backend'
           tag: ${{ github.ref }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Deploy to kubernetes (secrets, database, backend, and frontend)
       run: echo "TODO"

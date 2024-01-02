@@ -8,6 +8,9 @@ inputs:
     description: 'Docker image tag'
     required: true
     default: 'latest'
+  github-token:
+    description: 'GitHub token for authentication'
+    required: true
 
 runs:
   using: 'composite'
@@ -20,7 +23,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.github-token }}
 
     - name: Build and Push Docker Image
       run: |

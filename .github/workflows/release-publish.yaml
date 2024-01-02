@@ -82,7 +82,7 @@ jobs:
         run: |
           git fetch origin
           git checkout development
-          git merge main
+          git merge origin/main
           git push origin development
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,29 @@
+name: Tag on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  tag-if-merged:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Main Branch
+        uses: actions/checkout@v2
+        with:
+          ref: 'main'
+
+      - name: Extract Version from pyproject.toml
+        id: extract-version
+        uses: ./.github/actions/retrieve_version
+        with:
+          pyproject-path: 'pyproject.toml'
+
+      - name: Tag Merge Commit
+        run: |
+          version_tag="v${{ steps.extract-version.outputs.version }}"
+          git tag $version_tag ${{ github.event.pull_request.merge_commit_sha }}
+          git push origin $version_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

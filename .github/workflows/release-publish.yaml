@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  process-version:
+  release-publish:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:

@@ -1,6 +1,7 @@
 name: Create a Release
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
     branches:

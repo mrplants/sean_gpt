@@ -1,4 +1,4 @@
-name: Main - Version Tagging
+name: Create a Release
 
 on:
   pull_request:

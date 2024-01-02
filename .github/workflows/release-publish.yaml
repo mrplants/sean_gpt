@@ -80,10 +80,10 @@ jobs:
       
       - name: Merge main into development
         run: |
-          git fetch origin development
+          git fetch origin main:main development:development
           git checkout development
-          git merge origin/main
+          git merge main
           git push origin development
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+      

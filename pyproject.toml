@@ -29,6 +29,7 @@ pytest-asyncio = "^0.23.2"
 redis = "^5.0.1"
 aioredis = "^2.0.1"
 pylint = "^3.0.3"
+toml = "^0.10.2"
 
 
 [build-system]

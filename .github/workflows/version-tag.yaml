@@ -1,0 +1,41 @@
+name: PR Version Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-version:
+    if: github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Extract Version from pyproject.toml
+      id: extract-version
+      uses: ./.github/actions/retrieve_version
+      with:
+        pyproject-path: 'pyproject.toml'
+
+    - name: Set Tag on Pull Request
+      run: |
+        version_tag="v${{ steps.extract-version.outputs.version }}"
+        git tag $version_tag
+        git push origin $version_tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Fetch Tags from Main Branch
+      run: git fetch --tags origin main
+
+    - name: Check for Matching Tag on Main
+      run: |
+        main_latest_tag=$(git describe --tags --abbrev=0 origin/main)
+        version_tag="v${{ steps.extract-version.outputs.version }}"
+        if [[ "$version_tag" == "$main_latest_tag" ]]; then
+          echo "The version tag ($version_tag) for the pull request is the same as the main branch's latest tag ($main_latest_tag)."
+          exit 1
+        fi

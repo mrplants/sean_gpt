@@ -1,4 +1,4 @@
-name: Lint Code
+name: Lint Python Backend
 
 on:
   workflow_dispatch:

@@ -18,7 +18,7 @@ spec:
         image: postgres
         envFrom:
         - secretRef:
-            name: sean-gpt-db-secrets
+            name: sean-gpt-secrets
         - configMapRef:
             name: sean-gpt-env
         env:
@@ -38,7 +38,7 @@ spec:
   - metadata:
       name: postgres-volume
     spec:
-      storageClassName: standard # "standard" for kind, "default" for azure
+      storageClassName: default # "standard" for kind, "default" for azure
       accessModes:
       - ReadWriteOnce
       resources:

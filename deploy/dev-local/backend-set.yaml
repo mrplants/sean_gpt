@@ -1,37 +1,35 @@
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: fastapi-backend
+  name: sean_gpt-backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fastapi-backend
+      app: sean_gpt-backend
   template:
     metadata:
       labels:
-        app: fastapi-backend
+        app: sean_gpt-backend
     spec:
       containers:
-      - name: fastapi-backend
+      - name: sean_gpt-backend
         image: sean_gpt_backend
         imagePullPolicy: IfNotPresent
         envFrom:
         - secretRef:
-            name: sean-gpt-backend-secrets
-        - secretRef:
-            name: sean-gpt-db-secrets
+            name: sean-gpt-secrets
         - configMapRef:
             name: sean-gpt-env
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fastapi-backend
+  name: sean_gpt-backend
 spec:
   type: ClusterIP
   selector:
-    app: fastapi-backend
+    app: sean_gpt-backend
   ports:
     - port: 8000
       targetPort: 8000

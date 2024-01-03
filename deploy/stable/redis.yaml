@@ -30,7 +30,7 @@ spec:
       name: redis-data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: standard
+      storageClassName: default # "standard" for kind, "default" for azure
       resources:
         requests:
           storage: 1Gi

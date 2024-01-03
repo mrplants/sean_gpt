@@ -5,6 +5,10 @@ on:
   release:
     types: [created]
 
+permissions:
+  packages: write
+  contents: write
+    
 jobs:
   deploy:
     runs-on: ubuntu-latest

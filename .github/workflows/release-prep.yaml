@@ -21,7 +21,18 @@ jobs:
 
       - name: test-backend
         uses: ./.github/actions/test-backend
-          
+
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}   
+
+      - name: lint-backend
+        uses: ./.github/actions/lint-backend
+
   check-version:
     runs-on: ubuntu-latest
     steps:

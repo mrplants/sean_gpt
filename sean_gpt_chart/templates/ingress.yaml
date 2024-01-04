@@ -1,0 +1,36 @@
+{{- if .Values.local }}
+{{- else }}
+  # If not, use the nginx ingress controller
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-seangpt
+  annotations:
+    cert-manager.io/issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - sean-gpt.com
+    secretName: sean-gpt-tls-cert
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sean-gpt
+            port:
+              number: 8000
+  - host: "sean-gpt.com"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sean-gpt
+            port:
+              number: 8000
+  ingressClassName: nginx
+{{- end }}

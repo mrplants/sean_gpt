@@ -4,6 +4,8 @@ import pytest_asyncio
 import time
 from unittest.mock import patch, Mock
 import asyncio
+import logging
+import os
 
 from httpx import AsyncClient
 from fastapi.testclient import TestClient
@@ -14,7 +16,6 @@ import redis
 
 from sean_gpt.main import app
 from sean_gpt.util.describe import describe
-from sean_gpt.config import settings
 
 def wait_for_db_to_be_ready(host, port, user, password, max_attempts=10, delay=1):
     """Waits for the database to be ready to accept connections."""
@@ -44,7 +45,12 @@ def wait_for_redis_to_be_ready(host, port, max_attempts=10, delay=1):
     raise RuntimeError("Redis did not become ready in time")
 
 @pytest.fixture
-def local_redis():
+def local_redis(monkeypatch):
+    from sean_gpt.config import settings
+
+    # Mock the database host to be localhost
+    monkeypatch.setattr(settings, 'redis_host', 'localhost')
+
     docker_client = docker.from_env()
     container = docker_client.containers.run(
         "redis:latest",
@@ -66,62 +72,44 @@ def local_redis():
     yield
     # Teardown code here
     container.stop()
-    container.remove()
+    container.remove(v=True)
 
 @describe(""" Test fixture to start a local postgres database. """)
 @pytest.fixture
-def local_postgres(request):
+def local_postgres(request, monkeypatch):
+    from sean_gpt.config import settings
+
+    # Mock the database host to be localhost
+    monkeypatch.setattr(settings, 'database_host', 'localhost')
+
+    admin_user = "postgres"
+    admin_password = "admin_password"
     docker_client = docker.from_env()
     container = docker_client.containers.run(
         "postgres:latest",
         detach=True,
         ports={"5432/tcp": 5432},
         environment={
-            "POSTGRES_USER": "admin_user",
-            "POSTGRES_PASSWORD": "admin_password",
+            "POSTGRES_USER": admin_user,
+            "POSTGRES_PASSWORD": admin_password,
+            "API_DB_USER": settings.api_db_user,
+            "API_DB_PASSWORD": settings.api_db_password,
+            "DATABASE_NAME": settings.database_name
         },
+        volumes={
+            os.path.abspath('sean_gpt_chart/files/postgres_init.sh'): {'bind': '/docker-entrypoint-initdb.d/init.sh', 'mode': 'ro'},
+        }
     )
 
-    # Wait for the container to be ready
-    while True:
-        container.reload()
-        if container.status == "running":
-            break
-        time.sleep(0.5)
-
     # Wait for the database to be ready
-    if not wait_for_db_to_be_ready('localhost', 5432, "admin_user", "admin_password"):
+    if not wait_for_db_to_be_ready('localhost', 5432, admin_user, admin_password):
         raise RuntimeError("Unable to connect to the database")
 
-    # Connect to the PostgreSQL server
-    conn = psycopg2.connect(dbname='postgres', user="admin_user", password="admin_password", host='localhost')
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
-    # Cursor to perform database operations
-    cur = conn.cursor()
-
-    # Create a new user
-    cur.execute(f"CREATE USER {settings.api_db_user} WITH ENCRYPTED PASSWORD %s;", (settings.api_db_password,))
-
-    # Create a new database
-    cur.execute(f"CREATE DATABASE {settings.api_db_name};")
-
-    conn.close()
-    conn = psycopg2.connect(dbname=settings.api_db_name, user="admin_user", password="admin_password", host='localhost')
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cur = conn.cursor()
-
-    # Grant the user the ability to create tables in the public schema
-    cur.execute(f"GRANT CREATE ON SCHEMA public TO {settings.api_db_user};")
-
-    # Close communication with the database
-    cur.close()
-    conn.close()
     yield
     # Teardown code here
     container.stop()
     # if not request.session.testsfailed:
-    container.remove()
+    container.remove(v=True)
 
 @describe(""" Test fixture to provide a test client for the application. """)
 @pytest.fixture

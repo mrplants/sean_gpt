@@ -4,7 +4,7 @@ import uuid
 from passlib.context import CryptContext
 from jose import jwt
 
-from .config import settings
+from ..config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -53,5 +53,5 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         "iat": now,
         "jti": str(uuid.uuid4())
     })
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt

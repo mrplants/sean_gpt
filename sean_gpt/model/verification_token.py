@@ -10,7 +10,7 @@ from ..config import settings
 
 class VerificationTokenBase(SQLModel):
     code_hash: str = Field(index=True, unique=True)
-    expiration: int = Field(default_factory=lambda: int(datetime.now().timestamp()) + settings.verification_token_expire_minutes)
+    expiration: int = Field(default_factory=lambda: int(datetime.now().timestamp()) + settings.jwt_verification_token_expire_minutes)
     user_id: UUID = Field(foreign_key="authenticateduser.id")
 
 class VerificationTokenRead(VerificationTokenBase):

@@ -1,0 +1,55 @@
+# values.yaml
+env:
+  openai:
+    api_url: "https://api.openai.com/v1/chat/completions"
+
+  # 24 hours x 60 minutes = 1440 minutes
+  jwt:
+    algorithm: "HS256"
+    access_token_expire_minutes: 1440
+    verification_token_expire_minutes: 15
+
+  # dialect+driver://username:password@host:port/database
+  # The "+" should be included in the driver env variable below
+  database:
+    dialect: "postgresql"
+    driver: ""
+    host: "postgres"
+    port: 5432
+    name: "sean_gpt"
+
+  redis:
+    host: "redis"
+
+  app:
+    chat_history_length: 10
+    default_ai_model: "gpt-4-1106-preview"
+    welcome_message: "Welcome to SeanGPT! Your account is ready to go!"
+    request_referral_message: "Please send your referral code as a standalone message."
+    no_whatsapp_message: "Please only send SMS messages to this number. Whatsapp will be supported in the future."
+    no_mms_message: "Please only send SMS messages to this number. Multimedia messages will be supported in the future."
+    ai_system_message: "You are a helpful AI assistant that users interact with via SMS. Therefore, your responses are short, concise, and split into chunks with character count fewer than 140. When you want to go over this count, use a | character to separate messages. Break your response at reasonable, logical breaks. In very few circumstance should you go over three SMS messages in your response. Do not include markup in your response, but feel free to include emojis."
+    max_sms_characters: 139
+    phone_number: "+15104548054"
+    phone_verification_message: "Your verification code is: {}"
+
+redis:
+  replicas: 1
+  image: "redis:latest"
+  storage: 1Gi
+  storageClassName: default # "standard" for kind, "default" for azure
+  port: 6379
+
+postgres:
+  replicas: 1
+  image: "postgres:latest"
+  storage: 1Gi
+  storageClassName: default # "standard" for kind, "default" for azure
+  port: 5432
+
+sean_gpt:
+  replicas: 1
+  image: "ghcr.io/mrplants/sean_gpt:latest"
+  port: 8000
+
+local: false

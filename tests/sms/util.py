@@ -34,7 +34,7 @@ def send_text(
     client: TestClient,
     body:str = 'This is a test twilio message.',
     from_number:str = '+14017122661',
-    to_number:str = settings.twilio_phone_number,
+    to_number:str = settings.app_phone_number,
     openai_response:str = "This is the simulated OpenAI resopnse.",
     valid:bool = True,
     delay:int = 0.001,

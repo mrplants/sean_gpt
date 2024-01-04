@@ -5,6 +5,10 @@ on:
   release:
     types: [created]
 
+permissions:
+  packages: write
+  contents: write
+    
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,16 +23,11 @@ jobs:
 
     - name: Checkout code at release tag
       uses: actions/checkout@v2
-      with:
-        ref: ${{ steps.get-latest-release.outputs.tag }}
+      # with:
+      #   ref: ${{ steps.get-latest-release.outputs.tag }}
   
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1
-
-    - name: Configure Kubernetes context
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
     - name: Build the frontend
       run: echo "TODO- Build the frontend"
@@ -36,12 +35,31 @@ jobs:
     - name: Move the compiled frontend to the serving directory
       run: echo "TODO- Move the compiled frontend to the serving directory"
 
-    - name: Build and push backend Docker image
+    - name: Build and push backend Docker image (this version)
       uses: ./.github/actions/build_push_docker
       with:
-          image-name: 'sean_gpt_backend'
+          image-name: 'sean_gpt'
           tag: ${{ steps.get-latest-release.outputs.tag }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Deploy to kubernetes (secrets, database, backend, and frontend)
-      run: echo "TODO"
+    - name: Build and push backend Docker image (latest)
+      uses: ./.github/actions/build_push_docker
+      with:
+          image-name: 'sean_gpt'
+          tag: 'latest'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Configure Kubernetes context
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Create secrets.yaml file
+      run: |
+        echo "${{ secrets.SECRETS_YAML }}" | base64 -d > sean_gpt_chart/secrets.yaml
+      
+    - name: Deploy to kubernetes using helm
+      run: |
+        cd sean_gpt_chart
+        helm upgrade --install seangpt-stable . -f secrets.yaml --namespace stable
+

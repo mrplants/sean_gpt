@@ -4,7 +4,7 @@ metadata:
   name: redis
 spec:
   serviceName: "redis"
-  replicas: 1
+  replicas: {{ .Values.redis.replicas }}
   selector:
     matchLabels:
       app: redis
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis
+        image: {{ .Values.redis.image }}
         volumeMounts:
         - name: redis-data
           mountPath: /data
@@ -30,10 +30,10 @@ spec:
       name: redis-data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: standard
+      storageClassName: {{ .Values.redis.storageClassName }}
       resources:
         requests:
-          storage: 1Gi
+          storage: {{ .Values.redis.storage }}
 ---
 apiVersion: v1
 kind: Service
@@ -44,5 +44,5 @@ spec:
   selector:
     app: redis
   ports:
-    - port: 6379
-      targetPort: 6379
+    - port: {{ .Values.redis.port }}
+      targetPort: {{ .Values.redis.port }}

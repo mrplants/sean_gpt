@@ -21,23 +21,6 @@ jobs:
 
       - name: test-backend
         uses: ./.github/actions/test-backend
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          ADMIN_PHONE: ${{ secrets.ADMIN_PHONE }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          API_DB_USER: ${{ secrets.API_DB_USER }}
-          API_DB_PASSWORD: ${{ secrets.API_DB_PASSWORD }}
-          TWILIO_TEST_SID: ${{ secrets.TWILIO_TEST_SID }}
-          TWILIO_TEST_AUTH_TOKEN: ${{ secrets.TWILIO_TEST_AUTH_TOKEN }}
-          TWILIO_SID: ${{ secrets.TWILIO_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-  
-          API_DB_HOST: localhost
-          REDIS_HOST: localhost
-          DEBUG: "True"
           
   check-version:
     runs-on: ubuntu-latest
@@ -67,6 +50,16 @@ jobs:
   build-package:
     runs-on: ubuntu-latest
     steps:
+      - name: Check for Auto-Commit
+        id: check_autocommit
+        run: |
+          if [[ "$(git log -1 --pretty='%cn')" == "GitHub Action" ]]; then
+            echo "This commit was made by the workflow. Skipping push to prevent recursion."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout Repository
         uses: actions/checkout@v2
         with:
@@ -77,16 +70,9 @@ jobs:
   
       - name: Build Package
         run: poetry build
-
-      - name: Check for Auto-Commit
-        id: check_autocommit
-        run: |
-          if [[ "$(git log -1 --pretty='%cn')" == "GitHub Action" ]]; then
-            echo "This commit was made by the workflow. Skipping push to prevent recursion."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+      
+      - name: Create the requirements.txt file
+        run: poetry export -f requirements.txt --output dist/requirements.txt
 
       - name: Commit and Push Changes
         if: steps.check_autocommit.outputs.skip == 'false'

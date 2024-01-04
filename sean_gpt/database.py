@@ -5,7 +5,7 @@ from fastapi import Depends
 import aioredis
 
 from .config import settings
-from .auth_util import get_password_hash
+from .util.auth import get_password_hash
 from .util.describe import describe
 
 # Import all the models, so that they're registered with sqlmodel
@@ -30,7 +30,7 @@ def get_db_engine():
     global _db_engine
     if _db_engine is None:
         # dialect+driver://username:password@host:port/database
-        database_url = f"{settings.api_db_dialect}{settings.api_db_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.api_db_host}:{settings.api_db_port}/{settings.api_db_name}"
+        database_url = f"{settings.database_dialect}{settings.database_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}"
         _db_engine = create_engine(database_url, echo=settings.debug)
     return _db_engine
 
@@ -41,18 +41,18 @@ def create_admin_if_necessary():
     with Session(db_engine) as session:
         # Create the admin user
         admin_user = AuthenticatedUser(
-            phone=settings.admin_phone,
-            hashed_password=get_password_hash(settings.admin_password),
+            phone=settings.user_admin_phone,
+            hashed_password=get_password_hash(settings.user_admin_password),
             referrer_user_id="root",
             is_phone_verified=True,
         )
         # Check if the admin user exists
-        select_admin = select(AuthenticatedUser).where(AuthenticatedUser.phone == settings.admin_phone)
+        select_admin = select(AuthenticatedUser).where(AuthenticatedUser.phone == settings.user_admin_phone)
         existing_admin_user = session.exec(select_admin).first()
         if not existing_admin_user:
             # Create the admin's unique twilio chat
             # Since the database is being created, need to also create the default AI model
-            ai = AI(name=settings.default_ai_model)
+            ai = AI(name=settings.app_default_ai_model)
             session.add(ai)
             twilio_chat = Chat(user_id=admin_user.id, name="Phone Chat", assistant_id=ai.id)
             session.add(twilio_chat)

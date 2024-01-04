@@ -19,10 +19,10 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: maintenance-backend
+            name: sean-gpt
             port:
-              number: 80
-  - host: "nightly.sean-gpt.com"
+              number: 8000
+  - host: "sean-gpt.com"
     http:
       paths:
       - path: /
@@ -31,6 +31,6 @@ spec:
           service:
             name: sean-gpt
             port:
-              number: 80
+              number: 8000
   ingressClassName: nginx
 {{- end }}

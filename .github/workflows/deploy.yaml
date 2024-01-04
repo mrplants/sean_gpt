@@ -56,7 +56,7 @@ jobs:
 
     - name: Create secrets.yaml file
       run: |
-        echo "${{ secrets.secrets_yaml }}" > sean_gpt_chart/secrets.yaml
+        echo "${{ secrets.SECRETS_YAML }}" | base64 -d > sean_gpt_chart/secrets.yaml
 
     - name: Check contents of secrets.yaml
       run: cat sean_gpt_chart/secrets.yaml

@@ -54,10 +54,12 @@ jobs:
         mkdir -p $HOME/.kube
         echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-      # TODO: Create the secrets.yaml file
+    - name: Create secrets.yaml file
+      run: |
+        echo "${{ secrets.secrets_yaml }}" > sean_gpt_chart/secrets.yaml
 
     - name: Deploy to kubernetes using helm
       run: |
         cd sean_gpt_chart
-        helm upgrade --install seangpt-stable . -f secrets.yaml
+        helm upgrade --install seangpt-stable . -f secrets.yaml --namespace stable
 

@@ -58,7 +58,6 @@ jobs:
           draft: false
           prerelease: false
       
-      # Assuming you have built your package and the files are in the 'dist' directory
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:

@@ -72,7 +72,7 @@ jobs:
         run: poetry build
       
       - name: Create the requirements.txt file
-        run: poetry export -f requirements.txt --output dist/requirements.txt
+        run: poetry export -f requirements.txt --output dist/requirements.txt --without-hashes
 
       - name: Commit and Push Changes
         if: steps.check_autocommit.outputs.skip == 'false'

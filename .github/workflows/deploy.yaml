@@ -58,6 +58,9 @@ jobs:
       run: |
         echo "${{ secrets.secrets_yaml }}" > sean_gpt_chart/secrets.yaml
 
+    - name: Check contents of secrets.yaml
+      run: cat sean_gpt_chart/secrets.yaml
+      
     - name: Deploy to kubernetes using helm
       run: |
         cd sean_gpt_chart

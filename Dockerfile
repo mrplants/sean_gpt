@@ -13,10 +13,10 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the specific wheel file
-COPY dist/"$WHEEL_FILE" .
+COPY dist/$WHEEL_FILE .
 
 # Install the wheel
-RUN pip install "$WHEEL_FILE"
+RUN pip install $WHEEL_FILE
 
 # Expose the port the app runs on
 EXPOSE 8000

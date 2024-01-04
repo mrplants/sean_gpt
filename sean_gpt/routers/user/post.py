@@ -7,9 +7,9 @@ from fastapi import APIRouter, HTTPException, status, Security, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
-from ...config import constants, settings
+from ...config import settings
 from .util import authenticate_user, AuthenticatedUserDep
-from ...auth_util import create_access_token, get_password_hash
+from ...util.auth import create_access_token, get_password_hash
 from ...util.describe import describe
 from ...model.authenticated_user import UserRead, AuthenticatedUser, UserCreate
 from ...model.access_token import AccessToken
@@ -86,7 +86,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=float(settings.access_token_expire_minutes))
+    access_token_expires = timedelta(minutes=float(settings.jwt_access_token_expire_minutes))
     access_token = create_access_token(
         data={"sub": user.phone}, expires_delta=access_token_expires
     )
@@ -106,7 +106,7 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
     if current_user.verification_token and current_user.verification_token.expiration > datetime.now().timestamp():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot request another verification code prior to expiration ({settings.verification_token_expire_minutes} minutes).",
+            detail=f"Cannot request another verification code prior to expiration ({settings.jwt_verification_token_expire_minutes} minutes).",
         )
     # Generate a verification token
     token_code = secrets.token_urlsafe(8)
@@ -126,7 +126,7 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
         )
     # Send the verification token to the user
     sms_client.messages.create(
-        body=constants.phone_verification_message.format(token_code),
-        from_=settings.twilio_phone_number,
+        body=settings.app_phone_verification_message.format(token_code),
+        from_=settings.app_phone_number,
         to=current_user.phone,
     )

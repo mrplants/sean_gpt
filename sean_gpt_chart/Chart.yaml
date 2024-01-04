@@ -1,0 +1,4 @@
+apiVersion: v2
+name: sean_gpt_chart
+type: application
+version: 0.1.16

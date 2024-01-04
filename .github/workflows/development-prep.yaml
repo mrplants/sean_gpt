@@ -18,6 +18,9 @@ jobs:
         with:
           ref: ${{ github.head_ref }}   
 
+      # TODO: Remove the need for listing secrets here
+      # Tests should not require secrets.
+
       - name: test-backend
         uses: ./.github/actions/test-backend
         env:

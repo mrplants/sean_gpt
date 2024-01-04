@@ -10,7 +10,6 @@
 
 from fastapi.testclient import TestClient
 
-from sean_gpt.config import constants
 from sean_gpt.util.describe import describe
 
 from .fixtures import *
@@ -20,7 +19,7 @@ from ..fixtures import *
 def test_verified_authorized_routes(mock_twilio_sms_create: Mock, new_user: dict, client: TestClient):
     check_authorized_route("POST", "/user/request_phone_verification", authorized_user=new_user, client=client)
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
-    code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = settings.app_phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
     check_authorized_route("PUT", "/user/is_phone_verified", json={
         "phone_verification_code": phone_verification_code
@@ -42,10 +41,10 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
-    code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = settings.app_phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
     # Check that the verification code message is properly formatted
-    assert verification_msg == constants.phone_verification_message.format(phone_verification_code)
+    assert verification_msg == settings.app_phone_verification_message.format(phone_verification_code)
     # Pass the user's verification code to update the phone verification status
     response = client.put(
         "/user/is_phone_verified",

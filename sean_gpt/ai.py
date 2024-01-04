@@ -42,4 +42,4 @@ def default_ai() -> AI:
     Returns:
         The default AI model.
     """
-    return get_ai(settings.default_ai_model) or create_ai(settings.default_ai_model)
+    return get_ai(settings.app_default_ai_model) or create_ai(settings.app_default_ai_model)

@@ -9,7 +9,7 @@ from ...model.authenticated_user import UserRead, AuthenticatedUser
 from ...model.access_token import AccessTokenData
 from ...config import settings
 from ...database import get_db_engine
-from ...auth_util import verify_password
+from ...util.auth import verify_password
 from ...util.describe import describe
 from ...database import SessionDep
 
@@ -64,7 +64,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Authentic
         # The 'exp' claim in the JWT is a Unix timestamp of when the token expires.
         # If the current time is past this expiration time, jwt.decode raises a JWTError.
         # This is a built-in feature of the python-jose library, ensuring expired tokens are rejected.
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

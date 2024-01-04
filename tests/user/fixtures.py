@@ -10,9 +10,9 @@ from unittest.mock import patch, Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from sean_gpt.config import settings, constants
 from sean_gpt.util.describe import describe
 from ..fixtures import *
+from sean_gpt.config import settings
 
 @describe(""" Test fixture to provide an admin auth token. """)
 @pytest.fixture
@@ -22,8 +22,8 @@ def admin_auth_token(client: TestClient) -> str:
         f"/user/token",
         data={
             "grant_type": "password",
-            "username": settings.admin_phone,
-            "password": settings.admin_password,
+            "username": settings.user_admin_phone,
+            "password": settings.user_admin_password,
         },
     )
     return response.json()["access_token"]
@@ -88,7 +88,7 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: Test
         f"/user/request_phone_verification",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
-    code_message_regex = constants.phone_verification_message.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = settings.app_phone_verification_message.format('(\\S+)').replace('.', '\\.')
     phone_verification_code = re.search(code_message_regex, mock_twilio_sms_create.call_args[1]["body"]).group(1)
     # Verify the user
     response_token = client.put(

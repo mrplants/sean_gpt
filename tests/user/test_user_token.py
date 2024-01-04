@@ -24,8 +24,8 @@ def test_generate_token(client: TestClient):
         "/user/token",
         data={
             "grant_type": "password",
-            "username": settings.admin_phone,
-            "password": settings.admin_password,
+            "username": settings.user_admin_phone,
+            "password": settings.user_admin_password,
         },
     )
     # The response should be:
@@ -47,12 +47,12 @@ def test_token_expiration(admin_auth_token: str, client: TestClient):
     # The JWT expiration can be decoded and checked without the secret key.
     # Decode the token without verification
     unverified_claims = jwt.get_unverified_claims(admin_auth_token)
-    assert unverified_claims["exp"] - unverified_claims["iat"] == settings.access_token_expire_minutes * 60
+    assert unverified_claims["exp"] - unverified_claims["iat"] == settings.jwt_access_token_expire_minutes * 60
     # Without waiting the full expiration time, it is not possible to write a
     # practical test for this.  Instead, we will perform a verified check
     # that the token will expire.
-    decoded = jwt.decode(admin_auth_token, settings.secret_key, algorithms=[settings.algorithm])
-    assert decoded["exp"] - decoded["iat"] == settings.access_token_expire_minutes * 60
+    decoded = jwt.decode(admin_auth_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+    assert decoded["exp"] - decoded["iat"] == settings.jwt_access_token_expire_minutes * 60
 
 @describe(""" Test that an authorization token will not be generated with an incorrect password. """)
 def test_generate_token_incorrect_password(client: TestClient):
@@ -61,7 +61,7 @@ def test_generate_token_incorrect_password(client: TestClient):
         "/user/token",
         data={
             "grant_type": "password",
-            "username": settings.admin_phone,
+            "username": settings.user_admin_phone,
             "password": "incorrect_password",
         },
     )

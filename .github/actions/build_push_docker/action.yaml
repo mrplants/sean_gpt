@@ -25,12 +25,13 @@ runs:
     - name: Determine the name of the latest wheel file
       id: get_wheel_file
       run: |
+        echo $(python scripts/find_latest_whl.py dist)
         echo "wheel_file=$(python scripts/find_latest_whl.py dist)" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Build and Push Docker Image
       run: |
-        docker build --build-arg WHEEL_FILE="$LATEST_WHEEL" -t ${{ inputs.image-name }} .
+        docker build --build-arg WHEEL_FILE="${{ steps.get_wheel_file.outputs.wheel_file }}" -t ${{ inputs.image-name }} .
         docker tag ${{ inputs.image-name }} ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ inputs.tag }}
         docker push ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}:${{ inputs.tag }}
       shell: bash

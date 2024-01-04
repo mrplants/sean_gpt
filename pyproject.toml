@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sean-gpt"
-version = "0.1.16"
+version = "0.1.17"
 description = ""
 authors = ["Sean F <fitzgerald.sean.t@gmail.com>"]
 readme = "README.md"
@@ -30,6 +30,8 @@ redis = "^5.0.1"
 aioredis = "^2.0.1"
 pylint = "^3.0.3"
 toml = "^0.10.2"
+pyyaml = "^6.0.1"
+tqdm = "^4.66.1"
 
 
 [build-system]

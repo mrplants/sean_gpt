@@ -124,7 +124,7 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
         })
     # The response message must be greater X charactere to trigger a
     # multi-message response.  Make a message that is X+1 characters long.
-    outgoing_msg = ''.join(['a' for _ in range(settings.twilio_max_message_characters+1)])
+    outgoing_msg = ''.join(['a' for _ in range(settings.app_max_sms_characters+1)])
     # When this occurs, an ellipsis emoji is appended to the end of the message.
     # This takes only one character.
     response = send_text(client,
@@ -142,7 +142,7 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
     # Check that the text of the 'Message' element is the outgoing message
     # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis emoji appended.
-    expected_message = outgoing_msg[:settings.twilio_max_message_characters-1] + '…'
+    expected_message = outgoing_msg[:settings.app_max_sms_characters-1] + '…'
     assert root[0].text == expected_message, f"Expected first child element text to be '{expected_message}', got {root[0].text}"
 
     # Check that the second child element is 'Redirect'
@@ -193,7 +193,7 @@ def test_account_created(referral_code:str, client: TestClient):
     # Instead of the simulated response, we should see the welcome message
     # This is a twiml response, so we need to parse it
     # Check that the text of the 'Message' element is the welcome message
-    assert parse_twiml_msg(response) == settings.twilio_welcome_message, f"Expected message response to be '{settings.twilio_welcome_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_welcome_message, f"Expected message response to be '{settings.app_welcome_message}', got {parse_twiml_msg(response)}"
     # Now we need to check that the database has the new user
     # We cannot do this via the endpoint because the user has no credentials yet
     # Instead, we will check the database directly
@@ -220,7 +220,7 @@ def test_account_not_created(client: TestClient):
                          from_number=random_phone_number,
                          body='user does not have a referral code')
     # Check that the text of the 'Message' element is the referral message
-    assert parse_twiml_msg(response) == settings.twilio_request_referral_message, f"Expected message response to be '{settings.twilio_request_referral_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_request_referral_message, f"Expected message response to be '{settings.app_request_referral_message}', got {parse_twiml_msg(response)}"
     # Retrieve the user
     db_engine = get_db_engine()
     with Session(db_engine) as session:
@@ -255,7 +255,7 @@ def test_system_message(verified_new_user: dict, client: TestClient):
         # Check that it has role=system and content=settings.twilio_system_message
         system_message = mock_openai_api.call_args.kwargs['messages'][0]
         assert system_message['role'] == 'system', f"Expected system message to have role='system', got {system_message['role']}"
-        assert system_message['content'] == settings.twilio_ai_system_message, f"Expected system message to be the system message, got {system_message['content']}"
+        assert system_message['content'] == settings.app_ai_system_message, f"Expected system message to be the system message, got {system_message['content']}"
 
 @describe(
 """ Tests that interrupted multi-message responses stop sending messages.
@@ -336,7 +336,7 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
                          body="This is a test message.")
     # The response should be a valid twiml message saying that only SMS is
     # supported.
-    assert parse_twiml_msg(response) == settings.twilio_no_whatsapp_message, f"Expected message response to be '{settings.twilio_no_whatsapp_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_no_whatsapp_message, f"Expected message response to be '{settings.app_no_whatsapp_message}', got {parse_twiml_msg(response)}"
     # Send a text to the endpoint (MMS)
     response = send_text(client,
                          from_number=verified_new_user["phone"],
@@ -344,7 +344,7 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
                          num_media=1)
     # The response should be a valid twiml message saying that only SMS is
     # supported.
-    assert parse_twiml_msg(response) == settings.twilio_no_mms_message, f"Expected message response to be '{settings.twilio_no_mms_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_no_mms_message, f"Expected message response to be '{settings.app_no_mms_message}', got {parse_twiml_msg(response)}"
 
 @describe(
 """ Tests that the follow-on messages work.
@@ -377,10 +377,10 @@ def test_followon_messages(verified_new_user: dict, client: TestClient):
     # First, list the assistant messages.  All but the last should be longer
     # than max characters to trigger a redirect.
     assistant_responses = [
-        'a'*(settings.twilio_max_message_characters + 1),
-        'b'*(settings.twilio_max_message_characters + 1),
-        'c'*(settings.twilio_max_message_characters + 1),
-        'd'*(settings.twilio_max_message_characters + 1),
+        'a'*(settings.app_max_sms_characters + 1),
+        'b'*(settings.app_max_sms_characters + 1),
+        'c'*(settings.app_max_sms_characters + 1),
+        'd'*(settings.app_max_sms_characters + 1),
         "This is the last message.",
     ]
     # Since this is a redirect, all messages must have the same message_sid

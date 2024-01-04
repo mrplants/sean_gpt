@@ -12,7 +12,7 @@ from .....config import settings
 from .....model.message import Message
 from .....model.chat import Chat
 
-openai_client = AsyncOpenAI()
+openai_client = AsyncOpenAI(api_key = settings.openai_api_key)
 
 router = APIRouter(prefix="/next")
 
@@ -58,8 +58,8 @@ async def next_message(
     session.commit()
     session.refresh(chat)
     # Retrieve the last X messages from the chat, in ascending order of chat_index
-    # X = settings.chat_history_length
-    messages = session.exec(select(Message).where(Message.chat_id == chat.id).order_by(Message.chat_index.desc()).limit(settings.chat_history_length-1)).all()
+    # X = settings.app_chat_history_length
+    messages = session.exec(select(Message).where(Message.chat_id == chat.id).order_by(Message.chat_index.desc()).limit(settings.app_chat_history_length-1)).all()
     # Put them in openai format and append the user's message
     openai_messages = [{"role": msg.role, "content": msg.content} for msg in messages][::-1] + [{"role": "user", "content": content}]
     # TODO: Incorporate different AI agents

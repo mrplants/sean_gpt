@@ -2,6 +2,7 @@ __pycache__
 .DS_Store
 .terraform
 .env.secrets
+secrets.yaml
 .env.local
 
 # Local .terraform directories

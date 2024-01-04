@@ -1,5 +1,4 @@
 from openai import OpenAI
-client = OpenAI()
 
 from fastapi import APIRouter, Depends, status
 
@@ -9,7 +8,9 @@ from ...model.chat import ChatRead, Chat, ChatCreate
 from ...model.ai import AI
 from ...ai import default_ai
 from ...util.describe import describe
+from ...config import settings
 
+client = OpenAI(api_key = settings.openai_api_key)
 router = APIRouter(prefix="/chat")
 
 @describe(

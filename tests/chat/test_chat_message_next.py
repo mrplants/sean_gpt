@@ -112,7 +112,7 @@ def test_message_order(verified_new_user: dict, client: TestClient):
                     headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                     json={}).json()
     # Create a few messages for the chat.
-    for message_i in range(settings.chat_history_length-1):
+    for message_i in range(settings.app_chat_history_length-1):
         client.post("/chat/message",
                 headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                         "X-Chat-ID": chat["id"]
@@ -123,9 +123,9 @@ def test_message_order(verified_new_user: dict, client: TestClient):
     messages = client.get("/chat/message",
                     headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                              "X-Chat-ID": chat["id"]},
-                    params={"limit": settings.chat_history_length-1, "offset": 0}).json()
+                    params={"limit": settings.app_chat_history_length-1, "offset": 0}).json()
     messages_contents = [message["content"] for message in messages]
-    assert messages_contents == [f"Message {message_i}" for message_i in range(settings.chat_history_length-1)], "Check that the messages are retrievable."
+    assert messages_contents == [f"Message {message_i}" for message_i in range(settings.app_chat_history_length-1)], "Check that the messages are retrievable."
     with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
         mock_openai_api.side_effect = async_create_mock_streaming_openai_api("Message response", delay=0.001)
         # Create a message.  The response will be streamed via SSE.
@@ -133,7 +133,7 @@ def test_message_order(verified_new_user: dict, client: TestClient):
             "headers": {"Authorization": "Bearer " + verified_new_user["access_token"],
                         "X-Chat-ID": chat["id"]
                         },
-            "json": {"content": f"Message {settings.chat_history_length-1}"}
+            "json": {"content": f"Message {settings.app_chat_history_length-1}"}
         }
         # The first message will be sent and then the response will be streamed.
         for _ in stream_response("post","/chat/message/next",request_kwargs,client):
@@ -144,7 +144,7 @@ def test_message_order(verified_new_user: dict, client: TestClient):
     messages_contents = [message["content"] for message in openai_create_kwargs["messages"]]
     print('messages!')
     print(messages_contents)
-    assert messages_contents == [f"Message {message_i}" for message_i in range(settings.chat_history_length)], "Check that the messages are in the correct order."
+    assert messages_contents == [f"Message {message_i}" for message_i in range(settings.app_chat_history_length)], "Check that the messages are in the correct order."
 
 @describe(
 """ Test that the message history is the correct length.
@@ -159,7 +159,7 @@ def test_history_correct_length(verified_new_user: dict, client: TestClient):
                     headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                     json={}).json()
     # Enter >max_history messages into the chat
-    for message_i in range(settings.chat_history_length+10):
+    for message_i in range(settings.app_chat_history_length+10):
         client.post("/chat/message",
                 headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                         "X-Chat-ID": chat["id"]
@@ -182,7 +182,7 @@ def test_history_correct_length(verified_new_user: dict, client: TestClient):
     # of chat_index.
     openai_create_kwargs = mock_openai_api.call_args.kwargs
     messages_contents = [message["content"] for message in openai_create_kwargs["messages"]]
-    assert len(messages_contents) == settings.chat_history_length, f'Chat history length is incorrect: {len(messages_contents)}.  Should be {settings.chat_history_length}.'
+    assert len(messages_contents) == settings.app_chat_history_length, f'Chat history length is incorrect: {len(messages_contents)}.  Should be {settings.app_chat_history_length}.'
 
 @describe(
 """ Test stream interruption.
@@ -233,7 +233,7 @@ def test_stream_interruption(verified_new_user: dict, client: TestClient):
     # of chat_index.
     openai_create_kwargs = mock_openai_api.call_args.kwargs
     messages_contents = [message["content"] for message in openai_create_kwargs["messages"]]
-    assert len(messages_contents) == 2, f'Chat length is incorrect: {len(messages_contents)}.  Should be {settings.chat_history_length}.'
+    assert len(messages_contents) == 2, f'Chat length is incorrect: {len(messages_contents)}.  Should be {settings.app_chat_history_length}.'
     # - Wait for the thread to finish and then verify that it was interrupted.
     message_request_process.join()
     results = []
@@ -250,6 +250,8 @@ def test_verified_and_authorized(verified_new_user, client):
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Check the routes
-    check_verified_route("post", "/chat/message/next", verified_new_user, client,
-                         json={"content": "Hello, world! This is my first message in a chat."},
-                         headers={"X-Chat-ID": chat["id"]})
+    with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
+        mock_openai_api.side_effect = async_create_mock_streaming_openai_api("Sample OpenAI response", delay=0.001)
+        check_verified_route("post", "/chat/message/next", verified_new_user, client,
+                            json={"content": "Hello, world! This is my first message in a chat."},
+                            headers={"X-Chat-ID": chat["id"]})

@@ -7,7 +7,7 @@ from sqlmodel import select
 
 from ...util.describe import describe
 from .util import AuthenticatedUserDep
-from ...auth_util import verify_password, get_password_hash
+from ...util.auth import verify_password, get_password_hash
 from ...database import SessionDep
 from ...model.authenticated_user import AuthenticatedUser
 

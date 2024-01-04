@@ -14,7 +14,7 @@ from ...util.describe import describe
 from ...config import settings
 from .util import TwilioGetUserDep
 
-openai_client = AsyncOpenAI()
+openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 router = APIRouter(
     prefix="/twilio"
@@ -38,13 +38,13 @@ async def twilio_webhook(
     # - Verify that this is not a whatsapp message
     if incoming_message.from_.startswith('whatsapp:'):
         twiml_response = twiml.MessagingResponse()
-        twiml_response.message(settings.twilio_no_whatsapp_message)
+        twiml_response.message(settings.app_no_whatsapp_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - Verify that this is not a MMS
     if incoming_message.num_media > 0:
         twiml_response = twiml.MessagingResponse()
-        twiml_response.message(settings.twilio_no_mms_message)
+        twiml_response.message(settings.app_no_mms_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # Create a request ID.  It will be thrown away at the end, but used to
@@ -53,7 +53,7 @@ async def twilio_webhook(
     # - If the current_user could not be found, return a static message requesting referral code
     if not current_user:
         twiml_response = twiml.MessagingResponse()
-        twiml_response.message(settings.twilio_request_referral_message)
+        twiml_response.message(settings.app_request_referral_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - Retrieve the user's twilio chat
@@ -74,7 +74,7 @@ async def twilio_webhook(
     # If so, send the static welcome message.
     if not twilio_chat.messages:
         twiml_response = twiml.MessagingResponse()
-        twiml_response.message(settings.twilio_welcome_message)
+        twiml_response.message(settings.app_welcome_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - Save the incoming message to the database (commit and refresh)
@@ -91,11 +91,11 @@ async def twilio_webhook(
     # Create the system and user messages
     openai_system_message = {
         "role": "system",
-        "content": settings.twilio_ai_system_message,
+        "content": settings.app_ai_system_message,
     }
     # Retrieve the last X messages from the chat, in ascending order of chat_index
-    # X = settings.chat_history_length
-    messages = session.exec(select(Message).where(Message.chat_id == twilio_chat.id).order_by(Message.chat_index.desc()).limit(settings.chat_history_length-1)).all()
+    # X = settings.app_chat_history_length
+    messages = session.exec(select(Message).where(Message.chat_id == twilio_chat.id).order_by(Message.chat_index.desc()).limit(settings.app_chat_history_length-1)).all()
     # Put them in openai format, prepend the system message
     openai_messages = [openai_system_message] + [{"role": msg.role.value, "content": msg.content} for msg in messages][::-1]
     # TODO: Incorporate different AI agents
@@ -121,9 +121,9 @@ async def twilio_webhook(
             return twiml.MessagingResponse()
         partial_response += chunk.choices[0].delta.content or ""
         # Check if the partial response is over the character limit
-        if len(partial_response) > settings.twilio_max_message_characters:
+        if len(partial_response) > settings.app_max_sms_characters:
             # Break at the character limit, add an ellipsis emoji, and stop streaming.  Return the message.
-            partial_response = partial_response[:settings.twilio_max_message_characters-1] + "…"
+            partial_response = partial_response[:settings.app_max_sms_characters-1] + "…"
             requires_redirect = True
             await redis_conn.set(f'multi-part message with SID: {incoming_message.message_sid}', 'True', ex=60)
             break

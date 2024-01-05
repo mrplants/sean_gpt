@@ -1,4 +1,4 @@
-name: 'Lint Baackend'
+name: 'Lint Backend'
 description: 'Run the backend linter'
 
 runs:

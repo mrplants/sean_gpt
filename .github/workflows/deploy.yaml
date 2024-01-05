@@ -3,7 +3,7 @@ name: Deploy
 on:
   workflow_dispatch:
   release:
-    types: [published]
+    types: [published, created]
 
 permissions:
   packages: write
@@ -23,8 +23,8 @@ jobs:
 
     - name: Checkout code at release tag
       uses: actions/checkout@v2
-      # with:
-      #   ref: ${{ steps.get-latest-release.outputs.tag }}
+      with:
+        ref: ${{ steps.get-latest-release.outputs.tag }}
   
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1

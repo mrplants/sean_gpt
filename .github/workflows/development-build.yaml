@@ -1,4 +1,4 @@
-name: Development Post-PR Actions
+name: Build Development Branch
 
 on:
   workflow_dispatch:

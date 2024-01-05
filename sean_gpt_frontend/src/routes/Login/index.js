@@ -26,11 +26,11 @@ const Login = () => {
     <div className="hero min-h-screen bg-base-200">
       <div className="hero-content text-center">
         <div className="max-w-md">
-          <h1 className="text-5xl font-bold">(Artificial) Sean</h1>
+          <h1 className="text-5xl font-bold">SeanGPT</h1>
           <form className="card-body" onSubmit={handleSubmit}>
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Username</span>
+                <span className="label-text">Phone</span>
               </label>
               <input 
                 type="text" 
@@ -57,6 +57,8 @@ const Login = () => {
             <div className="form-control mt-6">
               <button className="btn btn-primary" type='submit'>Login</button>
             </div>
+            <br/>
+            <a href="sms:+15104548054" className="link link-primary">Text (510)454-8054 to sign up!</a>
           </form>
         </div>
       </div>

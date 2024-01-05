@@ -12,17 +12,21 @@ spec:
   - hosts:
     - sean-gpt.com
     secretName: sean-gpt-tls-cert
+  - hosts:
+    - api.sean-gpt.com
+    secretName: sean-gpt-api-tls-cert
   rules:
-  - http:
+  - host: sean-gpt.com
+    http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt
+            name: sean-gpt-static
             port:
-              number: 8000
-  - host: "sean-gpt.com"
+              number: 80
+  - host: api.sean-gpt.com
     http:
       paths:
       - path: /

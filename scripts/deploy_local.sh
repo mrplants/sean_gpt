@@ -7,6 +7,20 @@ set -x
 # Get the directory of the script
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+function kind_cluster_exists() {
+    local cluster_name="$1"
+    kind get clusters | grep -q "^${cluster_name}$"
+    return $?
+}
+
+# Create a fresh kind cluster for this deployment
+if kind_cluster_exists "sean-gpt-local"; then
+    echo "Cluster sean-gpt-local exists"
+else
+    echo "Cluster sean-gpt-local does not exist.  Creating..."
+    kind create cluster --name sean-gpt-local --config "$SCRIPT_DIR/kind-config.yaml"
+fi
+
 # TODO: Build the frontend
 # TODO: Copy the frontend into the static serving directory
 
@@ -20,10 +34,7 @@ echo "Latest wheel: $LATEST_WHEEL"
 
 # Build the API docker image and push to kind
 docker build --build-arg WHEEL_FILE="$LATEST_WHEEL" -t sean_gpt_local:latest -f "$SCRIPT_DIR/../Dockerfile.api" "$SCRIPT_DIR/.."
-kind load docker-image sean_gpt_local:latest
-# Build the static init docker image and push to kind
-docker build sean_gpt_static_init_local:latest -f "$SCRIPT_DIR/../Dockerfile.static_init" "$SCRIPT_DIR/.."
-kind load docker-image sean_gpt_static_init_local:latest
+kind load docker-image sean_gpt_local:latest -n sean-gpt-local
 
 # Deploy the helm chart
 helm upgrade --install seangpt-local "$SCRIPT_DIR/../sean_gpt_chart" \
@@ -33,4 +44,4 @@ helm upgrade --install seangpt-local "$SCRIPT_DIR/../sean_gpt_chart" \
     --set local=true \
     --set postgres.storageClassName=standard \
     --set redis.storageClassName=standard \
-    --kube-context kind-kind
+    --kube-context kind-sean-gpt-local

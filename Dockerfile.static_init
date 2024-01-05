@@ -1,9 +1,0 @@
-# This container is used to initialize the storage volume for serving a static
-# website via nginx.  A separate lightweight container will actually serve the
-# files.  This one just checks to see if they exist and then downloads them.
-FROM alpine:latest
-
-# Install wget
-RUN apk add --no-cache wget
-
-RUN if [ -f /path/to/file ]; then echo "File exists"; else exit 1; fi

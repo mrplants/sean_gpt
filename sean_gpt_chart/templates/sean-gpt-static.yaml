@@ -27,16 +27,29 @@ spec:
     spec:
       initContainers:
       - name: init-sean-gpt-static
-        image: busybox
+        image: alpine
         command: ["/bin/sh", "-c"]
-        args: ["echo 'Hello, World!' > /usr/share/nginx/html/index.html"]
+        args: 
+        - |
+          if [ -z "$(ls -A /usr/share/nginx/html)" ]; then
+            apk add --no-cache wget unzip && \
+            wget -O repo.zip https://github.com/mrplants/sean_gpt/archive/refs/heads/main.zip && \
+            unzip repo.zip && \
+            cp -r sean_gpt-main/sean_gpt_frontend/build/* /usr/share/nginx/html/ && \
+            rm -r sean_gpt-main repo.zip
+          fi
         volumeMounts:
         - name: sean-gpt-static-storage
           mountPath: /usr/share/nginx/html
       volumes:
         - name: sean-gpt-static-storage
+          {{- if .Values.local }}
+          hostPath:
+            path: /mnt/frontend/build
+          {{- else }}
           persistentVolumeClaim:
             claimName: sean-gpt-static-pvc
+          {{- end }}
       containers:
       - name: sean-gpt-static
         image: nginx:latest

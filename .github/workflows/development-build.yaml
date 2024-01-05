@@ -1,0 +1,39 @@
+name: Build Development Branch
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - development
+
+permissions:
+  contents: write
+
+jobs:
+    build-package:
+        runs-on: ubuntu-latest
+        steps:    
+          - name: Checkout Repository
+            uses: actions/checkout@v2
+            with:
+              ref: ${{ github.head_ref }}   
+    
+          - name: Setup Python environment
+            uses: ./.github/actions/setup
+      
+          - name: Build Package
+            run: poetry build
+          
+          - name: Create the requirements.txt file
+            run: poetry export -f requirements.txt --output dist/requirements.txt
+    
+          - name: Commit and Push Changes
+            run: |
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add .
+              git commit -m "[AUTO-COMMIT] Build package for version ${{ steps.extract-version.outputs.version }}"
+              git push
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

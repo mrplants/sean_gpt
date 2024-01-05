@@ -1,7 +1,11 @@
+""" Main entrypoint for the Sean GPT API. 
+"""
+
 import os
 
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from .database import create_tables_if_necessary, reset_db_connection

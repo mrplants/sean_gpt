@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sean-gpt-static-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sean-gpt-static
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sean-gpt-static
+  template:
+    metadata:
+      labels:
+        app: sean-gpt-static
+    spec:
+      initContainers:
+      - name: init-sean-gpt-static
+        image: busybox
+        command: ["/bin/sh", "-c"]
+        args: ["echo 'Hello, World!' > /usr/share/nginx/html/index.html"]
+        volumeMounts:
+        - name: sean-gpt-static-storage
+          mountPath: /usr/share/nginx/html
+      volumes:
+        - name: sean-gpt-static-storage
+          persistentVolumeClaim:
+            claimName: sean-gpt-static-pvc
+      containers:
+      - name: sean-gpt-static
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: sean-gpt-static-storage
+          mountPath: /usr/share/nginx/html
+          readOnly: true
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: sean-gpt-static
+spec:
+  selector:
+    app: sean-gpt-static
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

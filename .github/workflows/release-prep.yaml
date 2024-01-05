@@ -21,7 +21,19 @@ jobs:
 
       - name: test-backend
         uses: ./.github/actions/test-backend
-          
+
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}   
+
+      - name: test-backend
+        uses: ./.github/actions/test-backend
+      
+
   check-version:
     runs-on: ubuntu-latest
     steps:
@@ -46,41 +58,3 @@ jobs:
             echo "The version tag ($version_tag) already exists on the main branch."
             exit 1
           fi
-
-  build-package:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check for Auto-Commit
-        id: check_autocommit
-        run: |
-          if [[ "$(git log -1 --pretty='%cn')" == "GitHub Action" ]]; then
-            echo "This commit was made by the workflow. Skipping push to prevent recursion."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.head_ref }}   
-
-      - name: Setup Python environment
-        uses: ./.github/actions/setup
-  
-      - name: Build Package
-        run: poetry build
-      
-      - name: Create the requirements.txt file
-        run: poetry export -f requirements.txt --output dist/requirements.txt
-
-      - name: Commit and Push Changes
-        if: steps.check_autocommit.outputs.skip == 'false'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "[AUTO-COMMIT] Build package for version ${{ steps.extract-version.outputs.version }}"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

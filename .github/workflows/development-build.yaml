@@ -38,6 +38,9 @@ jobs:
               npm install
               npm run build
               cd ..
+          
+          - name: Deploy to dev endpoint
+            run: ./scripts/deploy_dev.sh
 
           - name: Commit and Push Changes
             run: |

@@ -23,7 +23,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt-static
+            name: sean-gpt-frontend
             port:
               number: 80
   - host: api.sean-gpt.com

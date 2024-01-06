@@ -29,6 +29,18 @@ jobs:
     - name: Set up Kubectl
       uses: azure/setup-kubectl@v1
 
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Build the frontend
+      run: |
+        cd sean_gpt_frontend
+        npm install
+        npm run build
+        cd ..
+
     - name: Build and push backend Docker image (this version)
       uses: ./.github/actions/build_push_docker
       with:

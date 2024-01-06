@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter,
+  createRoutesFromElements,
+  Route,
   RouterProvider,
 } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
@@ -11,30 +13,24 @@ import './index.css';
 import Root from './routes/Root';
 import Login from './routes/Login';
 import Chat from './routes/Chat';
-import PrivateRoute from "./routes/PrivateRoute";
+import TermsOfService from './routes/TermsOfService';
+import FAQ from './routes/FAQ';
+import About from './routes/About';
+// import PrivateRoute from "./routes/PrivateRoute";
 
 import ErrorPage from './components/ErrorPage';
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: (
-        <Root>
-          <About />
-          <FAQ />
-          <TermsOfService />
-        </Root>
-    ),
-    errorElement: <ErrorPage />,
-    children: [
-      { index: true, element: <Chat /> },
-    ],
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-]);
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path='/' element={<Root />} errorElement={<ErrorPage />}>
+      <Route path='login' element={<Login />} />
+      <Route path='chat' element={<Chat />} />
+      <Route path='tos' element={<TermsOfService />} />
+      <Route path='faq' element={<FAQ />} />
+      <Route path='about' element={<About />} />
+    </Route>
+  )
+);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

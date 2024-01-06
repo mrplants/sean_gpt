@@ -13,7 +13,7 @@ const TitleBar = () => {
   return (
     <header className="navbar bg-base-100 px-4 py-2">
       <div className="flex-1">
-        <Link to="/" className="btn btn-ghost normal-case text-xl">(Artificial) Sean</Link>
+        <Link to="/" className="btn btn-ghost normal-case text-xl">SeanGPT</Link>
       </div>
       <div className="flex-none">
         <button onClick={handleLogout} className="btn btn-primary">

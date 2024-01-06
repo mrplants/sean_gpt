@@ -29,5 +29,5 @@ jobs:
         with:
           ref: ${{ github.head_ref }}   
 
-      - name: test-backend
-        uses: ./.github/actions/test-backend
+      - name: lint-backend
+        uses: ./.github/actions/lint-backend

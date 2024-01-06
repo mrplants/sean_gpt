@@ -19,6 +19,13 @@ if kind_cluster_exists "sean-gpt-local"; then
 else
     echo "Cluster sean-gpt-local does not exist.  Creating..."
     kind create cluster --name sean-gpt-local --config "$SCRIPT_DIR/kind-config.yaml"
+    helm upgrade --install ingress-nginx ingress-nginx \
+        --repo https://kubernetes.github.io/ingress-nginx \
+        --namespace ingress-nginx --create-namespace
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    # Access with:
+    # $ kubectl proxy
+    # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 fi
 
 # Build the frontend

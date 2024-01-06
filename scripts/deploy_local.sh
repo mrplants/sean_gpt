@@ -23,7 +23,7 @@ fi
 
 # Build the frontend
 pushd "$SCRIPT_DIR/../sean_gpt_frontend"
-npm run build
+CI=true npm run build
 popd
 
 # Build the project

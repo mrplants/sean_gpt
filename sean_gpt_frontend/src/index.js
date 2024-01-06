@@ -8,12 +8,12 @@ import { Toaster } from 'react-hot-toast';
 
 import './index.css';
 
-import Root from './routes/Root';
-import Login from './routes/Login';
-import Chat from './routes/Chat';
-import PrivateRoute from "./routes/PrivateRoute";
+// import Root from './routes/Root';
+// import Login from './routes/Login';
+// import Chat from './routes/Chat';
+// import PrivateRoute from "./routes/PrivateRoute";
 
-import ErrorPage from './components/ErrorPage';
+// import ErrorPage from './components/ErrorPage';
 
 const router = createBrowserRouter([
   // {

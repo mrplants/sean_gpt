@@ -7,8 +7,9 @@ on:
       - development
 
 permissions:
+  packages: write
   contents: write
-
+      
 jobs:
     build-package:
         runs-on: ubuntu-latest
@@ -52,8 +53,24 @@ jobs:
               echo "${{ secrets.SECRETS_YAML }}" | base64 -d > sean_gpt_chart/secrets.yaml
 
           - name: Login to GitHub Container Registry
-            run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+          # - name: Build and push backend Docker image (latest)
+          #   uses: ./.github/actions/build_push_docker
+          #   with:
+          #     image-name: 'sean_gpt_dev'
+          #     tag: 'latest'
+          #     github-token: ${{ secrets.GITHUB_TOKEN }}
+          #     dockerfile: 'Dockerfile.api'
+
+          # - name: Build and push frontend Docker image (latest)
+          #   uses: ./.github/actions/build_push_docker
+          #   with:
+          #     image-name: 'sean_gpt_frontend_dev'
+          #     tag: 'latest'
+          #     github-token: ${{ secrets.GITHUB_TOKEN }}
+          #     dockerfile: 'Dockerfile.frontend'
+                          
           - name: Deploy to dev endpoint
             run: ./scripts/deploy_dev.sh
 

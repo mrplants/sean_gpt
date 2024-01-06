@@ -47,6 +47,10 @@ jobs:
               mkdir -p $HOME/.kube
               echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
+          - name: Create secrets.yaml file
+            run: |
+              echo "${{ secrets.SECRETS_YAML }}" | base64 -d > sean_gpt_chart/secrets.yaml
+
           - name: Deploy to dev endpoint
             run: ./scripts/deploy_dev.sh
 

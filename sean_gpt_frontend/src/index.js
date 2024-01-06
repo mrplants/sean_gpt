@@ -16,21 +16,32 @@ import PrivateRoute from "./routes/PrivateRoute";
 import ErrorPage from './components/ErrorPage';
 
 const router = createBrowserRouter([
+  // {
+  //   path: "/",
+  //   element: (
+  //     <PrivateRoute>
+  //       <Root />
+  //     </PrivateRoute>
+  //   ),
+  //   errorElement: <ErrorPage />,
+  //   children: [
+  //     { index: true, element: <Chat /> },
+  //   ],
+  // },
+  // {
+  //   path: "/login",
+  //   element: <Login />,
+  // },
   {
     path: "/",
-    element: (
-      <PrivateRoute>
-        <Root />
-      </PrivateRoute>
-    ),
-    errorElement: <ErrorPage />,
-    children: [
-      { index: true, element: <Chat /> },
-    ],
-  },
-  {
-    path: "/login",
-    element: <Login />,
+    element: <div className="hero min-h-screen bg-base-200">
+    <div className="hero-content text-center">
+      <div className="max-w-md">
+        <h1 className="text-5xl font-bold">Under Construction</h1>
+        <p className="py-6">Please stay tuned!  SeanGPT is coming soon.</p>
+      </div>
+    </div>
+  </div>,
   },
 ]);
 

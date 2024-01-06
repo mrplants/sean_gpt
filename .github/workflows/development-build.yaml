@@ -51,6 +51,9 @@ jobs:
             run: |
               echo "${{ secrets.SECRETS_YAML }}" | base64 -d > sean_gpt_chart/secrets.yaml
 
+          - name: Login to GitHub Container Registry
+            run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
           - name: Deploy to dev endpoint
             run: ./scripts/deploy_dev.sh
 

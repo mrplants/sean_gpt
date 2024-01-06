@@ -1,73 +1,33 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sean-gpt-static-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sean-gpt-static
+  name: sean-gpt-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sean-gpt-static
+      app: sean-gpt-frontend
   template:
     metadata:
       labels:
-        app: sean-gpt-static
+        app: sean-gpt-frontend
     spec:
-      initContainers:
-      - name: init-sean-gpt-static
-        image: alpine
-        command: ["/bin/sh", "-c"]
-        args: 
-        - |
-          if [ -z "$(ls -A /usr/share/nginx/html)" ]; then
-            apk add --no-cache wget unzip && \
-            wget -O repo.zip https://github.com/mrplants/sean_gpt/archive/refs/heads/main.zip && \
-            unzip repo.zip && \
-            cp -r sean_gpt-main/sean_gpt_frontend/build/* /usr/share/nginx/html/ && \
-            rm -r sean_gpt-main repo.zip
-          fi
-        volumeMounts:
-        - name: sean-gpt-static-storage
-          mountPath: /usr/share/nginx/html
-      volumes:
-        - name: sean-gpt-static-storage
-          {{- if .Values.local }}
-          hostPath:
-            path: /mnt/frontend/build
-          {{- else }}
-          persistentVolumeClaim:
-            claimName: sean-gpt-static-pvc
-          {{- end }}
       containers:
-      - name: sean-gpt-static
-        image: nginx:latest
+      - name: sean-gpt-frontend
+        imagePullPolicy: IfNotPresent
+        image: {{ .Values.sean_gpt_frontend.image }}
         ports:
         - containerPort: 80
-        volumeMounts:
-        - name: sean-gpt-static-storage
-          mountPath: /usr/share/nginx/html
-          readOnly: true
+
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: sean-gpt-static
+  name: sean-gpt-frontend
 spec:
   selector:
-    app: sean-gpt-static
+    app: sean-gpt-frontend
   ports:
     - protocol: TCP
       port: 80

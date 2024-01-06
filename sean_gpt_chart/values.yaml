@@ -52,7 +52,7 @@ sean_gpt:
   image: "ghcr.io/mrplants/sean_gpt:latest"
   port: 8000
 
-sean_gpt_static_init:
-  image: "ghcr.io/mrplants/sean_gpt_static_init:latest"
+sean_gpt_frontend:
+  image: "ghcr.io/mrplants/sean_gpt_frontend:latest"
 
 local: false

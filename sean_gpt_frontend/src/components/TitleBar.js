@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import authService from '../services/authService';
 import LoginModal from './LoginModal';
 
 const TitleBar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
+
+  const loginModalRef = useRef(null);
 
   useEffect(() => {
     setIsAuthenticated(authService.isAuthenticated());
@@ -16,10 +18,7 @@ const TitleBar = () => {
   };
 
   const handleLogin = () => {
-    const modal = document.getElementById('login_modal');
-    if (modal && modal.showModal) {
-      modal.showModal();
-    }
+    loginModalRef.current.openModal();
   };
 
   return (
@@ -37,7 +36,7 @@ const TitleBar = () => {
             <button onClick={handleLogin} className="btn btn-primary">
               Login
             </button>
-            <LoginModal onLogin={() => setIsAuthenticated(true)} />
+            <LoginModal onLogin={() => setIsAuthenticated(true)} ref={loginModalRef}/>
           </>
         )}
       </div>

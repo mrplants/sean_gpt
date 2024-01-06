@@ -7,8 +7,9 @@ on:
       - development
 
 permissions:
+  packages: write
   contents: write
-
+      
 jobs:
     build-package:
         runs-on: ubuntu-latest

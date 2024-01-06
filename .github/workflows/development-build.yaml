@@ -18,6 +18,11 @@ jobs:
             with:
               ref: ${{ github.head_ref }}   
     
+          - name: Setup Node.js environment
+            uses: actions/setup-node@v2
+            with:
+              node-version: '18'
+
           - name: Setup Python environment
             uses: ./.github/actions/setup
       
@@ -27,6 +32,13 @@ jobs:
           - name: Create the requirements.txt file
             run: poetry export -f requirements.txt --output dist/requirements.txt
     
+          - name: Build the frontend
+            run: |
+              cd sean_gpt_frontend
+              npm install
+              npm run build
+              cd ..
+
           - name: Commit and Push Changes
             run: |
               git config --local user.email "action@github.com"

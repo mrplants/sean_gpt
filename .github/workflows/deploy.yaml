@@ -44,6 +44,22 @@ jobs:
           tag: 'latest'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           dockerfile: 'Dockerfile.api'
+
+    - name: Build and push frontend Docker image (this version)
+      uses: ./.github/actions/build_push_docker
+      with:
+          image-name: 'sean_gpt_frontend'
+          tag: ${{ steps.get-latest-release.outputs.tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: 'Dockerfile.frontend'
+
+    - name: Build and push frontend Docker image (latest)
+      uses: ./.github/actions/build_push_docker
+      with:
+          image-name: 'sean_gpt_frontend'
+          tag: 'latest'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: 'Dockerfile.frontend'
     
     - name: Configure Kubernetes context
       run: |

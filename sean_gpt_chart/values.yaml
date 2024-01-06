@@ -56,3 +56,5 @@ sean_gpt_frontend:
   image: "ghcr.io/mrplants/sean_gpt_frontend:latest"
 
 local: false
+domain: "sean-gpt.com"
+cert_prefix: "sean-gpt"

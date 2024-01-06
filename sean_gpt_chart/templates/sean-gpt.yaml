@@ -20,7 +20,9 @@ spec:
       containers:
       - name: sean-gpt
         image: {{ .Values.sean_gpt.image }}
+{{- if .Values.local }}
         imagePullPolicy: IfNotPresent
+{{- end }}
         envFrom:
         - prefix: "sean_gpt_"
           secretRef:

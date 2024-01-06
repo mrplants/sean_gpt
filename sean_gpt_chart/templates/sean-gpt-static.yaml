@@ -14,7 +14,9 @@ spec:
     spec:
       containers:
       - name: sean-gpt-frontend
+{{- if .Values.local }}
         imagePullPolicy: IfNotPresent
+{{- end }}
         image: {{ .Values.sean_gpt_frontend.image }}
         ports:
         - containerPort: 80

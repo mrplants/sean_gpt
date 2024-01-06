@@ -21,8 +21,10 @@ else
     kind create cluster --name sean-gpt-local --config "$SCRIPT_DIR/kind-config.yaml"
 fi
 
-# TODO: Build the frontend
-# TODO: Copy the frontend into the static serving directory
+# Build the frontend
+pushd "$SCRIPT_DIR/../sean_gpt_frontend"
+npm run build
+popd
 
 # Build the project
 poetry build

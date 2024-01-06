@@ -23,7 +23,6 @@ import ErrorPage from './components/ErrorPage';
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path='/' element={<Root />} errorElement={<ErrorPage />}>
-      <Route path='login' element={<Login />} />
       <Route path='chat' element={<Chat />} />
       <Route path='tos' element={<TermsOfService />} />
       <Route path='faq' element={<FAQ />} />

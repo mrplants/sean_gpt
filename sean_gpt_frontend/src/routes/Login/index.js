@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import PhoneNumberInput from '../../components/PhoneNumberInput';
 
 import authService from '../../services/authService';
 
@@ -32,13 +33,11 @@ const Login = () => {
               <label className="label">
                 <span className="label-text">Phone</span>
               </label>
-              <input 
-                type="text" 
-                placeholder="" 
+              <PhoneNumberInput
                 className="input input-bordered" 
                 required 
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                setValue={setUsername}
               />
             </div>
             <div className="form-control">

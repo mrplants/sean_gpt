@@ -40,7 +40,7 @@ const authService = {
     formData.append('grant_type', 'password');
 
     try {
-      const response = await fetch('/token', {
+      const response = await fetch('/user/token', {
         method: 'POST',
         body: formData,
       });

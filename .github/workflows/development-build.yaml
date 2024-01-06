@@ -35,6 +35,7 @@ jobs:
           - name: Build the frontend
             run: |
               cd sean_gpt_frontend
+              npm install
               npm run build
               cd ..
 

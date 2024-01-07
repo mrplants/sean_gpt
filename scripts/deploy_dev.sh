@@ -18,7 +18,7 @@ trap popd EXIT
 
 # Build the frontend
 cd ../sean_gpt_frontend
-CI=true npm run build
+REACT_APP_API_ENDPOINT=https://api.dev.sean-gpt.com CI=true npm run build
 
 # Build the project
 cd ..

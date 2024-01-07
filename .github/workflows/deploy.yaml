@@ -38,7 +38,7 @@ jobs:
       run: |
         cd sean_gpt_frontend
         npm install
-        npm run build
+        REACT_APP_API_ENDPOINT=https://api.sean-gpt.com npm run build
         cd ..
 
     - name: Build and push backend Docker image (this version)

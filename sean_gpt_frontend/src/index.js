@@ -11,22 +11,22 @@ import { Toaster } from 'react-hot-toast';
 import './index.css';
 
 import Root from './routes/Root';
-import Login from './routes/Login';
 import Chat from './routes/Chat';
 import TermsOfService from './routes/TermsOfService';
 import FAQ from './routes/FAQ';
 import About from './routes/About';
-// import PrivateRoute from "./routes/PrivateRoute";
+import Contact from './routes/Contact';
 
 import ErrorPage from './components/ErrorPage';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path='/' element={<Root />} errorElement={<ErrorPage />}>
-      <Route path='chat' element={<Chat />} />
+      <Route index element={<Chat />} />
       <Route path='tos' element={<TermsOfService />} />
       <Route path='faq' element={<FAQ />} />
       <Route path='about' element={<About />} />
+      <Route path='contact' element={<Contact />} />
     </Route>
   )
 );

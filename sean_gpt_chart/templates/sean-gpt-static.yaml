@@ -20,6 +20,11 @@ spec:
         image: {{ .Values.sean_gpt_frontend.image }}
         ports:
         - containerPort: 80
+        env:
+        - name: LAST_DEPLOYED
+          value: "{{ now | unixEpoch }}"
+        - name: REACT_APP_API_ENDPOINT
+          value: "{{ .Values.api_domain }}"
 
 ---
 

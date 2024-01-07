@@ -15,7 +15,7 @@ spec:
     - {{ .Values.domain }}
     secretName: {{ .Values.cert_prefix }}-tls-cert
   - hosts:
-    - api.{{ .Values.domain }}
+    - {{ .Values.api_domain }}
     secretName: {{ .Values.cert_prefix }}-api-tls-cert
 {{- end }}
   rules:
@@ -36,7 +36,7 @@ spec:
 {{- if .Values.local }}
   - http:
 {{- else }}
-  - host: api.{{ .Values.domain }}
+  - host: {{ .Values.api_domain }}
     http:
 {{- end }}    
       paths:

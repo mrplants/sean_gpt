@@ -44,6 +44,7 @@ helm upgrade --install seangpt-dev . \
     --set sean_gpt.image=ghcr.io/mrplants/sean_gpt_dev:latest \
     --set sean_gpt_frontend.image=ghcr.io/mrplants/sean_gpt_frontend_dev:latest \
     --set domain=dev.sean-gpt.com \
+    --set api_domain=api.dev.sean-gpt.com \
     --set cert_prefix=sean-gpt-dev \
     --kube-context sean-gpt-aks \
     --namespace dev \

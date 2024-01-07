@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
       formData.append('password', password);
       formData.append('grant_type', 'password');
 
-      const response = await fetch('/user/token', {
+      const response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user/token', {
         method: 'POST',
         body: formData,
       });

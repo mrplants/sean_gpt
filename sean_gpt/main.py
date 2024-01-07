@@ -13,6 +13,7 @@ from .routers import chat
 from .routers import user
 from .routers import twilio
 from .routers.user.util import IsVerifiedUserDep
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,6 +24,19 @@ async def lifespan(app: FastAPI):
     # Shutdown logic
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "https://sean-gpt.com",
+    "https://dev.sean-gpt.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(user.router)
 app.include_router(chat.router, dependencies=[IsVerifiedUserDep])

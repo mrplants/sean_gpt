@@ -23,6 +23,9 @@ spec:
 {{- if .Values.local }}
         imagePullPolicy: IfNotPresent
 {{- end }}
+        env:
+        - name: LAST_DEPLOYED
+          value: "{{ now | unixEpoch }}"
         envFrom:
         - prefix: "sean_gpt_"
           secretRef:

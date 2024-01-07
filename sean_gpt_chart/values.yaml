@@ -57,4 +57,5 @@ sean_gpt_frontend:
 
 local: false
 domain: "sean-gpt.com"
+api_domain: "api.sean-gpt.com"
 cert_prefix: "sean-gpt"

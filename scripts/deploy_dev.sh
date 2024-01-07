@@ -18,7 +18,7 @@ trap popd EXIT
 
 # Build the frontend
 cd ../sean_gpt_frontend
-CI=true npm run build
+REACT_APP_API_ENDPOINT=https://api.dev.sean-gpt.com CI=true npm run build
 
 # Build the project
 cd ..
@@ -44,6 +44,7 @@ helm upgrade --install seangpt-dev . \
     --set sean_gpt.image=ghcr.io/mrplants/sean_gpt_dev:latest \
     --set sean_gpt_frontend.image=ghcr.io/mrplants/sean_gpt_frontend_dev:latest \
     --set domain=dev.sean-gpt.com \
+    --set api_domain=api.dev.sean-gpt.com \
     --set cert_prefix=sean-gpt-dev \
     --kube-context sean-gpt-aks \
     --namespace dev \

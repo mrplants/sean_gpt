@@ -19,6 +19,7 @@ import About from './routes/About';
 import Contact from './routes/Contact';
 import ErrorPage from './components/ErrorPage';
 import Chat from './routes/Chat';
+import PrivacyPolicy from './routes/PrivacyPolicy';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -29,6 +30,7 @@ const router = createBrowserRouter(
       <Route path='faq' element={<FAQ />} />
       <Route path='about' element={<About />} />
       <Route path='contact' element={<Contact />} />
+      <Route path='privacy' element={<PrivacyPolicy />} />
     </Route>
   )
 );

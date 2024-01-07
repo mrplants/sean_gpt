@@ -30,6 +30,7 @@ const ContactForm = () => {
     // TODO: Submit form to backend
     toast.success('Message sent!');
     // Reset the form fields
+    console.log('recaptchaToken', recaptchaToken);
     e.target.reset();
   };
 

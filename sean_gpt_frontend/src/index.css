@@ -11,6 +11,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.grecaptcha-badge { visibility: hidden; }
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

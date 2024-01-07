@@ -3,7 +3,7 @@ import React from 'react';
 const About = () => {
     return (
         <div className="container mx-auto p-4">
-            <div className="card  bg-base-100 shadow-md">
+            {/* <div className="card  bg-base-100 shadow-md"> */}
                 <div className="card-body text-center items-center">
                   <div className="flex w-full">
                     <div className="flex-1 flex justify-end">
@@ -36,18 +36,9 @@ const About = () => {
                     </div>
                   </div>
                 </div>
-            </div>
+            {/* </div> */}
         </div>
     );
 };
 
 export default About;
-
-{/* <div className="divider"></div> 
-<div>
-</div>
-<div className="divider divider-horizontal"></div>
-<div>
-</div>
-<div className="divider"></div> 
-<h3 className="">Access to AI is a human right, finally.</h3> */}

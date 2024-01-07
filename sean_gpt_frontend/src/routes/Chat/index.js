@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
+import { useAuthService } from '../../services/authService';
 import toast from 'react-hot-toast';
 
 const ChatPage = () => {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // New state for loading status
+  const [isLoading, setIsLoading] = useState(false);
+  const { logout, authToken } = useAuthService();
 
 // Function to call the OpenAI completion endpoint
 const getAIResponse = async (userMessage) => {
@@ -26,7 +26,7 @@ const getAIResponse = async (userMessage) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authService.getToken()}`
+      'Authorization': `Bearer ${authToken}`
     },
     body: JSON.stringify({
       "content": userMessage
@@ -36,8 +36,7 @@ const getAIResponse = async (userMessage) => {
     if (!response.ok) {
       if (response.status === 401) {
         toast.error('Please log in to continue');
-        authService.logout();
-        navigate('/login')
+        logout();
       } else {
         toast.error('Error getting AI response');
       }

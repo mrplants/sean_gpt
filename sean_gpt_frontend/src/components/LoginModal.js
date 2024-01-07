@@ -1,16 +1,13 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import PhoneNumberInput from './PhoneNumberInput';
 
-import authService from '../services/authService';
+import { useAuthService } from '../services/authService';
 
 const Login = forwardRef(({ onLogin }, ref) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const prior = location.state?.from?.pathname || '/';
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { attemptLogin } = useAuthService();
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -37,14 +34,12 @@ const Login = forwardRef(({ onLogin }, ref) => {
     event.preventDefault();
 
     try {
-      await authService.login(username, password);
+      await attemptLogin(username, password);
       // Close the modal if login is successful
       const modal = document.getElementById('login_modal');
       if (modal && modal.close) {
         modal.close();
       }
-      navigate(prior, { replace: true });
-      onLogin(); // Call the onLogin function passed in as a prop
     } catch (error) {
       setUsername('');
       setPassword('');

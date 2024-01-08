@@ -1,10 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthService } from '../services/authService';
-import LoginModal from './LoginModal';
+import LoginModal from './LoginSignupModal';
 
 const TitleBar = () => {
-  const { logout, isLoggedIn } = useAuthService();
+  const { logout, isLoggedIn, user } = useAuthService();
+  const [isReferModalOpen, setIsReferModalOpen] = useState(false);
 
   const loginModalRef = useRef(null);
   const detailsRef = useRef(null);
@@ -36,22 +37,37 @@ const TitleBar = () => {
         </details>
       <Link to="/" className="prose prose-xl dark:prose-invert prose-slate mx-3">SeanGPT</Link>
       <div className="hidden lg:flex">
-        { isLoggedIn && (<Link to="/chat" className="btn btn-sm btn-ghost normal-case mx-2">Chat</Link>) }
-        <Link to="/about" className="btn btn-sm btn-ghost normal-case mx-2">About</Link>
-        <Link to="/contact" className="btn btn-sm btn-ghost normal-case mx-2">Contact</Link>
-        <Link to="/faq" className="btn btn-sm btn-ghost normal-case mx-2">FAQ</Link>
-        <Link to="/tos" className="btn btn-sm btn-ghost normal-case mx-2">Terms of Service</Link>
+        { isLoggedIn && (<Link to="/chat" className="btn btn-sm btn-ghost normal-case mx-1">Chat</Link>) }
+        <Link to="/about" className="btn btn-sm btn-ghost normal-case mx-1">About</Link>
+        <Link to="/contact" className="btn btn-sm btn-ghost normal-case mx-1">Contact</Link>
+        <Link to="/faq" className="btn btn-sm btn-ghost normal-case mx-1">FAQ</Link>
+        <Link to="/tos" className="btn btn-sm btn-ghost normal-case mx-1">Terms of Service</Link>
       </div>
       </div>
       <div className="navbar-end">
         {isLoggedIn ? (
-          <button onClick={logout} className="btn btn-sm btn-ghost">
-            Logout
-          </button>
+          <>
+            <div>
+              <button className="btn btn-sm btn-ghost mx-2" onClick={() => setIsReferModalOpen(true)}>Refer your friends!</button>
+            </div>
+            <button onClick={logout} className="btn btn-sm btn-outline btn-primary">
+              Logout
+            </button>
+            {/* This modal is the reffer-friends dialog */}
+            <dialog className={`modal modal-bottom sm:modal-middle ${isReferModalOpen ? 'modal-open': ''}`}>
+              <div className="modal-box">
+                <p className="text-lg text-center">Share this referral code with your friends!</p>
+                <h3 className="font-bold text-lg text-center">{user.referral_code}</h3>
+              </div>
+              <form method="dialog" className="modal-backdrop">
+                <button onClick={() => setIsReferModalOpen(false)}>close</button>
+              </form>
+            </dialog>
+          </>
         ) : (
           <>
             <button onClick={handleLogin} className="btn btn-sm btn-primary">
-              Login
+              Login | Signup
             </button>
             <LoginModal ref={loginModalRef}/>
           </>

@@ -39,13 +39,36 @@ export function useAuthService() {
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authToken, setAuthToken] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token && !isJwtExpired(token)) {
-      setIsLoggedIn(true);
-      setAuthToken(token);
-    }
+    const fetchUser = async () => {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token && !isJwtExpired(token)) {
+        const response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        // Check that the request was successful
+        if (!response.ok) {
+          // Remove the token from local storage if it is invalid
+          localStorage.removeItem(TOKEN_KEY);
+          setIsLoggedIn(false);
+          setAuthToken(null);
+          return;
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+  
+        setIsLoggedIn(true);
+        setAuthToken(token);
+      }
+    };
+  
+    fetchUser();
   }, []);
 
   const attemptLogin = async (username, password) => {
@@ -84,7 +107,9 @@ export function AuthProvider({ children }) {
     toast.success('Logout successful');
   };
 
-  const value = { attemptLogin, logout, isLoggedIn, authToken };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ attemptLogin, logout, isLoggedIn, authToken, user }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

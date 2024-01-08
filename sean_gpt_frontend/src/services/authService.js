@@ -91,10 +91,19 @@ export function AuthProvider({ children }) {
 
       const data = await response.json();
       localStorage.setItem(TOKEN_KEY, data.access_token);
-      setIsLoggedIn(true);
       setAuthToken(data.access_token);
       toast.success('Login successful');
-    } catch (error) {
+
+      const user_response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`,
+        },
+      });
+      const userData = await user_response.json();
+      setUser(userData);
+      setIsLoggedIn(true);
+  } catch (error) {
       console.error('Login attempt failed:', error);
       throw error;
     }
@@ -104,6 +113,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY);
     setIsLoggedIn(false);
     setAuthToken(null);
+    setUser(null);
     toast.success('Logout successful');
   };
 

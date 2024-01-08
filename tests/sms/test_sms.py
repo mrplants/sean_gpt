@@ -83,19 +83,22 @@ def test_messages_saved(verified_new_user: dict, client: TestClient):
               openai_response=outgoing_msg,
               from_number=verified_new_user["phone"])
     # Retrieve the messages in the twilio chat
-    saved_messages = client.get("/chat/message",
-        headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
-        },
-        params={"limit": 5, "offset": 0}).json()
-    # Check that the messages are correct
-    assert saved_messages[0]['role'] == 'user'
-    assert saved_messages[0]['content'] == 'This is an initial message.'
-    assert saved_messages[1]['role'] == 'user'
-    assert saved_messages[1]['content'] == incoming_msg
-    assert saved_messages[2]['role'] == 'assistant'
-    assert saved_messages[2]['content'] == outgoing_msg
+    # The message endpoint retrieve messages one-by-one. You can query the message index with query param 'chat_index', with zero being the oldest message.
+    saved_messages = []
+    for chat_index in range(3):
+        saved_messages.append(client.get(
+            "/chat/message",
+            headers={
+                "Authorization": f"Bearer {verified_new_user['access_token']}",
+                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            },
+            params={"chat_index": chat_index}).json())
+    # Check that the first message is the incoming message
+    assert saved_messages[1]['role'] == 'user', f"Expected first message to have role='user', got {saved_messages[0]['role']}"
+    assert saved_messages[1]['content'] == incoming_msg, f"Expected first message to be '{incoming_msg}', got {saved_messages[0]['content']}"
+    # Check that the second message is the outgoing message
+    assert saved_messages[2]['role'] == 'assistant', f"Expected second message to have role='assistant', got {saved_messages[1]['role']}"
+    assert saved_messages[2]['content'] == outgoing_msg, f"Expected second message to be '{outgoing_msg}', got {saved_messages[1]['content']}"
     # check that only two messages exist
     assert len(saved_messages) == 3, f"Expected only three messages, got {len(saved_messages)}"
     
@@ -307,20 +310,30 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     # - The first message from the user
     # - The interruption message from the user
     # - The interruption response from the assistant
-    twilio_chat_messages = client.get(
-        "/chat/message",
+    twilio_chat_messages = []
+    len_twilio_chat_messages = client.get(
+        "/chat/message/len",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}",
             "X-Chat-ID": verified_new_user["twilio_chat_id"]
-        },
-        params={"limit": 10, "offset": 0}).json()
-    assert len(twilio_chat_messages) == 4, f"Expected 4 messages in the twilio chat, got {len(twilio_chat_messages)}"
-    assert twilio_chat_messages[1]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
-    assert twilio_chat_messages[1]['content'] == "This is an initial message.", f"Expected first message to be 'This is an initial message.', got {twilio_chat_messages[0]['content']}"
+        }).json()['len']
+    for chat_index in range(len_twilio_chat_messages):
+        twilio_chat_messages.append(client.get(
+            "/chat/message",
+            headers={
+                "Authorization": f"Bearer {verified_new_user['access_token']}",
+                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            },
+            params={"chat_index": chat_index}).json())
+    assert len(twilio_chat_messages) == 4, f"Expected only four messages, got {len(twilio_chat_messages)}"
+    assert twilio_chat_messages[0]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
+    assert twilio_chat_messages[0]['content'] == "First message to ignore welcome message.", f"Expected first message to be 'First message to ignore welcome message.', got {twilio_chat_messages[0]['content']}"
+    assert twilio_chat_messages[1]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
+    assert twilio_chat_messages[1]['content'] == "This is an initial message.", f"Expected second message to be 'This is an initial message.', got {twilio_chat_messages[1]['content']}"
     assert twilio_chat_messages[2]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
     assert twilio_chat_messages[2]['content'] == "This is an interruption message.", f"Expected second message to be 'This is an interruption message.', got {twilio_chat_messages[1]['content']}"
     assert twilio_chat_messages[3]['role'] == 'assistant', f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}"
-    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message.", f"Expected third message to be 'This is the response to the interruption message.', got {twilio_chat_messages[2]['content']}"     
+    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message.", f"Expected third message to be 'This is the response to the interruption message.', got {twilio_chat_messages[2]['content']}"
 
 @describe(
 """ Tests that only SMS is supported.

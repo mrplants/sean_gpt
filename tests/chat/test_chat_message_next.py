@@ -120,12 +120,14 @@ def test_message_order(verified_new_user: dict, client: TestClient):
                 json={"content": f"Message {message_i}",
                       "role": "user"})
     # Check that those messages are retrievable
-    messages = client.get("/chat/message",
-                    headers={"Authorization": "Bearer " + verified_new_user["access_token"],
-                             "X-Chat-ID": chat["id"]},
-                    params={"limit": settings.app_chat_history_length-1, "offset": 0}).json()
-    messages_contents = [message["content"] for message in messages]
-    assert messages_contents == [f"Message {message_i}" for message_i in range(settings.app_chat_history_length-1)], "Check that the messages are retrievable."
+    # The message endpoint retrieve messages one-by-one. You can query the message chat index with 'chat_index', with zero being the oldest message.
+    for message_i in range(settings.app_chat_history_length-1):
+        message = client.get("/chat/message",
+                headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                        "X-Chat-ID": chat["id"]
+                        },
+                params={"chat_index": message_i}).json()
+        assert message["content"] == f"Message {message_i}", "Check that the messages are in the correct order."
     with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
         mock_openai_api.side_effect = async_create_mock_streaming_openai_api("Message response", delay=0.001)
         # Create a message.  The response will be streamed via SSE.

@@ -30,6 +30,7 @@ Yields:
 """)
 def stream_response(url, request_kwargs, client, request_type='get'):
     with connect_sse(client, request_type.lower(), url, **request_kwargs) as event_source:
+        print(event_source)
         for sse in event_source.iter_sse():
             yield sse.data
 

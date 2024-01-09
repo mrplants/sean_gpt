@@ -1,6 +1,8 @@
 """ This module contains the route for generating chat completion stream tokens.
 """
 import uuid
+from typing import List
+import json
 
 from fastapi import APIRouter
 from openai import AsyncOpenAI
@@ -25,14 +27,15 @@ Args:
 Returns:
     dict:  A stream token.
 """)
-@router.post("", )
+@router.post("")
 async def generate_stream_token(
-    messages: list[MessageCreate],
+    messages: List[MessageCreate],
     redis_conn: RedisConnectionDep):
     # Generate a stream token, a UUID, to store in the redis database as a key
     # for the stream, with the value being the list of messages.
     stream_token = str(uuid.uuid4())
     # Store the stream token in the redis database
-    await redis_conn.set(stream_token, messages)
+    # Make sure to convert to a string.
+    await redis_conn.set(stream_token, json.dumps([msg.model_dump() for msg in messages]))
     # Return the stream token
     return {"stream_token": stream_token}

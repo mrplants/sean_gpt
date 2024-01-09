@@ -47,13 +47,12 @@ Args:
 def test_get_stream_session_token(verified_new_user: dict, client: TestClient):
     token_response = client.post("/chat/generate",
                         headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
-                        json={
-                            "messages": [
+                        json=[
                                 {"role" : "user",
                                  "content": "Hello, world! This is my first message in a chat."},
                                 {"role" : "assistant",
                                  "content": "Hello, world! This is my second message in a chat."}
-                            ]})
+                            ])
 
     # The response should be:
     # HTTP/1.1 200 OK
@@ -79,15 +78,14 @@ def test_create_stream(verified_new_user: dict, client: TestClient):
     # Create a stream token
     token_response = client.post("/chat/generate",
                         headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
-                        json={
-                            "messages": [
+                        json=[
                                 {"role" : "user",
                                  "content": "Hello, world! This is my first message in a chat."},
                                 {"role" : "assistant",
                                  "content": "Hello, world! This is my second message in a chat."},
                                 {"role" : "user",
                                  "content": "Hello, world! another user message."},
-                            ]})
+                            ])
     assert "stream_token" in token_response.json(), (
         "Check that the post response contains a stream_token."
     )
@@ -100,7 +98,7 @@ def test_create_stream(verified_new_user: dict, client: TestClient):
         response = ''.join(stream_response("/chat/generate", {
             "headers": {
                 "Authorization": "Bearer " + verified_new_user["access_token"],
-                "X-Stream-Token": token_response.json()["stream_token"]
+                "X-Chat-Stream-Token": token_response.json()["stream_token"]
             }
         },client))
     assert response == "Sample OpenAI response", "Check that the stream response is correct."
@@ -110,22 +108,17 @@ def test_verified_and_authorized(verified_new_user, client):
     # First, create a stream token
     token = client.post("/chat/generate",
                         headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
-                        json={
-                            "messages": [
-                            ]
-                        }).json()['stream_token']
+                        json=[]
+                        ).json()['stream_token']
     # Check the routes
     check_verified_route("post", "/chat/generate", verified_new_user, client,
-                         json={
-                            "messages": [
-                            ]
-                         })
+                         json=[])
     with patch('openai.resources.chat.AsyncCompletions.create',
                new_callable=Mock) as mock_openai_api:
         mock_openai_api.side_effect = (
             async_create_mock_streaming_openai_api("Sample OpenAI response", delay=0.001)
         )
-        check_verified_route("get", "/chat/message", verified_new_user, client,
+        check_verified_route("get", "/chat/generate", verified_new_user, client,
                             headers={
-                                "X-Stream-Token": token
+                                "X-Chat-Stream-Token": token
                             })

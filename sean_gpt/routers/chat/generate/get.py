@@ -1,6 +1,8 @@
 
 """ This module contains the route for generating chat completion streams.
 """
+import json
+
 from fastapi import APIRouter, Header
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
@@ -26,12 +28,13 @@ Yields:
     MessageChunk:  A chunk of the assistant's response.
 """)
 @router.get("")
-async def next_message(
+async def generate_chat_response(
     *,
     x_chat_stream_token: str = Header(),
     redis_conn: RedisConnectionDep):
+    print('connected')
     # Retrieve the messages from the redis database
-    messages = await redis_conn.get(x_chat_stream_token)
+    messages = json.loads(await redis_conn.get(x_chat_stream_token))
 
     # TODO: Incorporate different AI agents
     response_stream = await openai_client.chat.completions.create(

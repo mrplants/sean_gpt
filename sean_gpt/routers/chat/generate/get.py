@@ -4,8 +4,8 @@
 import json
 
 from fastapi import APIRouter, Header
-from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
+from sse_starlette.sse import EventSourceResponse
 
 from ....util.describe import describe
 from ....database import RedisConnectionDep
@@ -32,7 +32,6 @@ async def generate_chat_response(
     *,
     x_chat_stream_token: str = Header(),
     redis_conn: RedisConnectionDep):
-    print('connected')
     # Retrieve the messages from the redis database
     messages = json.loads(await redis_conn.get(x_chat_stream_token))
 
@@ -45,8 +44,7 @@ async def generate_chat_response(
 
     async def iter_openai_stream():
         async for chunk in response_stream:
-            if chunk.choices[0].delta.content is not None:
-                yield f'data: {chunk.choices[0].delta.content}\n\n'
-        yield 'data: \n\n'
+            if chunk.choices[0].delta.content is not None and chunk.choices[0].delta.content != '':
+                yield { 'data': chunk.choices[0].delta.content }
         # Indicate that the assistant is no longer responding
-    return StreamingResponse(iter_openai_stream(), media_type="text/event-stream")
+    return EventSourceResponse(iter_openai_stream())

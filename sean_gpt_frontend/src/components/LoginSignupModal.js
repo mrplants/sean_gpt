@@ -83,7 +83,7 @@ const Login = forwardRef(({ onLogin }, ref) => {
 
       // Check if the request was successful
       if (response.ok) {
-        const data = await response.json();
+        // const data = await response.json();
         // Handle successful account creation, e.g., updating the UI or redirecting
         toast.success('Account created successfully!');
         closeModal(); // Close the modal on successful account creation

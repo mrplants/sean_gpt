@@ -1,3 +1,14 @@
+""" Tests for the /user/referral_code route.
+"""
+
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 #######################
 # /user/referral_code #
 #######################
@@ -7,19 +18,24 @@ from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
 
-from .fixtures import *
-from ..fixtures import *
+from ..util.check_routes import check_authorized_route, check_verified_route
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
-    check_authorized_route("GET", "/user/referral_code", authorized_user=verified_new_user, client=client)
-    check_verified_route("GET", "/user/referral_code", verified_user=verified_new_user, client=client)
+    check_authorized_route("GET",
+                           "/user/referral_code",
+                           authorized_user=verified_new_user,
+                           client=client)
+    check_verified_route("GET",
+                         "/user/referral_code",
+                         verified_user=verified_new_user,
+                         client=client)
 
 @describe(""" Test that a referral code can be generated. """)
 def test_referral_code_generation(admin_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
-        f"/user/referral_code",
+        "/user/referral_code",
         headers={"Authorization": f"Bearer {admin_user['access_token']}"}
     )
     # The response should be:
@@ -31,13 +47,13 @@ def test_referral_code_generation(admin_user: dict, client: TestClient):
     # }
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
-    assert type(response.json()["referral_code"]) == str
+    assert isinstance(response.json()["referral_code"], str)
 
 @describe(""" Test that a referral code cannot be generated for an unverified user. """)
 def test_referral_code_generation_unverified(new_user: dict, client: TestClient):
     # Generate a referral code
     response = client.get(
-        f"/user/referral_code",
+        "/user/referral_code",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     # The response should be:

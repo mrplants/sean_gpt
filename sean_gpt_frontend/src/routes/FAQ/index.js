@@ -5,6 +5,15 @@ const FAQ = () => {
         <div className="container m-auto p-4">
             <h2 className="text-center text-lg lg:text-2xl mb-4">Frequently Asked Questions</h2>
             <div className="accordion" id="faqAccordion">
+            <div className="collapse collapse-arrow bg-base-200 my-2">
+                    <input type="radio" name="faq" />
+                    <div className="collapse-title text-md lg:text-xl font-medium">
+                        When will SeanGPT be available over SMS?
+                    </div>
+                    <div className="collapse-content"> 
+                        <p>We have submitted our approval request for an <a href="https://www.twilio.com/docs/messaging/compliance/a2p-10dlc" className='link'>A2P 10DLC campaign</a> to our messaging service provider and expect to hear back any day now- stay tuned!  In the meantime, feel free to use SeanGPT over the web.</p>
+                    </div>
+                </div>
                 <div className="collapse collapse-arrow bg-base-200 my-2">
                     <input type="radio" name="faq" />
                     <div className="collapse-title text-md lg:text-xl font-medium">

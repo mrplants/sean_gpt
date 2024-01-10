@@ -5,6 +5,7 @@ const About = () => {
         <div className="container mx-auto p-4">
             {/* <div className="card  bg-base-100 shadow-md"> */}
                 <div className="card-body text-center items-center">
+                <h2 className="card-title lg:text-xl text-accent">Our goal is to provide SeanGPT over SMS.<br/>Pending regulatory approval, please feel free to use SeanGPT right here on our website!</h2>
                   <div className="flex w-full">
                     <div className="flex-1 flex justify-end">
                       <h2 className="card-title lg:text-2xl">AI</h2>

@@ -120,7 +120,6 @@ export function ChatProvider({ children }) {
             }
 
             const chatData = await response.json();
-            console.log(chatData);
             setChats(chatData);
         };
 
@@ -229,8 +228,6 @@ export function ChatProvider({ children }) {
             };
         });
         
-        console.log(conversation);
-
         // POST /chat/generate with the conversation to get a stream token
         const stream_token_response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/generate/chat/token', {
             method: 'GET',
@@ -264,7 +261,9 @@ export function ChatProvider({ children }) {
         };
         ws.onclose = () => {
             // When the websocket closes, post the message to the backend
+            // Wait a second so that all the connectiosn are rendered
             const postAndReset = async () => {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
                 setGeneratingState(GeneratorStatus.DONE);
             };
             postAndReset();

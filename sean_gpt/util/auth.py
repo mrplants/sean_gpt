@@ -1,3 +1,4 @@
+""" Authentication utilities. """
 from datetime import datetime, timedelta
 import uuid
 
@@ -36,7 +37,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
     Args:
         data (dict): The data to encode into the token.
-        expires_delta (timedelta, optional): The amount of time until the token expires. Defaults to 15 minutes if None.
+        expires_delta (timedelta, optional): The amount of time until the token expires. Defaults to
+            15 minutes if None.
     
     Returns:
         str: The encoded token.

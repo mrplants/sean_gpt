@@ -1,3 +1,4 @@
+""" AI model functions. """
 from sqlmodel import Session, select
 
 from .config import settings

@@ -1,3 +1,5 @@
+""" Deletes a chat from the database. """
+
 from fastapi import APIRouter, Header, HTTPException, status
 from sqlmodel import select
 
@@ -19,7 +21,11 @@ Args:
     session (SessionDep): The database session.
 """)
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
-def delete_chat(*, x_chat_id: str = Header(), current_user: AuthenticatedUserDep, session: SessionDep):
+def delete_chat( # pylint: disable=missing-function-docstring
+    *,
+    x_chat_id: str = Header(),
+    current_user: AuthenticatedUserDep,
+    session: SessionDep):
     chat = session.exec(select(Chat).where(Chat.id == x_chat_id)).first()
     if not chat:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")

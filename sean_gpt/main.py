@@ -1,8 +1,6 @@
 """ Main entrypoint for the Sean GPT API. 
 """
 
-import os
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,12 +14,16 @@ from .routers import generate
 from .routers.user.util import IsVerifiedUserDep
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+async def lifespan(app: FastAPI): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
     create_tables_if_necessary()
     yield
     # Shutdown logic
+# pylint: enable=redefined-outer-name
+# pylint: enable=unused-argument
 
 app = FastAPI(lifespan=lifespan)
 

@@ -1,14 +1,15 @@
+""" User POST routes. """
+from datetime import datetime
 from datetime import timedelta
 from typing import Annotated
 import secrets
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status, Security, Body, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
 from ...config import settings
-from .util import authenticate_user, AuthenticatedUserDep
+from ...util.user import authenticate_user, AuthenticatedUserDep
 from ...util.auth import create_access_token, get_password_hash
 from ...util.describe import describe
 from ...model.authenticated_user import UserRead, AuthenticatedUser, UserCreate
@@ -17,8 +18,8 @@ from ...model.verification_token import VerificationToken
 from ...model.chat import Chat
 from ...model.ai import AI
 from ...ai import default_ai
-from ...database import SessionDep
-from ...sms import TwilioClientDep
+from ...util.database import SessionDep
+from ...util.sms import TwilioClientDep
 
 router = APIRouter(prefix="/user")
 
@@ -33,7 +34,12 @@ Returns:
           UserRead: The user's information.
 """)
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_user(*, user: UserCreate, referral_code: str = Body(), ai:AI = Depends(default_ai), session: SessionDep) -> UserRead:
+def create_user( # pylint: disable=missing-function-docstring
+    *,
+    user: UserCreate,
+    referral_code: str = Body(),
+    ai:AI = Depends(default_ai),
+    session: SessionDep) -> UserRead:
     # Check if the user exists
     select_user = select(AuthenticatedUser).where(AuthenticatedUser.phone == user.phone)
     existing_user = session.exec(select_user).first()
@@ -43,7 +49,8 @@ def create_user(*, user: UserCreate, referral_code: str = Body(), ai:AI = Depend
             detail="Unable to create user:  Phone already exists.",
         )
     # Check if the referral code exists
-    select_referral = select(AuthenticatedUser).where(AuthenticatedUser.referral_code == referral_code)
+    select_referral = (select(AuthenticatedUser)
+                       .where(AuthenticatedUser.referral_code == referral_code))
     existing_referral = session.exec(select_referral).first()
     if not existing_referral:
         raise HTTPException(
@@ -78,7 +85,7 @@ Returns:
     Token: The OAuth2.0 access token.
 """)
 @router.post("/token", response_model=AccessToken)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Security()]):
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Security()]): # pylint: disable=missing-function-docstring
     user = authenticate_user(phone=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(
@@ -94,7 +101,10 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 @describe(""" Requests a verification token be texted to the user's phone. """)
 @router.post("/request_phone_verification")
-def request_phone_verification(session: SessionDep, current_user: AuthenticatedUserDep, sms_client: TwilioClientDep):
+def request_phone_verification( # pylint: disable=missing-function-docstring
+    session: SessionDep,
+    current_user: AuthenticatedUserDep,
+    sms_client: TwilioClientDep):
     session.add(current_user)
     # Check if the user is already verified
     if current_user.is_phone_verified:
@@ -103,10 +113,13 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
             detail="User already verified",
         )
     # Check if the user has an unexpired verification token
-    if current_user.verification_token and current_user.verification_token.expiration > datetime.now().timestamp():
+    if (current_user.verification_token and
+        current_user.verification_token.expiration > datetime.now().timestamp()):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot request another verification code prior to expiration ({settings.jwt_verification_token_expire_minutes} minutes).",
+            detail=(
+                "Cannot request another verification code "
+                f"prior to expiration ({settings.jwt_verification_token_expire_minutes} minutes)."),
         )
     # Generate a verification token
     token_code = secrets.token_urlsafe(8)
@@ -126,7 +139,7 @@ def request_phone_verification(session: SessionDep, current_user: AuthenticatedU
         )
     # Send the verification token to the user
     sms_client.messages.create(
-        body=settings.app_phone_verification_message.format(token_code),
+        body=settings.app_phone_verification_message.format(token_code), # pylint: disable=no-member
         from_=settings.app_phone_number,
         to=current_user.phone,
     )

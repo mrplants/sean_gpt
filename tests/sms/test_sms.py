@@ -1,3 +1,13 @@
+""" Tests for the sms endpoint.
+"""
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 ########
 # /sms #
 ########
@@ -17,7 +27,7 @@
 # endpoints in the service.  While inefficient, it allows us to reuse the code
 # at those endpoints as well as spread out the load a little in the kubernetes
 # cluster.
-# 
+#
 # A user only has one Chat via their phone number.  It uses a reserved chat name
 # that is setup when they create an account.
 # TODO Missing Tests
@@ -34,13 +44,11 @@ from sqlmodel import Session, select
 
 from sean_gpt.util.describe import describe
 from sean_gpt.config import settings
-from sean_gpt.database import get_db_engine
+from sean_gpt.util.database import get_db_engine
 from sean_gpt.model.authenticated_user import AuthenticatedUser
 
-from ..user.fixtures import *
-from ..fixtures import client
-from .util import send_text, parse_twiml_msg
-from ..chat.util import async_create_mock_streaming_openai_api
+from ..util.sms import send_text, parse_twiml_msg
+from ..util.chat import async_create_mock_streaming_openai_api
 
 @describe(
 """ Tests that only Twilio-validated messages receive a valid response.
@@ -50,9 +58,14 @@ Args:
 """)
 def test_twilio_validated(client: TestClient):
     response = send_text(client)
-    assert response.status_code == 200, f"Expected status code 200 for valid Twilio request, got {response.status_code}, response: {response.content}"
+    assert response.status_code == 200, (
+        f"Expected status code 200 for valid Twilio request, got {response.status_code}. "
+        "Response: {response.content}"
+    )
     response = send_text(client, valid=False)
-    assert response.status_code != 200, f"Expected status code other than 200 for invalid Twilio request, got {response.status_code}, response: {response.content}"
+    assert response.status_code != 200, (
+        "Expected status code other than 200 for invalid Twilio request, "
+        f"got {response.status_code}, response: {response.content}")
 
 @describe(
 """ Tests that chat messages are saved.
@@ -83,22 +96,34 @@ def test_messages_saved(verified_new_user: dict, client: TestClient):
               openai_response=outgoing_msg,
               from_number=verified_new_user["phone"])
     # Retrieve the messages in the twilio chat
-    saved_messages = client.get("/chat/message",
-        headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
-        },
-        params={"limit": 5, "offset": 0}).json()
-    # Check that the messages are correct
-    assert saved_messages[0]['role'] == 'user'
-    assert saved_messages[0]['content'] == 'This is an initial message.'
-    assert saved_messages[1]['role'] == 'user'
-    assert saved_messages[1]['content'] == incoming_msg
-    assert saved_messages[2]['role'] == 'assistant'
-    assert saved_messages[2]['content'] == outgoing_msg
+    # The message endpoint retrieve messages one-by-one. You can query the message index with query
+    # param 'chat_index', with zero being the oldest message.
+    saved_messages = []
+    for chat_index in range(3):
+        saved_messages.append(client.get(
+            "/chat/message",
+            headers={
+                "Authorization": f"Bearer {verified_new_user['access_token']}",
+                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            },
+            params={"chat_index": chat_index}).json())
+    # Check that the first message is the incoming message
+    assert saved_messages[1]['role'] == 'user', (
+        f"Expected first message to have role='user', got {saved_messages[0]['role']}"
+    )
+    assert saved_messages[1]['content'] == incoming_msg, (
+        f"Expected first message to be '{incoming_msg}', got {saved_messages[0]['content']}"
+    )
+    # Check that the second message is the outgoing message
+    assert saved_messages[2]['role'] == 'assistant', (
+        f"Expected second message to have role='assistant', got {saved_messages[1]['role']}"
+    )
+    assert saved_messages[2]['content'] == outgoing_msg, (
+        f"Expected second message to be '{outgoing_msg}', got {saved_messages[1]['content']}"
+    )
     # check that only two messages exist
     assert len(saved_messages) == 3, f"Expected only three messages, got {len(saved_messages)}"
-    
+
 @describe(
 """ Tests that all multi-messages contain a redirect and multi-part indication.
 
@@ -137,19 +162,23 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
     assert root.tag == 'Response', f"Expected root element to be 'Response', got {root.tag}"
 
     # Check that the first child element is 'Message'
-    assert root[0].tag == 'Message', f"Expected first child element to be 'Message', got {root[0].tag}"
+    assert root[0].tag == 'Message', (
+        f"Expected first child element to be 'Message', got {root[0].tag}")
 
     # Check that the text of the 'Message' element is the outgoing message
     # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis emoji appended.
     expected_message = outgoing_msg[:settings.app_max_sms_characters-1] + '…'
-    assert root[0].text == expected_message, f"Expected first child element text to be '{expected_message}', got {root[0].text}"
+    assert root[0].text == expected_message, (
+        f"Expected first child element text to be '{expected_message}', got {root[0].text}")
 
     # Check that the second child element is 'Redirect'
-    assert root[1].tag == 'Redirect', f"Expected second child element to be 'Redirect', got {root[1].tag}"
+    assert root[1].tag == 'Redirect', (
+        f"Expected second child element to be 'Redirect', got {root[1].tag}")
 
     # Check that the text of the 'Redirect' element is the SMS endpoint
-    assert root[1].text == './', f"Expected second child element text to be './', got {root[1].text}"
+    assert root[1].text == './', (
+        f"Expected second child element text to be './', got {root[1].text}")
 
     # Check that there are no more child elements
     assert len(root) == 2, f"Expected only two child elements, got {len(root)}"
@@ -172,7 +201,8 @@ def test_phone_verified(new_user: dict, client: TestClient):
             "Authorization": f"Bearer {new_user['access_token']}"
         }).json()
     # Check that the user is phone verified
-    assert user["is_phone_verified"], f"Expected user to be phone verified, got {user['is_phone_verified']}"
+    assert user["is_phone_verified"], (
+        f"Expected user to be phone verified, got {user['is_phone_verified']}")
 
 @describe(
 """ Tests that an account is created for new users with valid referral codes.
@@ -193,14 +223,19 @@ def test_account_created(referral_code:str, client: TestClient):
     # Instead of the simulated response, we should see the welcome message
     # This is a twiml response, so we need to parse it
     # Check that the text of the 'Message' element is the welcome message
-    assert parse_twiml_msg(response) == settings.app_welcome_message, f"Expected message response to be '{settings.app_welcome_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_welcome_message, (
+        f"Expected message response to be '{settings.app_welcome_message}', "
+        f"got {parse_twiml_msg(response)}")
     # Now we need to check that the database has the new user
     # We cannot do this via the endpoint because the user has no credentials yet
     # Instead, we will check the database directly
     # Retrieve the user
     db_engine = get_db_engine()
     with Session(db_engine) as session:
-        user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.phone == random_phone_number)).first()
+        user = (session
+                .exec(select(AuthenticatedUser)
+                      .where(AuthenticatedUser.phone == random_phone_number))
+                .first())
     assert user is not None, 'User not created after valid referral.'
     assert user.is_phone_verified, 'User should be phone verified.'
     assert user.hashed_password == "", 'User should have no password hash.'
@@ -220,11 +255,14 @@ def test_account_not_created(client: TestClient):
                          from_number=random_phone_number,
                          body='user does not have a referral code')
     # Check that the text of the 'Message' element is the referral message
-    assert parse_twiml_msg(response) == settings.app_request_referral_message, f"Expected message response to be '{settings.app_request_referral_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_request_referral_message, (
+        f"Expected message response to be '{settings.app_request_referral_message}', "
+        "got {parse_twiml_msg(response)}")
     # Retrieve the user
     db_engine = get_db_engine()
     with Session(db_engine) as session:
-        user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.phone == random_phone_number)).first()
+        user = session.exec(select(AuthenticatedUser)
+                            .where(AuthenticatedUser.phone == random_phone_number)).first()
     assert user is None, 'User created after invalid referral.'
 
 @describe(
@@ -247,15 +285,19 @@ def test_system_message(verified_new_user: dict, client: TestClient):
         })
     # Send a text to the endpoint
     # Use our own patch for the openai endpoint so we can retrieve the system message
-    with patch('openai.resources.chat.AsyncCompletions.create', new_callable=Mock) as mock_openai_api:
-        mock_openai_api.side_effect = async_create_mock_streaming_openai_api("assistant message response", delay=0.001)
+    with patch('openai.resources.chat.AsyncCompletions.create',
+               new_callable=Mock) as mock_openai_api:
+        mock_openai_api.side_effect = (
+            async_create_mock_streaming_openai_api("assistant message response", delay=0.001))
         send_text(client, from_number=verified_new_user["phone"], patch_openai_api=False)
         # Check that the correct system message was sent to the openai endpoint
         # The first message is the system message.
         # Check that it has role=system and content=settings.twilio_system_message
         system_message = mock_openai_api.call_args.kwargs['messages'][0]
-        assert system_message['role'] == 'system', f"Expected system message to have role='system', got {system_message['role']}"
-        assert system_message['content'] == settings.app_ai_system_message, f"Expected system message to be the system message, got {system_message['content']}"
+        assert system_message['role'] == 'system', (
+            f"Expected system message to have role='system', got {system_message['role']}")
+        assert system_message['content'] == settings.app_ai_system_message, (
+            f"Expected system message to be the system message, got {system_message['content']}")
 
 @describe(
 """ Tests that interrupted multi-message responses stop sending messages.
@@ -307,20 +349,44 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     # - The first message from the user
     # - The interruption message from the user
     # - The interruption response from the assistant
-    twilio_chat_messages = client.get(
-        "/chat/message",
+    twilio_chat_messages = []
+    len_twilio_chat_messages = client.get(
+        "/chat/message/len",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}",
             "X-Chat-ID": verified_new_user["twilio_chat_id"]
-        },
-        params={"limit": 10, "offset": 0}).json()
-    assert len(twilio_chat_messages) == 4, f"Expected 4 messages in the twilio chat, got {len(twilio_chat_messages)}"
-    assert twilio_chat_messages[1]['role'] == 'user', f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}"
-    assert twilio_chat_messages[1]['content'] == "This is an initial message.", f"Expected first message to be 'This is an initial message.', got {twilio_chat_messages[0]['content']}"
-    assert twilio_chat_messages[2]['role'] == 'user', f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}"
-    assert twilio_chat_messages[2]['content'] == "This is an interruption message.", f"Expected second message to be 'This is an interruption message.', got {twilio_chat_messages[1]['content']}"
-    assert twilio_chat_messages[3]['role'] == 'assistant', f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}"
-    assert twilio_chat_messages[3]['content'] == "This is the response to the interruption message.", f"Expected third message to be 'This is the response to the interruption message.', got {twilio_chat_messages[2]['content']}"     
+        }).json()['len']
+    for chat_index in range(len_twilio_chat_messages):
+        twilio_chat_messages.append(client.get(
+            "/chat/message",
+            headers={
+                "Authorization": f"Bearer {verified_new_user['access_token']}",
+                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            },
+            params={"chat_index": chat_index}).json())
+    assert len(twilio_chat_messages) == 4, (
+        f"Expected only four messages, got {len(twilio_chat_messages)}")
+    assert twilio_chat_messages[0]['role'] == 'user', (
+        f"Expected first message to have role='user', got {twilio_chat_messages[0]['role']}")
+    assert twilio_chat_messages[0]['content'] == "First message to ignore welcome message.", (
+        f"Expected first message to be 'First message to ignore welcome message.', "
+        f"got {twilio_chat_messages[0]['content']}")
+    assert twilio_chat_messages[1]['role'] == 'user', (
+        f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}")
+    assert twilio_chat_messages[1]['content'] == "This is an initial message.", (
+        f"Expected second message to be 'This is an initial message.', "
+        f"got {twilio_chat_messages[1]['content']}")
+    assert twilio_chat_messages[2]['role'] == 'user', (
+        f"Expected second message to have role='user', got {twilio_chat_messages[1]['role']}")
+    assert twilio_chat_messages[2]['content'] == "This is an interruption message.", (
+        f"Expected second message to be 'This is an interruption message.', "
+        f"got {twilio_chat_messages[1]['content']}")
+    assert twilio_chat_messages[3]['role'] == 'assistant', (
+        f"Expected third message to have role='assistant', got {twilio_chat_messages[2]['role']}")
+    assert (twilio_chat_messages[3]['content'] ==
+            "This is the response to the interruption message."), (
+                f"Expected third message to be 'This is the response to the interruption message.',"
+                f" got {twilio_chat_messages[2]['content']}")
 
 @describe(
 """ Tests that only SMS is supported.
@@ -336,7 +402,9 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
                          body="This is a test message.")
     # The response should be a valid twiml message saying that only SMS is
     # supported.
-    assert parse_twiml_msg(response) == settings.app_no_whatsapp_message, f"Expected message response to be '{settings.app_no_whatsapp_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_no_whatsapp_message, (
+        f"Expected message response to be '{settings.app_no_whatsapp_message}', "
+        f"got {parse_twiml_msg(response)}")
     # Send a text to the endpoint (MMS)
     response = send_text(client,
                          from_number=verified_new_user["phone"],
@@ -344,7 +412,9 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
                          num_media=1)
     # The response should be a valid twiml message saying that only SMS is
     # supported.
-    assert parse_twiml_msg(response) == settings.app_no_mms_message, f"Expected message response to be '{settings.app_no_mms_message}', got {parse_twiml_msg(response)}"
+    assert parse_twiml_msg(response) == settings.app_no_mms_message, (
+        f"Expected message response to be '{settings.app_no_mms_message}', "
+        f"got {parse_twiml_msg(response)}")
 
 @describe(
 """ Tests that the follow-on messages work.
@@ -393,23 +463,31 @@ def test_followon_messages(verified_new_user: dict, client: TestClient):
         response_msg = parse_twiml_msg(response)
         # For the first message, check that it ends with an ellipsis but does not start with one
         if msg_index == 0:
-            assert response_msg.endswith('…'), f"Expected message response to end with '…', got {response_msg}"
-            assert not response_msg.startswith('…'), f"Expected message response to not start with '…', got {response_msg}"
+            assert response_msg.endswith('…'), (
+                f"Expected message response to end with '…', got {response_msg}")
+            assert not response_msg.startswith('…'), (
+                f"Expected message response to not start with '…', got {response_msg}")
         # For the middle messages, check that it starts and ends with an ellipsis
         elif msg_index < len(assistant_responses) - 1:
-            assert response_msg.startswith('…'), f"Expected message response to start with '…', got {response_msg}"
-            assert response_msg.endswith('…'), f"Expected message response to end with '…', got {response_msg}"
+            assert response_msg.startswith('…'), (
+                f"Expected message response to start with '…', got {response_msg}")
+            assert response_msg.endswith('…'), (
+                f"Expected message response to end with '…', got {response_msg}")
         # For the last message, check that it starts with, but does not end with an ellipsis
         else:
-            assert response_msg.startswith('…'), f"Expected message response to start with '…', got {response_msg}"
-            assert not response_msg.endswith('…'), f"Expected message response to not end with '…', got {response_msg}"
+            assert response_msg.startswith('…'), (
+                f"Expected message response to start with '…', got {response_msg}")
+            assert not response_msg.endswith('…'), (
+                f"Expected message response to not end with '…', got {response_msg}")
         # Only check for redirects if this is not the last message
         if msg_index < len(assistant_responses) - 1:
             # Parse the XML response
             root = ET.fromstring(response.content)
             # Check that the second child element is 'Redirect'
-            assert root[1].tag == 'Redirect', f"Expected second child element to be 'Redirect', got {root[1].tag}"
+            assert root[1].tag == 'Redirect', (
+                f"Expected second child element to be 'Redirect', got {root[1].tag}")
             # Check that the text of the 'Redirect' element is the SMS endpoint
-            assert root[1].text == './', f"Expected second child element text to be './', got {root[1].text}"
+            assert root[1].text == './', (
+                f"Expected second child element text to be './', got {root[1].text}")
             # Check that there are no more child elements
             assert len(root) == 2, f"Expected only two child elements, got {len(root)}"

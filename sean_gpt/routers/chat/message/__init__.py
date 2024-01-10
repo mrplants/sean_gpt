@@ -1,6 +1,8 @@
+""" Chat Message Router
+"""
 from fastapi import APIRouter
 
-from . import get, post, next
+from . import get, post
 
 router = APIRouter(
     tags=["Chat Completion"],
@@ -8,5 +10,3 @@ router = APIRouter(
 
 router.include_router(get.router)
 router.include_router(post.router)
-
-router.include_router(next.router, prefix="/message")

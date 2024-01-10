@@ -1,7 +1,9 @@
+""" This module contains functions for loading environment variables from a YAML file. """
 from typing import List
 import os
-import yaml
 import logging
+
+import yaml
 
 def yaml_env(yaml_file_path:str, drill_down_path: List[str]=None, prefix:str = "") -> None:
     """ Loads environment variables from a YAML file.
@@ -22,10 +24,10 @@ def yaml_env(yaml_file_path:str, drill_down_path: List[str]=None, prefix:str = "
     """
     # if the file does not exist, do nothing
     if not os.path.exists(yaml_file_path):
-        logging.info(f"YAML file {yaml_file_path} does not exist.")
+        logging.info("YAML file %s does not exist.", yaml_file_path)
         return
-    with open(yaml_file_path, 'r') as f:
-        logging.info(f"Loading ENV from YAML file {yaml_file_path}.")
+    with open(yaml_file_path, 'r', encoding='utf-8') as f:
+        logging.info("Loading ENV from YAML file %s.", yaml_file_path)
         data = yaml.safe_load(f)
 
     if drill_down_path:
@@ -33,7 +35,8 @@ def yaml_env(yaml_file_path:str, drill_down_path: List[str]=None, prefix:str = "
             data = data.get(path, {})
     # raise an error if the drill-down path does not exist
     if not data:
-        raise ValueError(f"Drill-down path {drill_down_path} does not exist in YAML file {yaml_file_path}.")
+        raise ValueError(
+            f"Drill-down path {drill_down_path} does not exist in YAML file {yaml_file_path}.")
 
     # This could contain multi-level values, so use DFS and create a new env var
     # for each leaf node

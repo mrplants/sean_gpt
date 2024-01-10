@@ -1,3 +1,4 @@
+""" Twilio webhook endpoint """
 import uuid
 
 from fastapi import APIRouter
@@ -6,7 +7,7 @@ from sqlmodel import select
 from openai import AsyncOpenAI
 import twilio.twiml.messaging_response as twiml
 
-from ...database import SessionDep, RedisConnectionDep
+from ...util.database import SessionDep, RedisConnectionDep
 from ...model.twilio_message import TwilioMessage
 from ...model.chat import Chat
 from ...model.message import Message
@@ -30,7 +31,7 @@ Returns:
     TwiML.  The TwiML response.
 """)
 @router.post("")
-async def twilio_webhook(
+async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements
     incoming_message: TwilioMessage,
     current_user: TwilioGetUserDep,
     session: SessionDep,
@@ -95,9 +96,14 @@ async def twilio_webhook(
     }
     # Retrieve the last X messages from the chat, in ascending order of chat_index
     # X = settings.app_chat_history_length
-    messages = session.exec(select(Message).where(Message.chat_id == twilio_chat.id).order_by(Message.chat_index.desc()).limit(settings.app_chat_history_length-1)).all()
+    messages = (session
+                .exec(select(Message)
+                      .where(Message.chat_id == twilio_chat.id)
+                      .order_by(Message.chat_index.desc()) # pylint: disable=no-member
+                      .limit(settings.app_chat_history_length-1)).all())
     # Put them in openai format, prepend the system message
-    openai_messages = [openai_system_message] + [{"role": msg.role.value, "content": msg.content} for msg in messages][::-1]
+    openai_messages = ([openai_system_message] +
+                       [{"role": msg.role.value, "content": msg.content} for msg in messages][::-1])
     # TODO: Incorporate different AI agents
     response_stream = await openai_client.chat.completions.create(
         model="gpt-4-1106-preview",
@@ -105,11 +111,11 @@ async def twilio_webhook(
         stream=True,
     )
     # Create the partial_response
-    print(f'message with SID: {incoming_message.message_sid}')
     if await redis_conn.get(f'multi-part message with SID: {incoming_message.message_sid}'):
         print("multi-part message detected")
         print(incoming_message.body)
-    partial_response = "…" if await redis_conn.get(f'multi-part message with SID: {incoming_message.message_sid}') else ""
+    partial_response = "…" if await redis_conn.get(
+        f'multi-part message with SID: {incoming_message.message_sid}') else ""
     requires_redirect = False
     async for chunk in response_stream:
         # Check the interrupt channel for interrupts
@@ -122,10 +128,13 @@ async def twilio_webhook(
         partial_response += chunk.choices[0].delta.content or ""
         # Check if the partial response is over the character limit
         if len(partial_response) > settings.app_max_sms_characters:
-            # Break at the character limit, add an ellipsis emoji, and stop streaming.  Return the message.
+            # Break at the character limit, add an ellipsis emoji, and stop streaming.
+            # Return the message.
             partial_response = partial_response[:settings.app_max_sms_characters-1] + "…"
             requires_redirect = True
-            await redis_conn.set(f'multi-part message with SID: {incoming_message.message_sid}', 'True', ex=60)
+            await redis_conn.set(f'multi-part message with SID: {incoming_message.message_sid}',
+                                 'True',
+                                 ex=60)
             break
         # Check if the partial response has a message break
         if "|" in partial_response:

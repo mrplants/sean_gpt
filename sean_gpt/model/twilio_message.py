@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+""" Twilio Message Model """
 from typing import Optional, List
+from pydantic import BaseModel, Field
 
 class TwilioMessage(BaseModel):
     """

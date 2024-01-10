@@ -1,3 +1,14 @@
+""" Tests for the /chat endpoint.
+"""
+
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 #########
 # /chat #
 #########
@@ -17,12 +28,16 @@
 # - is_assistant_responding = True
 # - is_assistant_responding = False
 
+
+# TODO: Make it so that backend does not allow deleting phone chat.
+
+import random
+
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
 
-from ..user.fixtures import *
-from ..fixtures import *
+from ..util.check_routes import check_verified_route
 
 @describe(
 """ Test that a user can create a chat. 
@@ -52,13 +67,14 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     #     "assistant_id": "...",
     # }   "is_assistant_responding": false
     # }
-    assert chat_response_1.status_code == 201, f'incorrect status code: {chat_response_1.status_code}, response: {chat_response_1.json()}'
+    assert chat_response_1.status_code == 201, (
+        f'incorrect status code: {chat_response_1.status_code}, response: {chat_response_1.json()}')
     assert chat_response_1.headers["content-type"] == "application/json"
     assert chat_response_1.json()["name"] == test_chat_name
-    assert type(chat_response_1.json()["id"]) == str
+    assert isinstance(chat_response_1.json()["id"], str)
     assert chat_response_1.json()["user_id"] == verified_new_user["id"]
-    assert type(chat_response_1.json()["assistant_id"]) == str
-    assert chat_response_1.json()["is_assistant_responding"] == False
+    assert isinstance(chat_response_1.json()["assistant_id"], str)
+    assert not chat_response_1.json()["is_assistant_responding"]
 
     # Create a chat without a name.
     chat_response_2 = client.post("/chat", json={}, headers={
@@ -74,13 +90,14 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     #     "assistant_id": "...",
     #     "is_assistant_responding": false
     # }
-    assert chat_response_2.status_code == 201, f'incorrect status code: {chat_response_2.status_code}, response: {chat_response_2.json()}'
+    assert chat_response_2.status_code == 201, (
+        f'incorrect status code: {chat_response_2.status_code}, response: {chat_response_2.json()}')
     assert chat_response_2.headers["content-type"] == "application/json"
     assert chat_response_2.json()["name"] == ""
-    assert type(chat_response_2.json()["id"]) == str
+    assert isinstance(chat_response_2.json()["id"], str)
     assert chat_response_2.json()["user_id"] == verified_new_user["id"]
-    assert type(chat_response_2.json()["assistant_id"]) == str
-    assert chat_response_2.json()["is_assistant_responding"] == False
+    assert isinstance(chat_response_2.json()["assistant_id"], str)
+    assert not chat_response_2.json()["is_assistant_responding"]
 
     # Check that both chats appears in the list of chats for the user.
     response_list = client.get("/chat", headers={
@@ -98,7 +115,8 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     #         "is_assistant_responding": false
     #     },...
     # ]
-    assert response_list.status_code == 200, f'incorrect status code: {response_list.status_code}, response: {response_list.json()}'
+    assert response_list.status_code == 200, (
+        f'incorrect status code: {response_list.status_code}, response: {response_list.json()}')
     assert response_list.headers["content-type"] == "application/json"
     assert chat_response_1.json() in response_list.json()
     assert chat_response_2.json() in response_list.json()
@@ -118,7 +136,8 @@ def test_delete_chat(verified_new_user: dict, client: TestClient):
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.status_code == 201, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 201, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Delete the chat.
     delete_response = client.delete("/chat", headers={
@@ -127,13 +146,14 @@ def test_delete_chat(verified_new_user: dict, client: TestClient):
     })
     # The response should be:
     # HTTP/1.1 204 No Content
-    assert delete_response.status_code == 204, f'incorrect status code: {delete_response.status_code}, response: {delete_response.json()}'
+    assert delete_response.status_code == 204, (
+        f'incorrect status code: {delete_response.status_code}, response: {delete_response.json()}')
 
     # Check that the chat no longer appears in the list of chats for the user.
     response_list = client.get("/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.json() not in response_list.json()        
+    assert chat_response.json() not in response_list.json()
 
 @describe(
 """ Test that a user cannot delete a chat that does not belong to them.
@@ -151,7 +171,8 @@ def test_delete_other_chat(admin_user: dict, verified_new_user: dict, client: Te
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.status_code == 201, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 201, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Delete the chat as the admin user.
     delete_response = client.delete("/chat", headers={
@@ -164,7 +185,8 @@ def test_delete_other_chat(admin_user: dict, verified_new_user: dict, client: Te
     # {
     #     "detail": "Chat not found"
     # }
-    assert delete_response.status_code == 404, f'incorrect status code: {delete_response.status_code}, response: {delete_response.json()}'
+    assert delete_response.status_code == 404, (
+        f'incorrect status code: {delete_response.status_code}, response: {delete_response.json()}')
     assert delete_response.headers["content-type"] == "application/json"
     assert delete_response.json()["detail"] == "Chat not found"
 
@@ -189,7 +211,8 @@ def test_get_chat_list(verified_new_user: dict, client: TestClient):
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.status_code == 201, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 201, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Check that the chat appears in the list of chats for the user.
     response_list = client.get("/chat", headers={
@@ -207,7 +230,8 @@ def test_get_chat_list(verified_new_user: dict, client: TestClient):
     #         "is_assistant_responding": false
     #     },...
     # ]
-    assert response_list.status_code == 200, f'incorrect status code: {response_list.status_code}, response: {response_list.json()}'
+    assert response_list.status_code == 200, (
+        f'incorrect status code: {response_list.status_code}, response: {response_list.json()}')
     assert response_list.headers["content-type"] == "application/json"
     assert chat_response.json() in response_list.json()
 
@@ -267,7 +291,8 @@ def test_modify_nonexistent_chat(verified_new_user: dict, client: TestClient):
     })
     # The response should be:
     # HTTP/1.1 422 Unprocessable Entity
-    assert chat_response.status_code == 422, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 422, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Test that a chat cannot be updated if the chat id is invalid.
     chat_response = client.put("/chat", json={
@@ -282,7 +307,8 @@ def test_modify_nonexistent_chat(verified_new_user: dict, client: TestClient):
     # {
     #     "detail": "Chat not found"
     # }
-    assert chat_response.status_code == 404, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 404, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
     assert chat_response.headers["content-type"] == "application/json"
     assert chat_response.json()["detail"] == "Chat not found"
 
@@ -303,7 +329,8 @@ def test_update_chat(verified_new_user: dict, client: TestClient):
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.status_code == 201, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 201, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Update the chat name.
     new_test_chat_name = f"test{random.randint(0, 1000000)}"
@@ -315,7 +342,8 @@ def test_update_chat(verified_new_user: dict, client: TestClient):
     })
     # The response should be:
     # HTTP/1.1 204 No Content
-    assert chat_response.status_code == 204, f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}'
+    assert chat_response.status_code == 204, (
+        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
@@ -335,6 +363,11 @@ def test_verified_authorized_routes(verified_new_user: dict, client: TestClient)
         "X-Chat-ID": chat["id"]
     })
     # Now check the DELETE route
-    check_verified_route("DELETE", "/chat", verified_user=verified_new_user, client=client, headers={
-        "X-Chat-ID": chat["id"]
-    })
+    check_verified_route(
+        "DELETE",
+        "/chat",
+        verified_user=verified_new_user,
+        client=client,
+        headers={
+            "X-Chat-ID": chat["id"]
+        })

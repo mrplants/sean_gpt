@@ -1,5 +1,15 @@
+""" Tests the /user endpoint.
+"""
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 ##########
-# /user/ #
+# /user #
 ##########
 # POST (protected):  Create a user
 # GET (protected):  Get a user's info
@@ -12,12 +22,13 @@
 # - Test that a user with a temporary password is prompted to reset their password.
 # - Test that SQL injection is not possible.
 
+import random
+
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
 
-from .fixtures import *
-from ..fixtures import *
+from ..util.check_routes import check_authorized_route
 
 @describe(""" Test that a new account can be created. """)
 def test_new_account_creation(admin_user: dict, client: TestClient):
@@ -47,11 +58,11 @@ def test_new_account_creation(admin_user: dict, client: TestClient):
     # "is_phone_verified": false
     # }
     assert response.status_code == 201
-    assert response.headers["content-type"] == "application/json"
-    assert type(response.json()["id"]) == str
+    assert response.headers["content-type"] == "application/json", "Response should be JSON."
+    assert isinstance(response.json()["id"], str), "User id should be a string."
     assert response.json()["phone"] == test_new_user_phone
     assert response.json()["referrer_user_id"] == admin_user_id
-    assert response.json()["is_phone_verified"] == False
+    assert not response.json()["is_phone_verified"]
 
 @describe(""" Test that a new account cannot be created with an incorrect referral code. """)
 def test_new_account_creation_incorrect_referral_code(client: TestClient):
@@ -135,7 +146,7 @@ def test_get_user_info(new_user: dict, client: TestClient):
     assert response.json()["id"] == new_user["id"]
     assert response.json()["phone"] == new_user["phone"]
     assert response.json()["referrer_user_id"] == new_user["referrer_user_id"]
-    assert response.json()["is_phone_verified"] == False
+    assert not response.json()["is_phone_verified"]
 
 @describe(""" Test that a user's account can be deleted. """)
 def test_delete_user(verified_new_user: dict, client: TestClient):
@@ -163,7 +174,10 @@ def test_delete_user(verified_new_user: dict, client: TestClient):
     assert response.json()["detail"] == "Could not validate credentials"
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(referral_code: str, verified_new_user: dict, client: TestClient):
+def test_verified_authorized_routes(
+    referral_code: str,
+    verified_new_user: dict,
+    client: TestClient):
     check_authorized_route("POST", "/user", json={
         "user": {
             "phone": f"+{random.randint(10000000000, 20000000000)}",
@@ -173,4 +187,3 @@ def test_verified_authorized_routes(referral_code: str, verified_new_user: dict,
     }, authorized_user=verified_new_user, client=client)
     check_authorized_route("GET", "/user", authorized_user=verified_new_user, client=client)
     check_authorized_route("DELETE", "/user", authorized_user=verified_new_user, client=client)
-

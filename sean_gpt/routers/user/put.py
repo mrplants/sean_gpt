@@ -1,4 +1,4 @@
-from typing import Annotated
+""" Defines the PUT method for the /user endpoint. """
 from datetime import datetime
 
 from fastapi import APIRouter, status, HTTPException, Body
@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from ...util.describe import describe
-from .util import AuthenticatedUserDep
+from ...util.user import AuthenticatedUserDep
 from ...util.auth import verify_password, get_password_hash
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.authenticated_user import AuthenticatedUser
 
 router = APIRouter(prefix="/user")
 
 class PasswordChangeRequest(BaseModel):
+    """ The parameters for changing a user's password. """
     old_password: str
     new_password: str
 
@@ -28,7 +29,7 @@ Args:
     old_password (str): The old password.
 """)
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
-def change_password(
+def change_password( # pylint: disable=missing-function-docstring
     change_request: PasswordChangeRequest,
     current_user: AuthenticatedUserDep,
     session: SessionDep
@@ -47,7 +48,8 @@ def change_password(
     current_user.hashed_password = new_password_hash
     session.add(current_user)
     session.commit()
-    check_current_user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.id == current_user.id)).first()
+    check_current_user = session.exec(select(AuthenticatedUser)
+                                      .where(AuthenticatedUser.id == current_user.id)).first()
     # Check that the password has been changed
     if check_current_user.hashed_password != new_password_hash:
         check_current_user.hashed_password = old_password_hash
@@ -68,7 +70,7 @@ Args:
     phone_verification_code (str): The verification code.
 """)
 @router.put("/is_phone_verified", status_code=status.HTTP_204_NO_CONTENT)
-def verify_phone(*,
+def verify_phone(*, # pylint: disable=missing-function-docstring
     phone_verification_code: str = Body(embed=True),
     current_user: AuthenticatedUserDep,
     session: SessionDep
@@ -82,7 +84,6 @@ def verify_phone(*,
             detail="Unable to verify phone:  Invalid verification code."
         )
     # Check the verification code using the cryptographic hash comparison function
-    print(f'current_user.verification_token: {current_user.verification_token}')
     if not verify_password(phone_verification_code, current_user.verification_token.code_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -98,8 +99,9 @@ def verify_phone(*,
     current_user.is_phone_verified = True
     session.commit()
     # Check that the phone verification status has been changed
-    check_current_user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.id == current_user.id)).first()
-    if check_current_user.is_phone_verified != True:
+    check_current_user = session.exec(select(AuthenticatedUser)
+                                      .where(AuthenticatedUser.id == current_user.id)).first()
+    if not check_current_user.is_phone_verified:
         check_current_user.is_phone_verified = False
         session.add(check_current_user)
         session.commit()

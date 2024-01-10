@@ -1,27 +1,29 @@
 """ Main entrypoint for the Sean GPT API. 
 """
 
-import os
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_tables_if_necessary, reset_db_connection
+from .util.database import create_tables_if_necessary, reset_db_connection
 from .routers import chat
 from .routers import user
 from .routers import twilio
-from .routers.user.util import IsVerifiedUserDep
-from fastapi.middleware.cors import CORSMiddleware
+from .routers import generate
+from .util.user import IsVerifiedUserDep
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+async def lifespan(app: FastAPI): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
     create_tables_if_necessary()
     yield
     # Shutdown logic
+# pylint: enable=redefined-outer-name
+# pylint: enable=unused-argument
 
 app = FastAPI(lifespan=lifespan)
 
@@ -41,3 +43,4 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(chat.router, dependencies=[IsVerifiedUserDep])
 app.include_router(twilio.router)
+app.include_router(generate.router)

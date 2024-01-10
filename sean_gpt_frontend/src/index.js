@@ -10,6 +10,7 @@ import { Toaster } from 'react-hot-toast';
 
 import './index.css';
 import { AuthProvider } from './services/authService';
+import { ChatProvider } from './services/chatService';
 
 import Root from './routes/Root';
 import Home from './routes/Home';
@@ -38,9 +39,11 @@ const router = createBrowserRouter(
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthProvider>      
-      <RouterProvider router={router} />
-      <Toaster />
+    <AuthProvider>   
+      <ChatProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </ChatProvider>
     </AuthProvider>
   </React.StrictMode>
 );

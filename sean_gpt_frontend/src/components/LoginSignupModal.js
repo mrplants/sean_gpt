@@ -1,37 +1,15 @@
-import { useState, forwardRef, useImperativeHandle } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import PhoneNumberInput from './PhoneNumberInput';
 import { useAuthService } from '../services/authService';
 
-const Login = forwardRef(({ onLogin }, ref) => {
+function Login({ isOpen, setIsOpen }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignupForm, setIsSignupForm] = useState(false);
   const { attemptLogin } = useAuthService();
-
-  const openModal = () => {
-    setIsModalOpen(true);
-    const modal = document.getElementById('login_modal');
-    if (modal && modal.showModal) {
-      modal.showModal();
-    }
-};
-
-  const closeModal = () => {
-    const modal = document.getElementById('login_modal');
-    if (modal && modal.close) {
-      modal.close();
-    }
-  setIsModalOpen(false);
-  };
-
-  useImperativeHandle(ref, () => ({
-    openModal,
-    closeModal
-  }));
 
   const loginFormSubmit = async (event) => {
     event.preventDefault();
@@ -39,10 +17,7 @@ const Login = forwardRef(({ onLogin }, ref) => {
     try {
       await attemptLogin(username, password);
       // Close the modal if login is successful
-      const modal = document.getElementById('login_modal');
-      if (modal && modal.close) {
-        modal.close();
-      }
+      setIsOpen(false);
     } catch (error) {
       setUsername('');
       setPassword('');
@@ -86,7 +61,7 @@ const Login = forwardRef(({ onLogin }, ref) => {
         // const data = await response.json();
         // Handle successful account creation, e.g., updating the UI or redirecting
         toast.success('Account created successfully!');
-        closeModal(); // Close the modal on successful account creation
+        setIsOpen(false); // Close the modal on successful account creation
         loginFormSubmit(event);
       } else {
         // Handle errors, e.g., displaying a message to the user
@@ -102,10 +77,10 @@ const Login = forwardRef(({ onLogin }, ref) => {
   };
 
   return (
-  <dialog id="login_modal" className="modal modal-bottom sm:modal-middle">
+  <dialog id="login_modal" className={`modal modal-bottom sm:modal-middle ${isOpen ? 'modal-open': ''}`}>
     <div className="modal-box">
       <div className="max-w-md">
-        {isModalOpen &&
+        {isOpen &&
         <form className="card-body" onSubmit={isSignupForm ? createAccount : loginFormSubmit}>
           <div className="form-control">
             <label className="label">
@@ -162,10 +137,10 @@ const Login = forwardRef(({ onLogin }, ref) => {
       </div>
     </div>
     <form method="dialog" className="modal-backdrop">
-      <button>close</button>
+      <button onClick={() => setIsOpen(false)}>close</button>
     </form>
   </dialog>
   );
-});
+};
 
 export default Login;

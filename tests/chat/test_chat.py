@@ -28,6 +28,9 @@
 # - is_assistant_responding = True
 # - is_assistant_responding = False
 
+
+# TODO: Make it so that backend does not allow deleting phone chat.
+
 import random
 
 from fastapi.testclient import TestClient

@@ -45,7 +45,6 @@ async def generate_chat_stream(
     #  }
     # Put the websocket in a try block to catch any disconnect exceptions
     try:
-
         message = await websocket.receive_json()
         if message['action'] != 'chat_completion':
             raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)

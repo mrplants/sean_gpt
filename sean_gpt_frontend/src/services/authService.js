@@ -37,7 +37,6 @@ export function useAuthService() {
  * @param {React.ReactNode} props.children - The children nodes.
  */
 export function AuthProvider({ children }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authToken, setAuthToken] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -55,7 +54,6 @@ export function AuthProvider({ children }) {
         if (!response.ok) {
           // Remove the token from local storage if it is invalid
           localStorage.removeItem(TOKEN_KEY);
-          setIsLoggedIn(false);
           setAuthToken(null);
           return;
         }
@@ -63,7 +61,6 @@ export function AuthProvider({ children }) {
         const userData = await response.json();
         setUser(userData);
   
-        setIsLoggedIn(true);
         setAuthToken(token);
       }
     };
@@ -91,8 +88,6 @@ export function AuthProvider({ children }) {
 
       const data = await response.json();
       localStorage.setItem(TOKEN_KEY, data.access_token);
-      setAuthToken(data.access_token);
-      toast.success('Login successful');
 
       const user_response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user', {
         method: 'GET',
@@ -102,7 +97,8 @@ export function AuthProvider({ children }) {
       });
       const userData = await user_response.json();
       setUser(userData);
-      setIsLoggedIn(true);
+      setAuthToken(data.access_token);
+      toast.success('Login successful');
   } catch (error) {
       console.error('Login attempt failed:', error);
       throw error;
@@ -111,14 +107,17 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
-    setIsLoggedIn(false);
+    if (!authToken) {
+      setUser(null);
+      return;
+    }
     setAuthToken(null);
     setUser(null);
     toast.success('Logout successful');
   };
 
   return (
-    <AuthContext.Provider value={{ attemptLogin, logout, isLoggedIn, authToken, user }}>
+    <AuthContext.Provider value={{ attemptLogin, logout, authToken, user }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,14 +6,14 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import create_tables_if_necessary, reset_db_connection
 from .routers import chat
 from .routers import user
 from .routers import twilio
+from .routers import generate
 from .routers.user.util import IsVerifiedUserDep
-from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,3 +41,4 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(chat.router, dependencies=[IsVerifiedUserDep])
 app.include_router(twilio.router)
+app.include_router(generate.router)

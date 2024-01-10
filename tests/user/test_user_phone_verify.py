@@ -1,3 +1,15 @@
+""" Tests for the /user/request_phone_verification route.
+"""
+
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+# pylint: disable=no-member
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 ####################################
 # /user/request_phone_verification #
 ####################################
@@ -8,18 +20,28 @@
 ############################
 # PUT (protected):  Verify a user's phone
 
+import re
+from unittest.mock import Mock
+
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
+from sean_gpt.config import settings
 
-from .fixtures import *
-from ..fixtures import *
+from ..util.check_routes import check_authorized_route
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(mock_twilio_sms_create: Mock, new_user: dict, client: TestClient):
-    check_authorized_route("POST", "/user/request_phone_verification", authorized_user=new_user, client=client)
+def test_verified_authorized_routes(mock_twilio_sms_create: Mock,
+                                    new_user: dict,
+                                    client: TestClient):
+    check_authorized_route("POST",
+                           "/user/request_phone_verification",
+                           authorized_user=new_user,
+                           client=client)
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
-    code_message_regex = settings.app_phone_verification_message.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = (settings.app_phone_verification_message
+                          .format('(\\S+)')
+                          .replace('.', '\\.'))
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
     check_authorized_route("PUT", "/user/is_phone_verified", json={
         "phone_verification_code": phone_verification_code
@@ -41,10 +63,13 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
     verification_msg = mock_twilio_sms_create.call_args[1]["body"]
-    code_message_regex = settings.app_phone_verification_message.format('(\\S+)').replace('.', '\\.')
+    code_message_regex = (settings.app_phone_verification_message
+                          .format('(\\S+)')
+                          .replace('.', '\\.'))
     phone_verification_code = re.search(code_message_regex, verification_msg).group(1)
     # Check that the verification code message is properly formatted
-    assert verification_msg == settings.app_phone_verification_message.format(phone_verification_code)
+    assert (verification_msg ==
+            settings.app_phone_verification_message.format(phone_verification_code))
     # Pass the user's verification code to update the phone verification status
     response = client.put(
         "/user/is_phone_verified",
@@ -59,10 +84,12 @@ def test_phone_verification(new_user: dict, mock_twilio_sms_create: Mock, client
         "/user",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}
     )
-    assert response.json()["is_phone_verified"] == True
+    assert response.json()["is_phone_verified"]
 
 @describe(""" Test that a user's phone cannot be verified with an incorrect verification code. """)
-def test_phone_verification_incorrect_code(new_user: dict, client: TestClient, mock_twilio_sms_create: Mock):
+def test_phone_verification_incorrect_code(new_user: dict,
+                                           client: TestClient,
+                                           mock_twilio_sms_create: Mock):
     # Attempt to verify a user with no verification code
     response = client.put(
         "/user/is_phone_verified",
@@ -79,7 +106,7 @@ def test_phone_verification_incorrect_code(new_user: dict, client: TestClient, m
     assert response.status_code == 400
     assert response.headers["content-type"] == "application/json"
     assert response.json()["detail"] == "Unable to verify phone:  Invalid verification code."
-    # Request a verification code and then attempt to verify the user with an incorrect verification code
+    # Request a verification code, then attempt with an incorrect verification code
     client.post(
         "/user/request_phone_verification",
         headers={"Authorization": f"Bearer {new_user['access_token']}"}

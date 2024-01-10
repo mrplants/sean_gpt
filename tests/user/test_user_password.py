@@ -1,14 +1,26 @@
+""" Tests for the user/password route.
+"""
+
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-import
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
 ##################
 # /user/password #
 ##################
 # PUT (protected): Change the user's password
 
+import random
+
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
 
-from .fixtures import *
-from ..fixtures import *
+from ..util.check_routes import check_authorized_route
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes(verified_new_user: str, client: TestClient):
@@ -31,7 +43,8 @@ def test_password_change(new_user: dict, client: TestClient):
     )
     # The response should be:
     # HTTP/1.1 204 No Content
-    assert response.status_code == 204, f"Status should be 204, not {response.status_code}. Response: {response.text}"
+    assert response.status_code == 204, (
+        f"Status should be 204, not {response.status_code}. Response: {response.text}")
     # Check that the user can log in with the new password
     response = client.post(
         "/user/token",
@@ -41,7 +54,8 @@ def test_password_change(new_user: dict, client: TestClient):
             "password": new_password,
         },
     )
-    assert response.status_code == 200, f"Status should be 200, not {response.status_code}. Response: {response.text}"
+    assert response.status_code == 200, (
+        f"Status should be 200, not {response.status_code}. Response: {response.text}")
     # Check that the user cannot log in with the old password
     response = client.post(
         "/user/token",
@@ -51,7 +65,8 @@ def test_password_change(new_user: dict, client: TestClient):
             "password": new_user["password"],
         },
     )
-    assert response.status_code == 401, f"Status should be 401, not {response.status_code}. Response: {response.text}"
+    assert response.status_code == 401, (
+        f"Status should be 401, not {response.status_code}. Response: {response.text}")
 
 
 @describe(""" Test that a user's password cannot be changed with an incorrect password. """)

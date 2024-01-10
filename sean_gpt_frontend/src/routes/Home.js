@@ -3,9 +3,9 @@ import About from './About';
 import Chat from './Chat';
 
 function Home() {
-  const { isLoggedIn } = useAuthService(); // Replace with your actual auth check
+  const { authToken } = useAuthService(); // Replace with your actual auth check
 
-  return isLoggedIn ? <Chat /> : <About />;
+  return authToken ? <Chat /> : <About />;
 }
 
 export default Home;

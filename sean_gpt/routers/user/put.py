@@ -82,7 +82,6 @@ def verify_phone(*,
             detail="Unable to verify phone:  Invalid verification code."
         )
     # Check the verification code using the cryptographic hash comparison function
-    print(f'current_user.verification_token: {current_user.verification_token}')
     if not verify_password(phone_verification_code, current_user.verification_token.code_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

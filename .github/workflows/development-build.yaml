@@ -79,7 +79,7 @@ jobs:
               git config --local user.email "action@github.com"
               git config --local user.name "GitHub Action"
               git add .
-              git commit -m "[AUTO-COMMIT] Build package for version ${{ steps.extract-version.outputs.version }}"
+              git commit -m "[AUTO-COMMIT] Build sean_gpt"
               git push
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

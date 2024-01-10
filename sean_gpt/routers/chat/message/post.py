@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, status, Body, Depends
 from sqlmodel import select
 
 from ....util.describe import describe
-from ....database import SessionDep
+from ....util.database import SessionDep
 from ....model.chat import Chat
 from ....model.message import Message, MessageCreate, MessageRead
 from ...user.util import AuthenticatedUserDep

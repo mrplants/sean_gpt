@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 
 from .config import settings
 from .model.ai import AI
-from .database import get_db_engine
+from .util.database import get_db_engine
 
 def get_ai(name: str) -> AI | None:
     """ Gets an AI from the database.

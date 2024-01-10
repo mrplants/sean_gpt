@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_tables_if_necessary, reset_db_connection
+from .util.database import create_tables_if_necessary, reset_db_connection
 from .routers import chat
 from .routers import user
 from .routers import twilio

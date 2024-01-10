@@ -6,7 +6,7 @@ from sqlmodel import select
 from openai import AsyncOpenAI
 import twilio.twiml.messaging_response as twiml
 
-from ...database import SessionDep, RedisConnectionDep
+from ...util.database import SessionDep, RedisConnectionDep
 from ...model.twilio_message import TwilioMessage
 from ...model.chat import Chat
 from ...model.message import Message

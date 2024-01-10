@@ -44,7 +44,7 @@ from sqlmodel import Session, select
 
 from sean_gpt.util.describe import describe
 from sean_gpt.config import settings
-from sean_gpt.database import get_db_engine
+from sean_gpt.util.database import get_db_engine
 from sean_gpt.model.authenticated_user import AuthenticatedUser
 
 from ..util.sms import send_text, parse_twiml_msg

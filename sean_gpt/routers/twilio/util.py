@@ -8,7 +8,7 @@ from ...config import settings
 from ...model.authenticated_user import AuthenticatedUser
 from ...model.twilio_message import TwilioMessage
 from ...model.chat import Chat
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.ai import AI
 from ...ai import default_ai
 

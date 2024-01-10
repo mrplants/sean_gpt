@@ -3,7 +3,7 @@ from openai import OpenAI
 from fastapi import APIRouter, Depends, status
 
 from ..user.util import AuthenticatedUserDep
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.chat import ChatRead, Chat, ChatCreate
 from ...model.ai import AI
 from ...ai import default_ai

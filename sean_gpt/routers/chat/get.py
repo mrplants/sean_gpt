@@ -4,7 +4,7 @@ from typing import List, Annotated
 from fastapi import APIRouter
 from sqlmodel import select
 
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.chat import Chat, ChatRead
 from ..user.util import AuthenticatedUserDep
 from ...util.describe import describe

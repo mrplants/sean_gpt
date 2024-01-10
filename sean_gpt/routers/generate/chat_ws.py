@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 
 from ...util.describe import describe
 from ...config import settings
-from ...database import RedisConnectionDep
+from ...util.database import RedisConnectionDep
 
 openai_client = AsyncOpenAI(api_key = settings.openai_api_key)
 

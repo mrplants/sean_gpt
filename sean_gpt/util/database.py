@@ -4,16 +4,16 @@ from sqlmodel import create_engine, SQLModel, Session, select
 from fastapi import Depends
 import aioredis
 
-from .config import settings
-from .util.auth import get_password_hash
-from .util.describe import describe
+from ..config import settings
+from .auth import get_password_hash
+from .describe import describe
 
 # Import all the models, so that they're registered with sqlmodel
-from .model.authenticated_user import AuthenticatedUser
-from .model.message import Message
-from .model.chat import Chat
-from .model.ai import AI
-from .model.verification_token import VerificationToken
+from ..model.authenticated_user import AuthenticatedUser
+from ..model.message import Message
+from ..model.chat import Chat
+from ..model.ai import AI
+from ..model.verification_token import VerificationToken
 
 # Module-level variable to store the database engine instance
 _db_engine = None

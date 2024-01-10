@@ -8,10 +8,10 @@ from sqlmodel import select, Session
 from ...model.authenticated_user import UserRead, AuthenticatedUser
 from ...model.access_token import AccessTokenData
 from ...config import settings
-from ...database import get_db_engine
+from ...util.database import get_db_engine
 from ...util.auth import verify_password
 from ...util.describe import describe
-from ...database import SessionDep
+from ...util.database import SessionDep
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/token")
 

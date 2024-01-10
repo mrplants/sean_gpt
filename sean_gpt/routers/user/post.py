@@ -17,8 +17,8 @@ from ...model.verification_token import VerificationToken
 from ...model.chat import Chat
 from ...model.ai import AI
 from ...ai import default_ai
-from ...database import SessionDep
-from ...sms import TwilioClientDep
+from ...util.database import SessionDep
+from ...util.sms import TwilioClientDep
 
 router = APIRouter(prefix="/user")
 

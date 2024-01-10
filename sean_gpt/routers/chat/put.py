@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from ...util.describe import describe
 from ..user.util import AuthenticatedUserDep
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.chat import Chat
 
 router = APIRouter(prefix="/chat")

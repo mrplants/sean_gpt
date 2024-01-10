@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
 from .util import AuthenticatedUserDep
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...util.describe import describe
 
 router = APIRouter(prefix="/user")

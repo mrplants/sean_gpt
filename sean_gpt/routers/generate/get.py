@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter
 
 from ...util.describe import describe
-from ...database import RedisConnectionDep
+from ...util.database import RedisConnectionDep
 from ...config import settings
 from ..user.util import IsVerifiedUserDep
 

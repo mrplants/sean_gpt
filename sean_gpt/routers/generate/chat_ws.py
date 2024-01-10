@@ -18,7 +18,7 @@ Args:
     current_user (AuthenticatedUser):  The user making the request.
 """)
 @router.websocket("/ws")
-async def generate_chat_stream(
+async def generate_chat_stream( # pylint: disable=missing-function-docstring
     *,
     token: str = Query(),
     redis_conn: RedisConnectionDep,

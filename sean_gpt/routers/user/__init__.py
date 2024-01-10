@@ -1,3 +1,4 @@
+""" User router. """
 from fastapi import APIRouter
 
 from . import post, delete, get, put

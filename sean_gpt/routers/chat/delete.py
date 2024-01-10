@@ -6,7 +6,7 @@ from sqlmodel import select
 from ...util.describe import describe
 from ...util.database import SessionDep
 from ...model.chat import Chat
-from ..user.util import AuthenticatedUserDep
+from ...util.user import AuthenticatedUserDep
 
 router = APIRouter(prefix="/chat")
 

@@ -11,7 +11,7 @@ from .routers import chat
 from .routers import user
 from .routers import twilio
 from .routers import generate
-from .routers.user.util import IsVerifiedUserDep
+from .util.user import IsVerifiedUserDep
 
 @asynccontextmanager
 # pylint: disable=redefined-outer-name

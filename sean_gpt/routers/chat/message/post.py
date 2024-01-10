@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Header, HTTPException, status, Body, Depends
+""" Contains the POST method for creating a new message in a chat. """
+from fastapi import APIRouter, Header, HTTPException, status, Body
 from sqlmodel import select
 
 from ....util.describe import describe
 from ....util.database import SessionDep
 from ....model.chat import Chat
 from ....model.message import Message, MessageCreate, MessageRead
-from ...user.util import AuthenticatedUserDep
+from ....util.user import AuthenticatedUserDep
 
 router = APIRouter(prefix="/message")
 
@@ -24,7 +25,7 @@ Returns:
     The created message.
 """)
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_message(*,
+def create_message(*, # pylint: disable=missing-function-docstring
     x_chat_id: str = Header(),
     message: MessageCreate = Body(),
     session: SessionDep,

@@ -1,3 +1,4 @@
+""" Updates a chat in the database. """
 import uuid
 
 from fastapi import APIRouter, status, HTTPException, Header
@@ -5,13 +6,14 @@ from sqlmodel import select
 from pydantic import BaseModel
 
 from ...util.describe import describe
-from ..user.util import AuthenticatedUserDep
+from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
 from ...model.chat import Chat
 
 router = APIRouter(prefix="/chat")
 
 class ChatUpdate(BaseModel):
+    """ The parameters for updating a chat."""
     name: None|str = None
 
 @describe(
@@ -24,11 +26,16 @@ Args:
     session (SessionDep): The database session.
 """)
 @router.put("", status_code=status.HTTP_204_NO_CONTENT)
-def update_chat(*, update_params: ChatUpdate, x_chat_id: str = Header(), current_user: AuthenticatedUserDep, session: SessionDep):
+def update_chat( # pylint: disable=missing-function-docstring
+    *,
+    update_params: ChatUpdate,
+    x_chat_id: str = Header(),
+    current_user: AuthenticatedUserDep,
+    session: SessionDep):
     try:
         uuid.UUID(x_chat_id)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found") from exc
 
     chat = session.exec(select(Chat).where(Chat.id == x_chat_id)).first()
     if not chat:

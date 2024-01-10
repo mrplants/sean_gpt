@@ -1,3 +1,4 @@
+""" Chat Completion Router """
 from fastapi import APIRouter
 
 from . import chat_ws, get

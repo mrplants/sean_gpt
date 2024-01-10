@@ -100,6 +100,9 @@ export function ChatProvider({ children }) {
 
     // Effect for fetching chats when page is loaded
     useEffect(() => {
+        if (!authToken) {
+            return;
+        }
         // Fetch all the chats from the /chat endpoint
         const fetchChats = async () => {
             const response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/chat', {

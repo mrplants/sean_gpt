@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Header, HTTPException, status, Query
+""" Gets the messages for the specified chat. """
+from fastapi import APIRouter, Header, HTTPException, status
 from sqlmodel import select
 
 from ....util.describe import describe
-from ....database import SessionDep
+from ....util.database import SessionDep
 from ....model.chat import Chat
 from ....model.message import MessageRead
-from ...user.util import AuthenticatedUserDep
+from ....util.user import AuthenticatedUserDep
 
 router = APIRouter(prefix="/message")
 
@@ -23,7 +24,7 @@ Returns:
     dict: The number of messages in the chat.
 """)
 @router.get("/len", status_code=status.HTTP_200_OK)
-def get_message_len(*,
+def get_message_len(*, # pylint: disable=missing-function-docstring
     x_chat_id: str = Header(),
     session: SessionDep,
     current_user: AuthenticatedUserDep
@@ -54,7 +55,7 @@ Returns:
     MessageRead: The message.
 """)
 @router.get("", status_code=status.HTTP_200_OK)
-def get_message(*,
+def get_message(*, # pylint: disable=missing-function-docstring
     x_chat_id: str = Header(),
     session: SessionDep,
     current_user: AuthenticatedUserDep,
@@ -68,7 +69,8 @@ def get_message(*,
     # Check for out of bounds.
     # If the chat_index is negative, raise an error.
     if chat_index < 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat index must be positive.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Chat index must be positive.")
     # If the chat_index is beyond the end of the list, raise an error.
     if chat_index >= len(chat.messages):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found.")

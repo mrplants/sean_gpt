@@ -129,4 +129,6 @@ def test_generate_chat(client: TestClient, verified_new_user: dict):
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_and_authorized(verified_new_user, client):
-    check_authorized_route("GET", "/generate/chat/token", authorized_user=verified_new_user, client=client)
+    check_authorized_route("GET",
+                           "/generate/chat/token",
+                           authorized_user=verified_new_user, client=client)

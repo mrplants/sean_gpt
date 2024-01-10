@@ -1,12 +1,13 @@
+""" Gets a filtered list of chats for the current user. """
 from uuid import UUID
-from typing import List, Annotated
+from typing import List
 
 from fastapi import APIRouter
 from sqlmodel import select
 
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.chat import Chat, ChatRead
-from ..user.util import AuthenticatedUserDep
+from ...util.user import AuthenticatedUserDep
 from ...util.describe import describe
 
 router = APIRouter(prefix="/chat")
@@ -24,7 +25,12 @@ Returns:
     A list of chats.
 """)
 @router.get("")
-def get_chats(*, name: None|str = None, id: None|UUID = None, current_user: AuthenticatedUserDep, session: SessionDep) -> List[ChatRead]:
+def get_chats( # pylint: disable=missing-function-docstring
+    *,
+    name: None|str = None,
+    id: None|UUID = None, # pylint: disable=redefined-builtin
+    current_user: AuthenticatedUserDep,
+    session: SessionDep) -> List[ChatRead]:
     query = select(Chat).where(Chat.user_id == current_user.id)
     if name:
         query = query.where(Chat.name == name)

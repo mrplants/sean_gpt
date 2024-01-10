@@ -1,3 +1,4 @@
+""" Twilio utility functions """
 from typing import Annotated, Optional
 
 from fastapi import Request, HTTPException, Depends
@@ -8,11 +9,19 @@ from ...config import settings
 from ...model.authenticated_user import AuthenticatedUser
 from ...model.twilio_message import TwilioMessage
 from ...model.chat import Chat
-from ...database import SessionDep
+from ...util.database import SessionDep
 from ...model.ai import AI
 from ...ai import default_ai
 
 async def validate_twilio(request: Request):
+    """ Validates a Twilio request.
+    
+    Args:
+        request (Request): The request object containing the data sent by Twilio.
+        
+    Raises:
+        HTTPException: If the request is invalid.
+    """
     validator = RequestValidator(settings.twilio_auth_token)
 
     # Get the full URL that Twilio requested
@@ -29,14 +38,31 @@ async def validate_twilio(request: Request):
     if not validator.validate(url, parameters, signature):
         raise HTTPException(status_code=400, detail="Invalid Twilio Signature")
 
-def twilio_get_or_create_user(incoming_message: TwilioMessage, session: SessionDep, ai:AI = Depends(default_ai)) -> Optional[AuthenticatedUser]:
+def twilio_get_or_create_user(
+        incoming_message: TwilioMessage,
+        session: SessionDep,
+        ai:AI = Depends(default_ai)) -> Optional[AuthenticatedUser]:
+    """ Gets or creates a user from a Twilio message.
+    
+    Args:
+        incoming_message (TwilioMessage): The incoming message.
+        session (SessionDep): The database session.
+        ai (AI): The AI to use for this chat.
+        
+    Returns:
+        Optional[AuthenticatedUser]: The user.
+    """
     # - Retrieve the user's phone number
     user_phone = incoming_message.from_
     # - Check if the user exists
-    user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.phone == user_phone)).first()
+    user = session.exec(select(AuthenticatedUser)
+                        .where(AuthenticatedUser.phone == user_phone)).first()
     # - If not, check if the message body is a referral code
     if not user:
-        referring_user = session.exec(select(AuthenticatedUser).where(AuthenticatedUser.referral_code == incoming_message.body)).first()
+        referring_user = (session
+                          .exec(select(AuthenticatedUser)
+                                .where(AuthenticatedUser.referral_code == incoming_message.body))
+                                .first())
         # - If so, create the user with the referral code
         if referring_user:
             user = AuthenticatedUser(

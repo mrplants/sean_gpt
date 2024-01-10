@@ -1,7 +1,8 @@
+""" Gets the current user. """
 from fastapi import APIRouter, HTTPException
 
 from ...model.authenticated_user import UserRead
-from .util import AuthenticatedUserDep
+from ...util.user import AuthenticatedUserDep
 from ...util.describe import describe
 
 router = APIRouter(prefix="/user")
@@ -15,7 +16,7 @@ Returns:
     UserRead: The current user.
 """)
 @router.get("")
-def read_users_me(current_user: AuthenticatedUserDep) -> UserRead:
+def read_users_me(current_user: AuthenticatedUserDep) -> UserRead: # pylint: disable=missing-function-docstring
     return current_user
 
 @describe(""" Retrieve the user's referral code.
@@ -27,8 +28,9 @@ Returns:
     dict: The user's referral code.
 """)
 @router.get("/referral_code")
-def get_referral_code(current_user: AuthenticatedUserDep) -> dict:
+def get_referral_code(current_user: AuthenticatedUserDep) -> dict: # pylint: disable=missing-function-docstring
     # Referral codes can only be retrieved if the user is_phone_verified
     if not current_user.is_phone_verified:
-        raise HTTPException(status_code=400, detail="Unable to retrieve referral code:  Phone is not verified.")
+        raise HTTPException(status_code=400,
+                            detail="Unable to retrieve referral code:  Phone is not verified.")
     return {"referral_code": current_user.referral_code}

@@ -1,9 +1,9 @@
+""" The chat post router. """
+from fastapi import APIRouter, Depends, status
 from openai import OpenAI
 
-from fastapi import APIRouter, Depends, status
-
-from ..user.util import AuthenticatedUserDep
-from ...database import SessionDep
+from ...util.user import AuthenticatedUserDep
+from ...util.database import SessionDep
 from ...model.chat import ChatRead, Chat, ChatCreate
 from ...model.ai import AI
 from ...ai import default_ai
@@ -26,7 +26,12 @@ Returns:
     The created chat.
 """)
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_chat(*, new_chat: ChatCreate, ai:AI = Depends(default_ai), current_user: AuthenticatedUserDep, session: SessionDep) -> ChatRead:
+def create_chat( # pylint: disable=missing-function-docstring
+    *,
+    new_chat: ChatCreate,
+    ai:AI = Depends(default_ai),
+    current_user: AuthenticatedUserDep,
+    session: SessionDep) -> ChatRead:
     chat = Chat(**new_chat.model_dump(), user_id=current_user.id, assistant_id=ai.id)
     session.add(chat)
     session.commit()

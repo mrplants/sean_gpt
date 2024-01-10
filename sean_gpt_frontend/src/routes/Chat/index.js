@@ -68,7 +68,7 @@ const Chat = () => {
           <>
           <div className="flex-grow overflow-y-auto p-4">
             {/* Message Area */}
-            <ul className='flex flex-col'>
+            <ul className='flex flex-col pt-7'>
               {
                 activeChatMessages.sort((a, b) => a.chat_index - b.chat_index).map((chatMessage, index) => (
                   <ChatMessage key={index} message={chatMessage} />

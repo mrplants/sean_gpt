@@ -7,7 +7,7 @@ const TermsOfService = () => {
       <div className="card-body  items-center">
         <h2 className="card-title text-lg lg:text-2xl">Terms of Service</h2>
         <div className="prose">
-            <p>Welcome to SeanGPT! By accessing or using our SMS-based AI service, you agree to be bound by these terms of service.</p>
+            <p>Welcome to SeanGPT! By accessing or using our AI chat service over SMS, the web, or any other medium, you agree to be bound by these terms of service.</p>
             
             <ol>
                 <li>

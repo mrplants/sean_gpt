@@ -1,12 +1,22 @@
 import Markdown from 'react-markdown'
 
 function ChatMessage({ message, pending }) {
-    
+    const maxLength = 100; // Maximum line length
+
+    // Break lines longer than maxLength
+    const content = message['content'].split('\n').map(line => {
+        let segments = [];
+        for (let i = 0; i < line.length; i += maxLength) {
+            segments.push(line.slice(i, i + maxLength));
+        }
+        return segments.join('\n');
+    }).join('\n');
+
     return (
         message ? (
         <li className={`chat ${message['role'] === 'user' ? 'chat-end' : 'chat-start'}`}>
             <div className={`flex flex-col items-center chat-bubble ${message['role'] === 'assistant' ? 'chat-bubble-primary':''}`}>
-            <Markdown className="text-wrap">{message['content']}</Markdown>
+            <Markdown className="text-wrap">{content}</Markdown>
             {pending ? <span className="loading loading-dots loading-md"></span> : null}
             </div>
         </li>

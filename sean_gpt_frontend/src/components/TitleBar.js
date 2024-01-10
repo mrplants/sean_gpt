@@ -26,20 +26,14 @@ const TitleBar = () => {
           <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
             { authToken && (<li> <Link to="/chat" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">Chat</Link> </li>) }
             <li> <Link to="/about" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">About</Link> </li>
-            <li> <Link to="/contact" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">Contact</Link> </li>
             <li> <Link to="/faq" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">FAQ</Link> </li>
-            <li> <Link to="/tos" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">Terms of Service</Link> </li>
-            <li> <Link to="/privacy" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">Privacy Policy</Link> </li>
           </ul>
         </details>
       <Link to="/" className="prose prose-xl dark:prose-invert prose-slate mx-3">SeanGPT</Link>
       <div className="hidden lg:flex">
         { authToken && (<Link to="/chat" className="btn btn-sm btn-ghost normal-case mx-1">Chat</Link>) }
         <Link to="/about" className="btn btn-sm btn-ghost normal-case mx-1">About</Link>
-        <Link to="/contact" className="btn btn-sm btn-ghost normal-case mx-1">Contact</Link>
         <Link to="/faq" className="btn btn-sm btn-ghost normal-case mx-1">FAQ</Link>
-        <Link to="/tos" className="btn btn-sm btn-ghost normal-case mx-1">Terms of Service</Link>
-        <Link to="/privacy" className="btn btn-sm btn-ghost normal-case mx-1">Privacy Policy</Link>
       </div>
       </div>
       <div className="navbar-end">

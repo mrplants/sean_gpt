@@ -38,7 +38,7 @@ def check_authorized_route(
     # The response should be any 2xx response code
     assert response.status_code // 100 == 2, (
         f"Expected status code 2xx, got {response.status_code}."
-        "Response body: {response.content}"
+        f"Response body: {response.content}"
     )
     # Now send an unauthorized request
     headers = {"Authorization": "Bearer invalid_token"} | request_kwargs.get("headers", {})
@@ -50,7 +50,7 @@ def check_authorized_route(
     # The response should not be a 2xx response code
     assert response.status_code // 100 != 2, (
         f"Expected status code NOT 2xx, got {response.status_code}."
-        "Response body: {response.content}"
+        f"Response body: {response.content}"
     )
 
 @describe(""" Checks that a route requires a verified user for access. """)
@@ -100,19 +100,21 @@ def check_verified_route(
     # The response should be any 2xx response code
     assert response.status_code // 100 == 2, (
         f"Expected status code 2xx, got {response.status_code}. "
-        "Response body: {response.text}"
+        f"Response body: {response.text}"
     )
-    # Now send an unverified request
-    headers = {
-        "Authorization": f"Bearer {unverified_user['access_token']}"
-    } | request_kwargs.get("headers", {})
-    response = request_func(
-        route,
-        headers=headers,
-        **{k: v for k, v in request_kwargs.items() if k != 'headers'}
-    )
-    # The response should not be a 2xx response code
-    assert response.status_code // 100 != 2, (
-        f"Expected status code NOT 2xx, got {response.status_code}. "
-        "Response body: {response.text}"
-    )
+    # TODO: Re-enable this when Twilio campaign is ready.  All users are automatically verified
+    #       until we can actually check.
+    # # Now send an unverified request
+    # headers = {
+    #     "Authorization": f"Bearer {unverified_user['access_token']}"
+    # } | request_kwargs.get("headers", {})
+    # response = request_func(
+    #     route,
+    #     headers=headers,
+    #     **{k: v for k, v in request_kwargs.items() if k != 'headers'}
+    # )
+    # # The response should not be a 2xx response code
+    # assert response.status_code // 100 != 2, (
+    #     f"Expected status code NOT 2xx, got {response.status_code}. "
+    #     f"Response body: {response.text}"
+    # )

@@ -14,8 +14,8 @@ const Root = () => {
   <footer className="footer p-4 bg-neutral text-neutral-content">
     <nav className="grid grid-flow-col gap-4">
       <Link to="/contact" className="link link-hover">Contact</Link>
-      <Link to="/tos" className="link link-hover">Terms of service</Link>
-      <Link to="/privacy" className="link link-hover">Privacy policy</Link>
+      <Link to="/tos" className="link link-hover">Terms</Link>
+      <Link to="/privacy" className="link link-hover">Privacy</Link>
     </nav>
   </footer>
 </div>

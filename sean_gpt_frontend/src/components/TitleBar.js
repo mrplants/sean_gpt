@@ -17,13 +17,13 @@ const TitleBar = () => {
   };
 
   return (
-    <header className="navbar bg-base-200">
+    <header className="navbar bg-base-300">
       <div className="navbar-start">
-        <details className="dropdown" ref={detailsRef}>
+        <details className="dropdown z-50" ref={detailsRef}>
           <summary tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
           </summary>
-          <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+          <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52">
             { authToken && (<li> <Link to="/chat" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">Chat</Link> </li>) }
             <li> <Link to="/about" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">About</Link> </li>
             <li> <Link to="/faq" onClick={closeDetails} className="btn btn-sm btn-ghost normal-case my-1">FAQ</Link> </li>

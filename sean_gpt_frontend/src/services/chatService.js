@@ -86,6 +86,7 @@ export function ChatProvider({ children }) {
     const [generatingState, setGeneratingState] = useState(GeneratorStatus.IDLE);
     const [activeChatMessages, dispatchActiveChatMessage] = useReducer(activeChatMessagesReducer, []);
     const [assistantResponse, dispatchAssistantResponse] = useReducer(assistantResponseReducer, null);
+    const [backendWebsocket, setBackendWebsocket] = useState(null);
 
     useEffect(() => {
         if (generatingState === GeneratorStatus.DONE && assistantResponse !== null) {
@@ -131,7 +132,7 @@ export function ChatProvider({ children }) {
         dispatchActiveChatMessage({ type: 'set', messages: [] });
         
         // if the active chat is null, return
-        if (activeChat === null) {
+        if (activeChat === null || authToken === null) {
             return;
         }
         
@@ -244,7 +245,9 @@ export function ChatProvider({ children }) {
         const ws_token = (await stream_token_response.json())['token'];
 
         // Create the websocket connection
-        const ws = new WebSocket(process.env.REACT_APP_API_ENDPOINT + '/generate/chat/ws?token=' + ws_token);
+        var ws = new WebSocket(process.env.REACT_APP_API_ENDPOINT.replace(/^http/, 'ws') + '/generate/chat/ws?token=' + ws_token);
+        setBackendWebsocket(ws);
+
         ws.onopen = () => {
             // Send the conversation to the websocket
             ws.send(JSON.stringify({
@@ -267,8 +270,12 @@ export function ChatProvider({ children }) {
                 setGeneratingState(GeneratorStatus.DONE);
             };
             postAndReset();
+            setBackendWebsocket(null);
         };
-
+        ws.onerror = (error) => {
+            toast.error('Error generating response');
+            console.log(error);
+        }
     };
 
     const deleteActiveChat = async () => {
@@ -331,7 +338,7 @@ export function ChatProvider({ children }) {
     }
 
     return (
-        <ChatContext.Provider value={{ chats, activeChat, activeChatMessages, assistantResponse, setActiveChat, createChat, postMessage, generateResponse, deleteActiveChat, renameActiveChat }}>
+        <ChatContext.Provider value={{ chats, activeChat, activeChatMessages, assistantResponse, setActiveChat, createChat, postMessage, generateResponse, deleteActiveChat, renameActiveChat, backendWebsocket }}>
         {children}
         </ChatContext.Provider>
     );

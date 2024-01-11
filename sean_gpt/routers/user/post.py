@@ -61,7 +61,7 @@ def create_user( # pylint: disable=missing-function-docstring
     user = AuthenticatedUser(phone=user.phone,
                              hashed_password=get_password_hash(user.password),
                              referrer_user_id=existing_referral.id,
-                             is_phone_verified=True,) # TODO:  Remove this line when SMS is implemented
+                             is_phone_verified=True,) # TODO:  Remove when SMS is implemented
     # Create the user's unique Twilio-only chat (all users have one)
     twilio_chat = Chat(user_id=user.id, name="Phone Chat", assistant_id=ai.id)
     user.twilio_chat_id = twilio_chat.id

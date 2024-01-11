@@ -13,7 +13,7 @@ function ChatMessage({ message, pending }) {
                     message['role'] === 'user' ? (
                     <p className="whitespace-break-spaces">{message['content']}</p>
                     ) : (
-                    <Markdown className="whitespace-break-spaces" components={{
+                    <Markdown className="whitespace-break-spaces min-w-0" components={{
                         code(props) {
                             const {children, className, node, ...rest} = props
                             const match = /language-(\w+)/.exec(className || '')
@@ -25,6 +25,8 @@ function ChatMessage({ message, pending }) {
                                 language={match[1]}
                                 style={style}
                                 wrapLongLines={true}
+                                wrapLines={true}
+                                lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}
                             />
                             ) : (
                             <code {...rest} className={className}>

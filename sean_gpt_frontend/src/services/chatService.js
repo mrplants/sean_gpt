@@ -131,7 +131,7 @@ export function ChatProvider({ children }) {
         dispatchActiveChatMessage({ type: 'set', messages: [] });
         
         // if the active chat is null, return
-        if (activeChat === null) {
+        if (activeChat === null || authToken === null) {
             return;
         }
         

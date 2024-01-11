@@ -87,22 +87,22 @@ const Chat = () => {
               <input
                   disabled = {assistantResponse !== null || activeChat == null || activeChat.id === user.twilio_chat_id}
                   type="text"
-                  className="w-full p-2.5 bg-gray-50 rounded-lg text-sm text-gray-900 input input-bordered"
+                  className="w-full p-2.5 rounded-lg text-sm text-gray-900 input input-bordered"
                   placeholder="Type a message..."
                   value={userMessage}
                   onChange={(e) => setUserMessage(e.target.value)}
               />
               <button
                   type='submit'
-                  className={`btn btn-sm btn-primary ml-2 ${assistantResponse !== null || activeChat === null || activeChat.id === user.twilio_chat_id ? 'btn-disabled' : ''}`}>
+                  className={`btn btn-md btn-primary ml-2 ${assistantResponse !== null || activeChat === null || activeChat.id === user.twilio_chat_id ? 'btn-disabled' : ''}`}>
                   Send
               </button>
           </form>
           </>
         ))}
-      <div className="absolute flex flex-row right-0 items-center">
-        <button className={`btn btn-sm btn-outline mt-2 mr-3 backdrop-blur-md z-50 ${activeChat === null || user.twilio_chat_id === activeChat.id ? 'hidden' : ''}`} onClick={() => setIsRenamingChat(true)}>Rename Chat</button>
-        <button className={`btn btn-error btn-sm btn-outline mt-2 mr-3 backdrop-blur-md z-50 ${activeChat === null || user.twilio_chat_id === activeChat.id ? 'hidden' : ''}`} onClick={() => deleteActiveChat()}>Delete Chat</button>
+      <div className="absolute flex justify-between flex-row inset-x-0 items-center lg:justify-end">
+        <button className={`btn btn-error btn-sm btn-outline mt-2 ml-3 backdrop-blur-md z-50 w-24 lg:mr-3 ${activeChat === null || user.twilio_chat_id === activeChat.id ? 'hidden' : ''}`} onClick={() => deleteActiveChat()}>Delete</button>
+        <button className={`btn btn-sm btn-outline mt-2 mr-3 backdrop-blur-md z-50 w-24 ${activeChat === null || user.twilio_chat_id === activeChat.id ? 'hidden' : ''}`} onClick={() => setIsRenamingChat(true)}>Rename</button>
         {/* This modal is the chat renaming dialog */}
         <dialog className={`modal modal-bottom sm:modal-middle ${isRenamingChat ? 'modal-open': ''}`}>
           <div className="modal-box">

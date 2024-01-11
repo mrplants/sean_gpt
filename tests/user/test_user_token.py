@@ -20,11 +20,6 @@ from jose import jwt
 from sean_gpt.config import settings
 from sean_gpt.util.describe import describe
 
-@describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
-    # This endopint is not a verified or authorized route.
-    pass
-
 @describe(""" Test that an authorization token can be generated. """)
 def test_generate_token(client: TestClient):
     # Generate a token

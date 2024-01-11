@@ -215,24 +215,25 @@ def new_user(referral_code: str, client: TestClient) -> dict:
 @describe(""" Test fixture to provide a verified new user and their auth token. """)
 @pytest.fixture
 def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: TestClient) -> dict:
-    # Request new user verification code
-    client.post(
-        "/user/request_phone_verification",
-        headers={"Authorization": f"Bearer {new_user['access_token']}"}
-    )
-    # pylint: disable=no-member
-    code_message_regex = (settings.app_phone_verification_message
-                          .format('(\\S+)')
-                          .replace('.', '\\.'))
-    phone_verification_code = re.search(
-        code_message_regex,
-        mock_twilio_sms_create.call_args[1]["body"]
-    ).group(1)
-    # pylint enable=no-member
-    # Verify the user
-    client.put(
-        "/user/is_phone_verified",
-        headers={"Authorization": f"Bearer {new_user['access_token']}"},
-        json={"phone_verification_code": phone_verification_code}
-    )
+    # TODO: Re-enable this when Twilio campaign is ready
+    # # Request new user verification code
+    # client.post(
+    #     "/user/request_phone_verification",
+    #     headers={"Authorization": f"Bearer {new_user['access_token']}"}
+    # )
+    # # pylint: disable=no-member
+    # code_message_regex = (settings.app_phone_verification_message
+    #                       .format('(\\S+)')
+    #                       .replace('.', '\\.'))
+    # phone_verification_code = re.search(
+    #     code_message_regex,
+    #     mock_twilio_sms_create.call_args[1]["body"]
+    # ).group(1)
+    # # pylint enable=no-member
+    # # Verify the user
+    # client.put(
+    #     "/user/is_phone_verified",
+    #     headers={"Authorization": f"Bearer {new_user['access_token']}"},
+    #     json={"phone_verification_code": phone_verification_code}
+    # )
     yield new_user

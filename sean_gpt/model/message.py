@@ -10,8 +10,8 @@ from sqlmodel import Field, SQLModel, Relationship
 class RoleType(str, Enum):
     """ The role of a message. """
     # The only valid roles are "user" and "assistant".
-    user = "user"
-    assistant = "assistant"
+    user = "user" # pylint: disable=invalid-name
+    assistant = "assistant" # pylint: disable=invalid-name
 
 class MessageCreate(SQLModel):
     """ Schema for creating a message. """

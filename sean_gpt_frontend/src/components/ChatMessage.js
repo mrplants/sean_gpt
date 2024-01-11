@@ -11,7 +11,7 @@ function ChatMessage({ message, pending }) {
             <div className={`flex flex-col items-center chat-bubble ${message['role'] === 'assistant' ? 'chat-bubble-primary':''}`}>
                 {
                     message['role'] === 'user' ? (
-                    <p className="prose whitespace-break-spaces">{message['content']}</p>
+                    <p className="whitespace-break-spaces">{message['content']}</p>
                     ) : (
                     <Markdown className="whitespace-break-spaces" components={{
                         code(props) {

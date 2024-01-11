@@ -72,9 +72,9 @@ const Chat = () => {
   
   return (
     <div className="flex flex-row w-full h-full">
-      <div className='relative hidden lg:flex flex-col h-full bg-base-100'>
+      <div className='relative hidden lg:flex flex-col h-full bg-base-200'>
         <div className='overflow-y-auto w-56 '>
-          <ul className='menu block flex-col pt-8'>
+          <ul className='menu block flex-col pt-10'>
             {
               chats.map((chat, index) => {
                 return (
@@ -85,7 +85,7 @@ const Chat = () => {
               })
             }
           </ul>
-          <button className='absolute top-0 w-52 btn btn-accent btn-sm btn-outline mx-2 backdrop-blur-md' onClick={() => createChat() }>New Chat</button>
+          <button className='absolute top-0 w-52 btn btn-accent btn-sm btn-outline mx-2 mt-2 backdrop-blur-md' onClick={() => createChat() }>New Chat</button>
         </div>
       </div>
       <div className="flex flex-col w-full h-full">

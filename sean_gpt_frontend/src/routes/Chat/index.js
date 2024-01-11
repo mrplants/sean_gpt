@@ -39,6 +39,10 @@ const Chat = () => {
     if (messagesEndRef.current === null) {
       return;
     }
+    // If the cchat message with the highest chat_index is role=asssitant, don't scroll to the bottom
+    if (activeChatMessages.length > 0 && activeChatMessages[activeChatMessages.length - 1].role === 'assistant') {
+      return;
+    }
     messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
   }  
   useEffect(scrollToBottom, [ activeChatMessages ]);
@@ -111,7 +115,7 @@ const Chat = () => {
               {/* Input Area */}
               <textarea
                   disabled = {assistantResponse !== null || activeChat == null || activeChat.id === user.twilio_chat_id}
-                  className="w-full text-sm textarea textarea-bordered textarea-primary pr-12 resize-none leading-normal"
+                  className="w-full text-base textarea textarea-bordered textarea-primary pr-12 resize-none leading-normal"
                   placeholder="Type a message..."
                   value={userMessage}
                   onChange={(e) => setUserMessage(e.target.value)}
@@ -129,7 +133,7 @@ const Chat = () => {
               <button
                   onClick={() => backendWebsocket.close()}
                   className={`absolute btn btn-sm btn-primary mr-5 right-0 ${assistantResponse !== null? '' : 'hidden'} ${activeChat === null || activeChat.id === user.twilio_chat_id ? 'hidden' : ''}`}>
-                  &#x23F9;
+                  &#x25A0;
               </button>
           </form>
           </>

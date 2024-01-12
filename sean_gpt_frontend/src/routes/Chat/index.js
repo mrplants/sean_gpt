@@ -39,12 +39,20 @@ const Chat = () => {
     if (messagesEndRef.current === null) {
       return;
     }
-    // If the cchat message with the highest chat_index is role=asssitant, don't scroll to the bottom
+    // If the chat message with the highest chat_index is role=asssitant, don't scroll to the bottom
     if (activeChatMessages.length > 0 && activeChatMessages[activeChatMessages.length - 1].role === 'assistant') {
       return;
     }
     messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
-  }  
+  }
+
+  const scrollToBottomActiveChatChanged = () => {
+    if (messagesEndRef.current === null) {
+      return;
+    }
+    messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+  }
+  useEffect(scrollToBottomActiveChatChanged, [ activeChat ]);
   useEffect(scrollToBottom, [ activeChatMessages ]);
   useEffect(scrollToBottomAssistantStarted, [ assistantResponse ]);
   useEffect(ScrollToBottomIfClose, [ assistantResponse ]);

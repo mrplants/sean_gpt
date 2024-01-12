@@ -55,7 +55,8 @@ def test_new_account_creation(admin_user: dict, client: TestClient):
     # "id": "...",
     # "phone": "...",
     # "referrer_user_id": "...",
-    # "is_phone_verified": false
+    # "is_phone_verified": false,
+    # "opted_into_sms": false,
     # }
     assert response.status_code == 201
     assert response.headers["content-type"] == "application/json", "Response should be JSON."
@@ -141,6 +142,7 @@ def test_get_user_info(new_user: dict, client: TestClient):
     # "phone": "...",
     # "referrer_user_id": "...",
     # "is_phone_verified": false
+    # "opted_into_sms": false,
     # }
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"

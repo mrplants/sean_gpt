@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     app_request_referral_message: str = Field(alias='sean_gpt_app_request_referral_message')
     app_no_whatsapp_message: str = Field(alias='sean_gpt_app_no_whatsapp_message')
     app_no_mms_message: str = Field(alias='sean_gpt_app_no_mms_message')
+    app_sms_opt_in_message: str = Field(alias='sean_gpt_app_sms_opt_in_message')
     app_ai_system_message: str = Field(alias='sean_gpt_app_ai_system_message')
     app_max_sms_characters: int = Field(alias='sean_gpt_app_max_sms_characters')
     app_chat_history_length: int = Field(alias='sean_gpt_app_chat_history_length')

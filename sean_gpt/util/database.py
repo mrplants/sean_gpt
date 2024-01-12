@@ -46,6 +46,7 @@ def create_admin_if_necessary(): # pylint: disable=missing-function-docstring
             hashed_password=get_password_hash(settings.user_admin_password),
             referrer_user_id="root",
             is_phone_verified=True,
+            opted_into_sms=True,
         )
         # Check if the admin user exists
         select_admin = select(AuthenticatedUser).where(

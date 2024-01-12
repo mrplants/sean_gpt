@@ -18,6 +18,7 @@ class UserBase(SQLModel):
         index=True,
         unique=True)
     is_phone_verified: bool = Field(default=False)
+    opted_into_sms: bool = Field(default=False)
     referrer_user_id: str = Field(index=True)
 
 class UserRead(UserBase):

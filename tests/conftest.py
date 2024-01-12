@@ -237,3 +237,16 @@ def verified_new_user(new_user: dict, mock_twilio_sms_create: Mock, client: Test
     #     json={"phone_verification_code": phone_verification_code}
     # )
     yield new_user
+
+@describe(""" Test fixture to provide a verified, opted-in user and their auth token. """)
+@pytest.fixture
+def verified_opted_in_user(
+    verified_new_user: dict,
+    client: TestClient) -> dict:
+    opted_in_user = client.put(
+        "/user/opted_into_sms",
+        headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
+        json={"opted_into_sms": True}
+    ).json()
+    yield {**verified_new_user, **opted_in_user,}
+    

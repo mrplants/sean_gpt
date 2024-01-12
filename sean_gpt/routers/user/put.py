@@ -112,3 +112,32 @@ def verify_phone(*, # pylint: disable=missing-function-docstring
     # Delete the verification token now that it has been used
     session.delete(current_user.verification_token)
     session.commit()
+
+@describe(
+""" Set the opted_into_sms status of the current user.
+
+This endpoint requires the user to be authenticated. It also requires the user to provide their new
+opt-in status.
+
+Args:
+    opted_into_sms (bool): The new opt-in status.
+    current_user (AuthenticatedUserDep): The current user.
+    session (SessionDep): The database session.
+
+Returns:
+    current_user (AuthenticatedUser): The current user (after the opt-in status has been changed).
+""")
+@router.put("/opted_into_sms", response_model=AuthenticatedUser)
+def set_opted_into_sms(*, # pylint: disable=missing-function-docstring
+    opted_into_sms: bool = Body(embed=True),
+    current_user: AuthenticatedUserDep,
+    session: SessionDep
+    ):
+    session.add(current_user)
+    # We know that the authentication token is valid because the user is authenticated.
+    # Set the opted_into_sms status
+    session.add(current_user)
+    current_user.opted_into_sms = opted_into_sms
+    session.commit()
+    session.refresh(current_user)
+    return current_user

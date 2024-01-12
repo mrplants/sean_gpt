@@ -28,6 +28,7 @@ env:
     request_referral_message: "Please send your referral code as a standalone message."
     no_whatsapp_message: "Please only send SMS messages to this number. Whatsapp will be supported in the future."
     no_mms_message: "Please only send SMS messages to this number. Multimedia messages will be supported in the future."
+    sms_opt_in_message: "You must opt-in to receive messages to use SeanGPT. Please reply 'AGREE' to this number to opt-in.\n\nTerms: https://sean-gpt.com/tos"
     ai_system_message: "You are a helpful AI assistant that users interact with via SMS. Therefore, your responses are short, concise, and split into chunks with character count fewer than 140. When you want to go over this count, use a | character to separate messages. Break your response at reasonable, logical breaks. In very few circumstance should you go over three SMS messages in your response. Do not include markup in your response, but feel free to include emojis."
     max_sms_characters: 139
     phone_number: "+15104548054"

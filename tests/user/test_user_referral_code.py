@@ -66,5 +66,5 @@ def test_referral_code_generation_unverified(new_user: dict, client: TestClient)
     # # }
     # assert response.status_code == 400
     # assert response.headers["content-type"] == "application/json"
-    # assert response.json()["detail"] == "Unable to retrieve referral code:  Phone is not verified."
+    # assert response.json()["detail"]== "Unable to retrieve referral code:  Phone is not verified."
     pass

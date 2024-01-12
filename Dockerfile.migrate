@@ -1,0 +1,12 @@
+# Use the ubuntu base image
+FROM python:3.10
+
+RUN pip install sqlmodel
+RUN pip install alembic
+
+COPY alembic.ini /alembic.ini
+COPY migrations /migrations
+
+COPY sean_gpt /sean_gpt
+
+CMD ["alembic", "upgrade", "head"]

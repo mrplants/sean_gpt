@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 import PhoneNumberInput from './PhoneNumberInput';
 import { useAuthService } from '../services/authService';
@@ -9,7 +10,8 @@ function Login({ isOpen, setIsOpen }) {
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [isSignupForm, setIsSignupForm] = useState(false);
-  const { attemptLogin } = useAuthService();
+  const [isOptedIntoMessaging, setIsOptedIntoMessaging] = useState(false);
+  const { attemptLogin, authToken } = useAuthService();
 
   const loginFormSubmit = async (event) => {
     event.preventDefault();
@@ -37,6 +39,11 @@ function Login({ isOpen, setIsOpen }) {
       return;
     }
 
+    if (!isOptedIntoMessaging) {
+      toast.error('SeanGPT is AI over SMS.\n Please opt-in to create an account.');
+      return;
+    }
+
     // Prepare the data to be sent to the server
     const accountData = {
       user: {
@@ -47,7 +54,6 @@ function Login({ isOpen, setIsOpen }) {
     };
 
     try {
-      // Replace 'YOUR_ENDPOINT_URL' with the actual endpoint URL
       const response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user', {
         method: 'POST',
         headers: {
@@ -57,18 +63,35 @@ function Login({ isOpen, setIsOpen }) {
       });
 
       // Check if the request was successful
-      if (response.ok) {
-        // const data = await response.json();
-        // Handle successful account creation, e.g., updating the UI or redirecting
-        toast.success('Account created successfully!');
-        setIsOpen(false); // Close the modal on successful account creation
-        loginFormSubmit(event);
-      } else {
+      if (!response.ok) {
         // Handle errors, e.g., displaying a message to the user
         const errorData = await response.json();
         console.error('Account creation failed:', errorData);
         toast.error(errorData.detail);
+        return;
       }
+      if (isOptedIntoMessaging) {
+        const response = await fetch(process.env.REACT_APP_API_ENDPOINT + '/user/opted_into_sms', {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + authToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({opted_into_sms: true}),
+        });
+
+        if (!response.ok) {
+          // Handle errors, e.g., displaying a message to the user
+          const errorData = await response.json();
+          console.error('Account creation failed:', errorData);
+          toast.error('Account creation error. Please try again later.');
+          return;
+        }
+      }
+      // Handle successful account creation, e.g., updating the UI or redirecting
+      toast.success('Account created successfully!');
+      setIsOpen(false); // Close the modal on successful account creation
+      loginFormSubmit(event);
     } catch (error) {
       // Handle network errors
       console.error('Network error:', error);
@@ -117,6 +140,16 @@ function Login({ isOpen, setIsOpen }) {
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value)}
             />
+            <div className="form-control">
+              <label className="label cursor-pointer">
+                <span className="label-text">Opt into SeanGPT over SMS (<Link to="/tos" className='link' onClick={() => setIsOpen(false)}>Terms of Service</Link>)</span> 
+                <input
+                type="checkbox"
+                className="checkbox checkbox-lg"
+                value={isOptedIntoMessaging}
+                onChange={(e) => setIsOptedIntoMessaging(e.target.checked)}/>
+              </label>
+            </div>
           </div>
           <div className={`form-control mt-4 ${isSignupForm ? 'hidden':''}`}>
             <button className="btn btn-primary" type='submit'>Login</button>

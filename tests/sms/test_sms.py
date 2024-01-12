@@ -75,15 +75,15 @@ the database.  Note that there must be at least one chat in the user's twilio
 chat, otherwise the user will receive the welcome message (first message is ignored).
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_messages_saved(verified_new_user: dict, client: TestClient):
+def test_messages_saved(verified_opted_in_user: dict, client: TestClient):
     # Create a message in the Twilio chat
     client.post("/chat/message",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         },
         json={
             "role": "user",
@@ -94,7 +94,7 @@ def test_messages_saved(verified_new_user: dict, client: TestClient):
     send_text(client,
               body=incoming_msg,
               openai_response=outgoing_msg,
-              from_number=verified_new_user["phone"])
+              from_number=verified_opted_in_user["phone"])
     # Retrieve the messages in the twilio chat
     # The message endpoint retrieve messages one-by-one. You can query the message index with query
     # param 'chat_index', with zero being the oldest message.
@@ -103,8 +103,8 @@ def test_messages_saved(verified_new_user: dict, client: TestClient):
         saved_messages.append(client.get(
             "/chat/message",
             headers={
-                "Authorization": f"Bearer {verified_new_user['access_token']}",
-                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+                "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+                "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
             },
             params={"chat_index": chat_index}).json())
     # Check that the first message is the incoming message
@@ -132,16 +132,16 @@ will be multiple messages.  Multi-message responses are generated when the
 assistant has greater than 160 characters to respond with.
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_multi_message(verified_new_user: dict, client: TestClient):
+def test_multi_message(verified_opted_in_user: dict, client: TestClient):
     # Create a message in the Twilio chat so that we don't get the welcome
     # message.
     client.post("/chat/message",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         },
         json={
             "role": "user",
@@ -154,7 +154,7 @@ def test_multi_message(verified_new_user: dict, client: TestClient):
     # This takes only one character.
     response = send_text(client,
                          openai_response=outgoing_msg,
-                         from_number=verified_new_user["phone"])
+                         from_number=verified_opted_in_user["phone"])
     # Parse the XML response
     root = ET.fromstring(response.content)
 
@@ -220,6 +220,16 @@ def test_account_created(referral_code:str, client: TestClient):
     response = send_text(client,
                          from_number=random_phone_number,
                          body=referral_code)
+    # Next the user will be prompted to opt-in
+    # Check that the text of the 'Message' element is the opt-in message
+    assert parse_twiml_msg(response) == settings.app_sms_opt_in_message, (
+        f"Expected message response to be '{settings.app_sms_opt_in_message}', "
+        f"got {parse_twiml_msg(response)}")
+    # Have the user opt-in by sending "AGREE" to the endpoint
+    response = send_text(client,
+                        from_number=random_phone_number,
+                        body="AGREE")
+
     # Instead of the simulated response, we should see the welcome message
     # This is a twiml response, so we need to parse it
     # Check that the text of the 'Message' element is the welcome message
@@ -269,15 +279,15 @@ def test_account_not_created(client: TestClient):
 """ Tests that the correct system message is sent to the openai endpoint.
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_system_message(verified_new_user: dict, client: TestClient):
+def test_system_message(verified_opted_in_user: dict, client: TestClient):
     # Create a message in the Twilio chat
     client.post("/chat/message",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         },
         json={
             "role": "user",
@@ -289,7 +299,7 @@ def test_system_message(verified_new_user: dict, client: TestClient):
                new_callable=Mock) as mock_openai_api:
         mock_openai_api.side_effect = (
             async_create_mock_streaming_openai_api("assistant message response", delay=0.001))
-        send_text(client, from_number=verified_new_user["phone"], patch_openai_api=False)
+        send_text(client, from_number=verified_opted_in_user["phone"], patch_openai_api=False)
         # Check that the correct system message was sent to the openai endpoint
         # The first message is the system message.
         # Check that it has role=system and content=settings.twilio_system_message
@@ -308,15 +318,15 @@ characters to respond with.  If the user sends another message before the
 assistant has finished responding, the assistant should stop sending messages.
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
+def test_interrupted_multi_message(verified_opted_in_user: dict, client: TestClient):
     # Create a message in the Twilio chat
     client.post("/chat/message",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         },
         json={
             "role": "user",
@@ -333,7 +343,7 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
         kwargs = {
             "body": "This is an initial message.",
             "openai_response": outgoing_msg,
-            "from_number": verified_new_user["phone"],
+            "from_number": verified_opted_in_user["phone"],
             "delay": 0.2 # About 3 seconds to respond, long enough to interrupt
         })
     first_message_thread.start()
@@ -343,7 +353,7 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     send_text(client,
               body="This is an interruption message.",
               openai_response= "This is the response to the interruption message.",
-              from_number=verified_new_user["phone"])
+              from_number=verified_opted_in_user["phone"])
     first_message_thread.join()
     # Check that the user's twilio chat has three messages:
     # - The first message from the user
@@ -353,15 +363,15 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
     len_twilio_chat_messages = client.get(
         "/chat/message/len",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         }).json()['len']
     for chat_index in range(len_twilio_chat_messages):
         twilio_chat_messages.append(client.get(
             "/chat/message",
             headers={
-                "Authorization": f"Bearer {verified_new_user['access_token']}",
-                "X-Chat-ID": verified_new_user["twilio_chat_id"]
+                "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+                "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
             },
             params={"chat_index": chat_index}).json())
     assert len(twilio_chat_messages) == 4, (
@@ -392,13 +402,13 @@ def test_interrupted_multi_message(verified_new_user: dict, client: TestClient):
 """ Tests that only SMS is supported.
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_only_sms(verified_new_user: dict, client: TestClient):
+def test_only_sms(verified_opted_in_user: dict, client: TestClient):
     # Send a text to the endpoint (whatsapp)
     response = send_text(client,
-                         from_number=f'whatsapp:{verified_new_user["phone"]}',
+                         from_number=f'whatsapp:{verified_opted_in_user["phone"]}',
                          body="This is a test message.")
     # The response should be a valid twiml message saying that only SMS is
     # supported.
@@ -407,7 +417,7 @@ def test_only_sms(verified_new_user: dict, client: TestClient):
         f"got {parse_twiml_msg(response)}")
     # Send a text to the endpoint (MMS)
     response = send_text(client,
-                         from_number=verified_new_user["phone"],
+                         from_number=verified_opted_in_user["phone"],
                          body="This is a test message.",
                          num_media=1)
     # The response should be a valid twiml message saying that only SMS is
@@ -426,16 +436,16 @@ since it has a redirect.
 Any message with a redirect must end with an ellipsis.
 
 Args:
-    verified_new_user (dict):  A verified user.
+    verified_opted_in_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_followon_messages(verified_new_user: dict, client: TestClient):
+def test_followon_messages(verified_opted_in_user: dict, client: TestClient):
     # Start by posting a message to the twilio_chat so that we don't get the
     # welcome message.
     client.post("/chat/message",
         headers={
-            "Authorization": f"Bearer {verified_new_user['access_token']}",
-            "X-Chat-ID": verified_new_user["twilio_chat_id"]
+            "Authorization": f"Bearer {verified_opted_in_user['access_token']}",
+            "X-Chat-ID": verified_opted_in_user["twilio_chat_id"]
         },
         json={
             "role": "user",
@@ -458,7 +468,7 @@ def test_followon_messages(verified_new_user: dict, client: TestClient):
     for msg_index, assistant_response in enumerate(assistant_responses):
         response = send_text(client,
                              openai_response=assistant_response,
-                             from_number=verified_new_user["phone"],
+                             from_number=verified_opted_in_user["phone"],
                              message_sid=message_sid)
         response_msg = parse_twiml_msg(response)
         # For the first message, check that it ends with an ellipsis but does not start with one

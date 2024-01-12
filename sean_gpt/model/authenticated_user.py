@@ -4,6 +4,7 @@ from uuid import UUID
 import uuid
 
 from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy.sql import text
 
 class UserCreate(SQLModel):
     """ Schema for creating a user. """
@@ -18,6 +19,7 @@ class UserBase(SQLModel):
         index=True,
         unique=True)
     is_phone_verified: bool = Field(default=False)
+    opted_into_sms: bool = Field(default=False, sa_column_kwargs={"server_default": text("false"),})
     referrer_user_id: str = Field(index=True)
 
 class UserRead(UserBase):

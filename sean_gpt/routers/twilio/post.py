@@ -21,6 +21,7 @@ router = APIRouter(
     prefix="/twilio"
 )
 
+# TODO:  This function is terrible style.  Refactor it.
 @describe(
 """ Receives Twilio webhooks
 
@@ -31,7 +32,7 @@ Returns:
     TwiML.  The TwiML response.
 """)
 @router.post("")
-async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements
+async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements disable=too-many-branches disable=too-many-return-statements
     incoming_message: TwilioMessage,
     current_user: TwilioGetUserDep,
     session: SessionDep,
@@ -42,6 +43,25 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
         twiml_response.message(settings.app_no_whatsapp_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
+    # - If the current_user could not be found, return a static message requesting referral code
+    if not current_user:
+        twiml_response = twiml.MessagingResponse()
+        twiml_response.message(settings.app_request_referral_message)
+        return Response(content=twiml_response.to_xml(),
+                        media_type="application/xml")
+    # - Verify that the user is opted into messaging
+    if not current_user.opted_into_sms:
+        # Check if the user has sent "AGREE" to opt in
+        if incoming_message.body.lower() == "agree":
+            current_user.opted_into_sms = True
+            session.add(current_user)
+            session.commit()
+            session.refresh(current_user)
+        else:
+            twiml_response = twiml.MessagingResponse()
+            twiml_response.message(settings.app_sms_opt_in_message)
+            return Response(content=twiml_response.to_xml(),
+                            media_type="application/xml")
     # - Verify that this is not a MMS
     if incoming_message.num_media > 0:
         twiml_response = twiml.MessagingResponse()
@@ -51,12 +71,6 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     # Create a request ID.  It will be thrown away at the end, but used to
     # identify the request in the redis interrupts.
     request_id = str(uuid.uuid4())
-    # - If the current_user could not be found, return a static message requesting referral code
-    if not current_user:
-        twiml_response = twiml.MessagingResponse()
-        twiml_response.message(settings.app_request_referral_message)
-        return Response(content=twiml_response.to_xml(),
-                        media_type="application/xml")
     # - Retrieve the user's twilio chat
     twilio_chat = session.exec(select(Chat).where(Chat.id == current_user.twilio_chat_id)).first()
     # Subscribe to stream interrupt events

@@ -21,6 +21,7 @@ router = APIRouter(
     prefix="/twilio"
 )
 
+# TODO:  This function is terrible style.  Refactor it.
 @describe(
 """ Receives Twilio webhooks
 
@@ -31,7 +32,7 @@ Returns:
     TwiML.  The TwiML response.
 """)
 @router.post("")
-async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements
+async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements disable=too-many-branches disable=too-many-return-statements
     incoming_message: TwilioMessage,
     current_user: TwilioGetUserDep,
     session: SessionDep,

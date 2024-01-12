@@ -1,5 +1,4 @@
 """ Tests for user opt-in to SMS notifications. """
-import random
 from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe

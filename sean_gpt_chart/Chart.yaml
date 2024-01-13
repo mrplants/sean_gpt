@@ -2,3 +2,8 @@ apiVersion: v2
 name: sean_gpt_chart
 type: application
 version: 0.1.0
+
+dependencies:
+  - name: kafka
+    version: "26.6.3"
+    repository: "https://charts.bitnami.com/bitnami"

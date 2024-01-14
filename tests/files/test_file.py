@@ -29,6 +29,10 @@
 # GET (protected, verified)
 #   Get a list of share sets that the file belongs to.
 #
+# /file/download
+# GET (protected, verified)
+#   Download a file.  The user must have access to the file.
+#
 # The SeanGPT Files API is designed to make a user's file contents searchable and available in their
 # AI chats. It also provides a way to share searchable files with other users.  Here's how it works:
 #
@@ -357,6 +361,7 @@ def test_file_get_share_sets(client: TestClient, verified_new_user: dict, tmp_pa
     assert get_response.json()[0]['id'] == upload_response['default_share_set_id'], (
         f"Expected response to contain 'id'. Received response {get_response.json()}"
     )
+    
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_and_authorized(verified_new_user, client, tmp_path):
@@ -367,17 +372,35 @@ def test_verified_and_authorized(verified_new_user, client, tmp_path):
                             "/file",
                             files={"file": temp_file.open("rb")},
                             verified_user=verified_new_user, client=client)
+    # Upload another file so that we have the ID for later checks
+    temp_file = tmp_path / "test2.txt"
+    temp_file.write_text("test file contents")
+    upload_response = client.post(
+        "/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        files={"file": temp_file.open("rb")}
+    ).json()
     check_verified_route("GET",
                             "/file",
-                            params={"file_id": "test"},
+                            params={"file_id": upload_response['id']},
                             verified_user=verified_new_user, client=client)
     check_verified_route("GET",
                             "/file",
-                            params={"share_set_id": "test"},
+                            params={"share_set_id": upload_response['default_share_set_id']},
                             verified_user=verified_new_user, client=client)
     check_verified_route("GET",
                             "/file",
                             params={"semantic_search": "test"},
+                            verified_user=verified_new_user, client=client)
+    check_verified_route("GET",
+                            "/file/share_sets",
+                            params={"file_id": upload_response['id']},
+                            verified_user=verified_new_user, client=client)
+    check_verified_route("GET",
+                            "/file/download",
+                            params={"id": upload_response['id']},
                             verified_user=verified_new_user, client=client)
     check_verified_route("DELETE",
                             "/file",

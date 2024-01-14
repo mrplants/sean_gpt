@@ -39,14 +39,12 @@ redis:
   replicas: 1
   image: "redis:latest"
   storage: 1Gi
-  storageClassName: default # "standard" for kind, "default" for azure
   port: 6379
 
 postgres:
   replicas: 1
   image: "postgres:latest"
   storage: 1Gi
-  storageClassName: default # "standard" for kind, "default" for azure
   port: 5432
 
 sean_gpt:
@@ -61,3 +59,18 @@ local: false
 domain: "sean-gpt.com"
 api_domain: "api.sean-gpt.com"
 cert_prefix: "sean-gpt"
+
+milvus:
+  cluster:
+    enabled: false
+  etcd:
+    replicaCount: 1
+  minio:
+    mode: standalone
+  pulsar:
+    enabled: false
+
+kafka:
+  listeners:
+    client:
+      protocol: "PLAINTEXT"

@@ -1,9 +1,15 @@
 apiVersion: v2
 name: sean_gpt_chart
 type: application
-version: 0.1.0
+version: 0.1.1
 
 dependencies:
   - name: kafka
     version: "26.6.3"
     repository: "https://charts.bitnami.com/bitnami"
+  - name: keda
+    version: "2.12.1"
+    repository: "https://kedacore.github.io/charts"
+  - name: milvus
+    version: "4.1.11"
+    repository: "https://zilliztech.github.io/milvus-helm/"

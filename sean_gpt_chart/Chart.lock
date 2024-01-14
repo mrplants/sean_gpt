@@ -2,5 +2,11 @@ dependencies:
 - name: kafka
   repository: https://charts.bitnami.com/bitnami
   version: 26.6.3
-digest: sha256:036ad10765d78dad242674929dbd1bbcb30a3ed56304d501c111a91b398646ca
-generated: "2024-01-12T23:15:32.573651-08:00"
+- name: keda
+  repository: https://kedacore.github.io/charts
+  version: 2.12.1
+- name: milvus
+  repository: https://zilliztech.github.io/milvus-helm/
+  version: 4.1.11
+digest: sha256:215e6498eff91ba6f9dddeb776fb785e7909e99a0dd119dc5a4978942c5b3013
+generated: "2024-01-13T10:32:04.477075-08:00"

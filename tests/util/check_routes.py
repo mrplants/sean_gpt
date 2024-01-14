@@ -2,7 +2,6 @@
 """
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -10,28 +9,28 @@
 
 import random
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.util.describe import describe
 
 @describe(""" Checks that a route requires authorization for access. """)
 def check_authorized_route(
     request_type: str,
+    host,
     route: str,
     authorized_user: dict,
-    client: TestClient,
     **request_kwargs):
     request_func = {
-        "get": client.get,
-        "post": client.post,
-        "put": client.put,
-        "delete": client.delete
+        "get": httpx.get,
+        "post": httpx.post,
+        "put": httpx.put,
+        "delete": httpx.delete
     }[request_type.lower()]
     headers = {
         "Authorization": f"Bearer {authorized_user['access_token']}"
     } | request_kwargs.get("headers", {})
     response = request_func(
-        route,
+        host+route,
         headers=headers,
         **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
@@ -42,8 +41,8 @@ def check_authorized_route(
     )
     # Now send an unauthorized request
     headers = {"Authorization": "Bearer invalid_token"} | request_kwargs.get("headers", {})
-    response = client.post(
-        route,
+    response = httpx.post(
+        host+route,
         headers=headers,
         **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )
@@ -56,15 +55,15 @@ def check_authorized_route(
 @describe(""" Checks that a route requires a verified user for access. """)
 def check_verified_route(
     request_type: str,
+    host,
     route: str,
     verified_user: dict,
-    client: TestClient,
     **request_kwargs):
     # First, create an unverified user from the referral code of the verified user
     new_user_phone = f"+{random.randint(10000000000, 20000000000)}"
     new_user_password = f"test{random.randint(0, 1000000)}"
-    unverified_user = client.post(
-        "/user",
+    unverified_user = httpx.post(
+        f"{host}/user",
         json={
             "user": {
                 "phone": new_user_phone,
@@ -74,8 +73,8 @@ def check_verified_route(
         }
     ).json()
     # Get the new user's auth token
-    unverified_user = unverified_user | client.post(
-        "/user/token",
+    unverified_user = unverified_user | httpx.post(
+        f"{host}/user/token",
         data={
             "grant_type": "password",
             "username": new_user_phone,
@@ -84,16 +83,16 @@ def check_verified_route(
     ).json() | {"password": new_user_password}
 
     request_func = {
-        "get": client.get,
-        "post": client.post,
-        "put": client.put,
-        "delete": client.delete
+        "get": httpx.get,
+        "post": httpx.post,
+        "put": httpx.put,
+        "delete": httpx.delete
     }[request_type.lower()]
     headers = {
         "Authorization": f"Bearer {verified_user['access_token']}"
     } | request_kwargs.get("headers", {})
     response = request_func(
-        route,
+        host+route,
         headers=headers,
         **{k: v for k, v in request_kwargs.items() if k != 'headers'}
     )

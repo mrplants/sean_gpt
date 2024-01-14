@@ -15,6 +15,14 @@ spec:
     spec:
       containers:
       - name: postgres
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -h localhost -p {{ .Values.postgres.port }} -U $API_DB_USER -d $DATABASE_NAME
+          initialDelaySeconds: 10
+          periodSeconds: 5
         image: {{ .Values.postgres.image }}
         env:
         - name: PGDATA
@@ -55,7 +63,6 @@ spec:
   - metadata:
       name: postgres-volume
     spec:
-      storageClassName: {{ .Values.postgres.storageClassName }}
       accessModes:
       - ReadWriteOnce
       resources:

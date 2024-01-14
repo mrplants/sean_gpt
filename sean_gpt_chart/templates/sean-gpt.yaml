@@ -19,6 +19,13 @@ spec:
     spec:
       containers:
       - name: sean-gpt
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.sean_gpt.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
         image: {{ .Values.sean_gpt.image }}
 {{- if .Values.local }}
         imagePullPolicy: IfNotPresent

@@ -6,6 +6,7 @@ from pydantic import Field
 from .util.env import yaml_env
 
 yaml_env('sean_gpt_chart/values.yaml', ['env'], 'sean_gpt_')
+yaml_env('sean_gpt_chart/test_secrets.yaml', ['secrets'], 'sean_gpt_')
 
 class Settings(BaseSettings):
     """ Configuration for the app. """
@@ -14,21 +15,16 @@ class Settings(BaseSettings):
     # SECRETS
     # Values from secrets need default values for testing because we do not load
     # the secrets file in testing
-    jwt_secret_key: str = Field(default="TEST_SECRET_KEY", alias='sean_gpt_jwt_secret_key')
-    api_db_user: str = Field(default="TEST_SEAN_GPT_DB_USER", alias='sean_gpt_api_db_user')
-    api_db_password: str = Field(default="TEST_SEAN_GPT_DB_PASSWORD",
-                                 alias='sean_gpt_api_db_password')
-    openai_api_key: str = Field(default="TEST_OPENAI_API_KEY", alias='sean_gpt_openai_api_key')
-    user_admin_phone: str = Field(default="TEST_USER_ADMIN_PHONE",
-                                  alias='sean_gpt_user_admin_phone')
-    user_admin_password: str = Field(default="TEST_USER_ADMIN_PASSWORD",
-                                     alias='sean_gpt_user_admin_password')
-    twilio_test_sid: str = Field(default="TEST_TWILIO_SID", alias='sean_gpt_twilio_test_sid')
-    twilio_test_auth_token: str = Field(default="TEST_TWILIO_AUTH_TOKEN",
-                                        alias='sean_gpt_twilio_test_auth_token')
-    twilio_sid: str = Field(default="TEST_TWILIO_SID", alias='sean_gpt_twilio_sid')
-    twilio_auth_token: str = Field(default="TEST_TWILIO_AUTH_TOKEN",
-                                   alias='sean_gpt_twilio_auth_token')
+    jwt_secret_key: str = Field(alias='sean_gpt_jwt_secret_key')
+    api_db_user: str = Field(alias='sean_gpt_api_db_user')
+    api_db_password: str = Field(alias='sean_gpt_api_db_password')
+    openai_api_key: str = Field(alias='sean_gpt_openai_api_key')
+    user_admin_phone: str = Field(alias='sean_gpt_user_admin_phone')
+    user_admin_password: str = Field(alias='sean_gpt_user_admin_password')
+    twilio_test_sid: str = Field( alias='sean_gpt_twilio_test_sid')
+    twilio_test_auth_token: str = Field(alias='sean_gpt_twilio_test_auth_token')
+    twilio_sid: str = Field( alias='sean_gpt_twilio_sid')
+    twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')

@@ -3,7 +3,6 @@
 
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -28,12 +27,12 @@
 from unittest.mock import patch, Mock
 import threading as th
 
-from fastapi.testclient import TestClient
+import httpx
 from fastapi.websockets import WebSocketDisconnect
 
 from sean_gpt.util.describe import describe
-from ..util.chat import async_create_mock_streaming_openai_api
 from ..util.check_routes import check_authorized_route
+from ..util.mock import patch_openai_async_completions
 
 @describe(
 """ Test GET endpoint for chat token generation.
@@ -42,10 +41,10 @@ Args:
     client (TestClient): The test client.
     verified_new_user (dict): A verified new user.
 """)
-def test_generate_chat_token_get(client: TestClient, verified_new_user: dict):
+def test_generate_chat_token_get(sean_gpt_host: str, verified_new_user: dict):
     # Create a chat generation token
-    token_response = client.get(
-        "/generate/chat/token",
+    token_response = httpx.get(
+        f"{sean_gpt_host}/generate/chat/token",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"})
     # The response should be:
@@ -67,10 +66,10 @@ Args:
     client (TestClient): The test client.
     verified_new_user (dict): A verified new user.
 """)
-def test_generate_chat(client: TestClient, verified_new_user: dict):
+def test_generate_chat(sean_gpt_host: str, verified_new_user: dict):
     # Create a chat generation token
-    token = client.get(
-        "/generate/chat/token",
+    token = httpx.get(
+        f"{sean_gpt_host}/generate/chat/token",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"}).json()['token']
 
@@ -78,15 +77,11 @@ def test_generate_chat(client: TestClient, verified_new_user: dict):
     websocket_generated_response = ''
     expected_response = "Sample OpenAI response"
     # First, patch the OpenAI API to return a mock response.
-    with patch('openai.resources.chat.AsyncCompletions.create',
-               new_callable=Mock) as mock_openai_api:
-        mock_openai_api.side_effect = (
-            async_create_mock_streaming_openai_api(expected_response, delay=0.001)
-        )
+    with patch_openai_async_completions(expected_response, 0.001) as retrieve_call_args:
         # Put in a try block to catch any disconnect exceptions
         try:
-            with client.websocket_connect(
-                f"/generate/chat/ws?token={token}") as websocket:
+            with httpx.websocket_connect(
+                f"{sean_gpt_host}/generate/chat/ws?token={token}") as websocket:
                 # The first messagein the exchange is the prior: a list of messages.
                 websocket.send_json({
                     'action': 'chat_completion',
@@ -128,7 +123,8 @@ def test_generate_chat(client: TestClient, verified_new_user: dict):
     )
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_and_authorized(verified_new_user, client):
+def test_verified_and_authorized(verified_new_user: dict, sean_gpt_host:str):
     check_authorized_route("GET",
+                           sean_gpt_host,
                            "/generate/chat/token",
-                           authorized_user=verified_new_user, client=client)
+                           authorized_user=verified_new_user)

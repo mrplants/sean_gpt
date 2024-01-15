@@ -52,9 +52,9 @@ helm upgrade --install seangpt-local "$SCRIPT_DIR/../sean_gpt_chart" \
 
 # Run the database migrations
 # First, wait for the database to be ready
-kubectl rollout status statefulset/postgres-0
+kubectl rollout status statefulset postgres
 # Port forward to the database
-kubectl port-forward statefulset/postgres-0 5432:5432 &
+kubectl port-forward service/postgres 5432:5432 &
 # Run the migrations
 sean_gpt_database_host=localhost python -m alembic upgrade head
 # Kill the port forward

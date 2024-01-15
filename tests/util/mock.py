@@ -23,26 +23,40 @@ def get_latest_sms(host: str) -> str:
         The contents of the most recent SMS.
     """
     # Get the most recent SMS
-    return httpx.get(
+    get_response = httpx.get(
         f"{host}/mock/twilio/sms",
-    ).json()
+    )
+    if get_response.is_error:
+        print('error retrieving latest sms')
+        print(get_response)
+        print(get_response.text)
+    return get_response.json()
 
 @describe(
 """ Patch the Twilio validator.
-
-Previously, this was done like:
-# with patch('twilio.request_validator.RequestValidator.validate',
-#         return_value=valid):
 
 Args:
     valid (bool): Whether the validator should validate the request.
 """)
 @contextmanager
 def patch_twilio_validator(host: str, valid: bool) -> None:
-    prev_valid = httpx.get(f"{host}/mock/twilio/validator").json()["valid"]
-    httpx.post(f"{host}/mock/twilio/validator", json={"valid": valid})
+    prev_valid = httpx.get(f"{host}/mock/twilio/validator")
+    if prev_valid.is_error:
+        print('error retrieving twilio validator patch')
+        print(prev_valid)
+        print(prev_valid.text)
+    prev_valid = prev_valid.json()['valid']
+    post_response = httpx.post(f"{host}/mock/twilio/validator", data=str(valid).lower())
+    if post_response.is_error:
+        print('error posting twilio validator patch')
+        print(post_response)
+        print(post_response.text)
     yield
-    httpx.post(f"{host}/mock/twilio/validator", json={"valid": prev_valid})
+    repost_response = httpx.post(f"{host}/mock/twilio/validator", data=str(prev_valid).lower())
+    if repost_response.is_error:
+        print('error reposting twilio validator patch')
+        print(repost_response)
+        print(repost_response.text)
 
 @describe(
 """ Test utility to patch the OpenAI async completions API.
@@ -52,11 +66,24 @@ Args:
     delay (int, optional): The delay between each response from the OpenAI API. Defaults to 0.001.
 """)
 @contextmanager
-def patch_openai_async_completions(host:str, openai_response: str, delay: int = 0.1):
-    prev_response = httpx.get(f"{host}/mock/openai/async_completions").json()
-    httpx.post(f"{host}/mock/openai/async_completions", json={
+def patch_openai_async_completions(host:str, openai_response: str, delay: float = 0.1):
+    prev_response = httpx.get(f"{host}/mock/openai/async_completions")
+    if prev_response.is_error:
+        print('error retrieving openai patch')
+        print(prev_response)
+        print(prev_response.text)
+    prev_response = prev_response.json()
+    post_response = httpx.post(f"{host}/mock/openai/async_completions", json={
         "response":openai_response,
         "delay": delay
     })
+    if post_response.is_error:
+        print('error posting openai patch')
+        print(post_response)
+        print(post_response.text)
     yield lambda: httpx.get(f"{host}/mock/openai/async_completions/call_args").json()
-    httpx.post(f"{host}/mock/openai/async_completions", json=prev_response)
+    repost_response = httpx.post(f"{host}/mock/openai/async_completions", json=prev_response)
+    if repost_response.is_error:
+        print('error reposting openai patch')
+        print(repost_response)
+        print(repost_response.text)

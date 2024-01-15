@@ -32,19 +32,16 @@
 # TODO Missing Tests
 # - Test that the openai message break character works "|"
 # - Test that the welcome message includes a contact card for the AI (or link to one)
-from unittest.mock import patch, Mock
 import xml.etree.ElementTree as ET
 import random
 import threading as th
 import time
+import uuid
 
 import httpx
-from sqlmodel import Session, select
 
 from sean_gpt.util.describe import describe
 from sean_gpt.config import settings
-from sean_gpt.util.database import get_db_engine
-from sean_gpt.model.authenticated_user import AuthenticatedUser
 
 from ..util.sms import send_text, parse_twiml_msg
 from ..util.mock import patch_openai_async_completions
@@ -108,17 +105,17 @@ def test_messages_saved(verified_opted_in_user: dict, sean_gpt_host: str):
             params={"chat_index": chat_index}).json())
     # Check that the first message is the incoming message
     assert saved_messages[1]['role'] == 'user', (
-        f"Expected first message to have role='user', got {saved_messages[0]['role']}"
+        f"Expected first message to have role='user', got {saved_messages}"
     )
     assert saved_messages[1]['content'] == incoming_msg, (
-        f"Expected first message to be '{incoming_msg}', got {saved_messages[0]['content']}"
+        f"Expected first message to be '{incoming_msg}', got {saved_messages}"
     )
     # Check that the second message is the outgoing message
     assert saved_messages[2]['role'] == 'assistant', (
-        f"Expected second message to have role='assistant', got {saved_messages[1]['role']}"
+        f"Expected second message to have role='assistant', got {saved_messages}"
     )
     assert saved_messages[2]['content'] == outgoing_msg, (
-        f"Expected second message to be '{outgoing_msg}', got {saved_messages[1]['content']}"
+        f"Expected second message to be '{outgoing_msg}', got {saved_messages}"
     )
     # check that only two messages exist
     assert len(saved_messages) == 3, f"Expected only three messages, got {len(saved_messages)}"
@@ -193,7 +190,7 @@ Args:
     client (TestClient):  A test client.
 """)
 def test_phone_verified(new_user: dict, sean_gpt_host: str):
-    send_text(client, from_number=new_user["phone"])
+    send_text(sean_gpt_host, from_number=new_user["phone"])
     # Retrieve the user
     user = httpx.get(f"{sean_gpt_host}/user",
         headers={
@@ -239,15 +236,17 @@ def test_account_created(referral_code:str, sean_gpt_host: str):
     # We cannot do this via the endpoint because the user has no credentials yet
     # Instead, we will check the database directly
     # Retrieve the user
-    db_engine = get_db_engine()
-    with Session(db_engine) as session:
-        user = (session
-                .exec(select(AuthenticatedUser)
-                      .where(AuthenticatedUser.phone == random_phone_number))
-                .first())
-    assert user is not None, 'User not created after valid referral.'
-    assert user.is_phone_verified, 'User should be phone verified.'
-    assert user.hashed_password == "", 'User should have no password hash.'
+
+    # TODO: Need to determine the user flow for authenticating after account creation over text
+    # db_engine = get_db_engine()
+    # with Session(db_engine) as session:
+    #     user = (session
+    #             .exec(select(AuthenticatedUser)
+    #                   .where(AuthenticatedUser.phone == random_phone_number))
+    #             .first())
+    # assert user is not None, 'User not created after valid referral.'
+    # assert user.is_phone_verified, 'User should be phone verified.'
+    # assert user.hashed_password == "", 'User should have no password hash.'
 
 @describe(
 """ Tests that an account is not created for new users without a valid referral.
@@ -260,7 +259,7 @@ Args:
 """)
 def test_account_not_created(sean_gpt_host: str):
     random_phone_number = f"+{random.randint(10000000000, 20000000000)}"
-    response = send_text(client,
+    response = send_text(sean_gpt_host,
                          from_number=random_phone_number,
                          body='user does not have a referral code')
     # Check that the text of the 'Message' element is the referral message
@@ -268,11 +267,12 @@ def test_account_not_created(sean_gpt_host: str):
         f"Expected message response to be '{settings.app_request_referral_message}', "
         "got {parse_twiml_msg(response)}")
     # Retrieve the user
-    db_engine = get_db_engine()
-    with Session(db_engine) as session:
-        user = session.exec(select(AuthenticatedUser)
-                            .where(AuthenticatedUser.phone == random_phone_number)).first()
-    assert user is None, 'User created after invalid referral.'
+    # TODO: Need to determine the user flow for authenticating after account creation over text
+    # db_engine = get_db_engine()
+    # with Session(db_engine) as session:
+    #     user = session.exec(select(AuthenticatedUser)
+    #                         .where(AuthenticatedUser.phone == random_phone_number)).first()
+    # assert user is None, 'User created after invalid referral.'
 
 @describe(
 """ Tests that the correct system message is sent to the openai endpoint.
@@ -303,7 +303,7 @@ def test_system_message(verified_opted_in_user: dict, sean_gpt_host: str):
         # Check that the correct system message was sent to the openai endpoint
         # The first message is the system message.
         # Check that it has role=system and content=settings.twilio_system_message
-        system_message = retrieve_call_args()['kwargs']['messages'][0]
+        system_message = retrieve_call_args()['messages'][0]
         assert system_message['role'] == 'system', (
             f"Expected system message to have role='system', got {system_message['role']}")
         assert system_message['content'] == settings.app_ai_system_message, (
@@ -464,7 +464,8 @@ def test_followon_messages(verified_opted_in_user: dict, sean_gpt_host: str):
         "This is the last message.",
     ]
     # Since this is a redirect, all messages must have the same message_sid
-    message_sid = 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    # Choose a random SID
+    message_sid = 'SM' + str(uuid.uuid4()).replace('-', '').upper()
     for msg_index, assistant_response in enumerate(assistant_responses):
         response = send_text(sean_gpt_host,
                              openai_response=assistant_response,

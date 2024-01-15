@@ -12,7 +12,11 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the code
-COPY sean_gpt sean_gpt
+# COPY sean_gpt sean_gpt
+# Removed because this is mounted directly from the node filesystem
+
+# Set the DEBUG_MOCK environment variable
+ENV DEBUG_MOCK=1
 
 # Expose the port the app runs on
 EXPOSE 8000

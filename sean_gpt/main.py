@@ -2,6 +2,7 @@
 """
 
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,17 +14,20 @@ from .routers import twilio
 from .routers import generate
 from .util.user import IsVerifiedUserDep
 
+if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+    from .routers import mock
+
 @asynccontextmanager
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-async def lifespan(app: FastAPI): # pylint: disable=missing-function-docstring
+async def lifespan(_): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
     create_tables_if_necessary()
+    if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+        mock.startup()
     yield
+    if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+        mock.shutdown()
     # Shutdown logic
-# pylint: enable=redefined-outer-name
-# pylint: enable=unused-argument
 
 app = FastAPI(lifespan=lifespan)
 
@@ -50,3 +54,6 @@ async def health_check():
     """ Health check endpoint.
     """
     return {"status": "ok"}
+
+if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+    app.include_router(mock.router)

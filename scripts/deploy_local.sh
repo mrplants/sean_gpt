@@ -36,7 +36,7 @@ popd
 poetry export -f requirements.txt --output "$SCRIPT_DIR/../dist/requirements.txt"
 
 # Build the API docker image and push to kind
-docker build -t sean_gpt_local:latest -f "$SCRIPT_DIR/../Dockerfile.test.api" "$SCRIPT_DIR/.."
+docker build -t sean_gpt_local:latest -f "$SCRIPT_DIR/../Dockerfile.local.api" "$SCRIPT_DIR/.."
 kind load docker-image sean_gpt_local:latest -n sean-gpt-local
 # Build the frontend docker image and push to kind
 docker build -t sean_gpt_frontend_local:latest -f "$SCRIPT_DIR/../Dockerfile.frontend" "$SCRIPT_DIR/.."

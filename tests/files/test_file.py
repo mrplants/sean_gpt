@@ -57,7 +57,7 @@
 
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.util.describe import describe
 from sean_gpt.config import settings
@@ -72,12 +72,12 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_upload(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_upload(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     # Create a temporary file
     temp_file = tmp_path / "temp.txt"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -132,19 +132,19 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_delete(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_delete(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     temp_file = tmp_path / "temp.txt"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     # Delete the file
-    delete_response = client.delete(
-        "/file",
+    delete_response = httpx.delete(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -164,19 +164,19 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_get_by_id(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_get_by_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     temp_file = tmp_path.parent / "test_file.py"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     # Retrieve the file
-    get_response = client.get(
-        "/file",
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -203,19 +203,19 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_get_by_share_set_id(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_get_by_share_set_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     temp_file = tmp_path / "test_file.py"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     # Retrieve the file
-    get_response = client.get(
-        "/file",
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -242,19 +242,19 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_get_by_semantic_search(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     temp_file = tmp_path / "test_file.py"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     # Retrieve the file
-    get_response = client.get(
-        "/file",
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -285,7 +285,7 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_upload_only_supported_types(
-    client: TestClient,
+    sean_gpt_host: str,
     verified_new_user: dict,
     tmp_path: Path):
     # Loop over the supported types and check that each can be uploaded
@@ -293,8 +293,8 @@ def test_file_upload_only_supported_types(
         # Create a temporary file
         temp_file = tmp_path / f"test_file.{file_type}"
         temp_file.write_text("Hello, World!")
-        upload_response = client.post(
-            "/file",
+        upload_response = httpx.post(
+            f"{sean_gpt_host}/file",
             headers={
                 "Authorization": f"Bearer {verified_new_user['access_token']}"
             },
@@ -309,8 +309,8 @@ def test_file_upload_only_supported_types(
     # Create a temporary file
     temp_file = tmp_path / "test_file.not_supported"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -330,20 +330,20 @@ Args:
     verified_new_user (dict): A verified new user.
     tmp_path (Path): A temporary path.
 """)
-def test_file_get_share_sets(client: TestClient, verified_new_user: dict, tmp_path: Path):
+def test_file_get_share_sets(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     # Create a temporary file
     temp_file = tmp_path / "temp.txt"
     temp_file.write_text("Hello, World!")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     # Retrieve the file's share sets
-    get_response = client.get(
-        "/file/share_sets",
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file/share_sets",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
@@ -364,45 +364,52 @@ def test_file_get_share_sets(client: TestClient, verified_new_user: dict, tmp_pa
     
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_and_authorized(verified_new_user, client, tmp_path):
+def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
     # Create and upload a file
     temp_file = tmp_path / "test.txt"
     temp_file.write_text("test file contents")
     check_verified_route("POST",
+                         sean_gpt_host,
                             "/file",
                             files={"file": temp_file.open("rb")},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     # Upload another file so that we have the ID for later checks
     temp_file = tmp_path / "test2.txt"
     temp_file.write_text("test file contents")
-    upload_response = client.post(
-        "/file",
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
         headers={
             "Authorization": f"Bearer {verified_new_user['access_token']}"
         },
         files={"file": temp_file.open("rb")}
     ).json()
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/file",
                             params={"file_id": upload_response['id']},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/file",
                             params={"share_set_id": upload_response['default_share_set_id']},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/file",
                             params={"semantic_search": "test"},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/file/share_sets",
                             params={"file_id": upload_response['id']},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/file/download",
                             params={"id": upload_response['id']},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("DELETE",
+                         sean_gpt_host,
                             "/file",
                             json={"id": "test"},
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)

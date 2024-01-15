@@ -125,9 +125,6 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
         stream=True,
     )
     # Create the partial_response
-    if await redis_conn.get(f'multi-part message with SID: {incoming_message.message_sid}'):
-        print("multi-part message detected")
-        print(incoming_message.body)
     partial_response = "…" if await redis_conn.get(
         f'multi-part message with SID: {incoming_message.message_sid}') else ""
     requires_redirect = False

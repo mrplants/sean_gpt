@@ -56,7 +56,7 @@ def send_text(
     if message_sid is None:
         message_sid = 'SM' + str(uuid.uuid4()).replace('-', '').upper()
     message = {
-        "MessageSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "MessageSid": message_sid,
         "SmsSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         "AccountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
         "MessagingServiceSid": "MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",

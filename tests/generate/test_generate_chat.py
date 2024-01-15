@@ -24,11 +24,12 @@
 #TODO: test that a connection cannot be made without a token
 #TODO: test that a completion token will timeout
 
-from unittest.mock import patch, Mock
 import threading as th
+import json
 
 import httpx
-from fastapi.websockets import WebSocketDisconnect
+from websockets.sync.client import connect as connect_ws
+from websockets.exceptions import ConnectionClosed
 
 from sean_gpt.util.describe import describe
 from ..util.check_routes import check_authorized_route
@@ -77,13 +78,12 @@ def test_generate_chat(sean_gpt_host: str, verified_new_user: dict):
     websocket_generated_response = ''
     expected_response = "Sample OpenAI response"
     # First, patch the OpenAI API to return a mock response.
-    with patch_openai_async_completions(expected_response, 0.001) as retrieve_call_args:
+    with patch_openai_async_completions(sean_gpt_host, expected_response, 0.001):
         # Put in a try block to catch any disconnect exceptions
         try:
-            with httpx.websocket_connect(
-                f"{sean_gpt_host}/generate/chat/ws?token={token}") as websocket:
+            with connect_ws(f"{sean_gpt_host}/generate/chat/ws?token={token}".replace('http','ws')) as ws:
                 # The first messagein the exchange is the prior: a list of messages.
-                websocket.send_json({
+                ws.send(json.dumps({
                     'action': 'chat_completion',
                     'payload': {
                         'conversation': [
@@ -101,20 +101,20 @@ def test_generate_chat(sean_gpt_host: str, verified_new_user: dict):
                             }
                         ]
                     }
-                })
+                }))
                 # The response is streamed back in chunks.
                 # The server will disconnect when it is finished streaming.
                 # Create a timer that will raise an exception if the server takes too long.
                 def timeout_assertion():
-                    websocket.close()
+                    ws.close()
                     assert False, "The server took too long to respond."
                 timer = th.Timer(10, timeout_assertion)
                 timer.start()
                 while True:
-                    response = websocket.receive_text()
+                    response = ws.recv()
                     websocket_generated_response += response
                 # All subsequent messages are the response.
-        except WebSocketDisconnect:
+        except ConnectionClosed:
             timer.cancel()
 
     # Check that the response is what we expect.

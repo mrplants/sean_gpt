@@ -29,6 +29,9 @@ spec:
         image: {{ .Values.sean_gpt.image }}
 {{- if .Values.local }}
         imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: host-volume
+          mountPath: /app/sean_gpt
 {{- end }}
         env:
         - name: LAST_DEPLOYED
@@ -40,6 +43,13 @@ spec:
         - prefix: "sean_gpt_"
           configMapRef:
             name: sean-gpt-env
+{{- if .Values.local }}
+      volumes:
+      - name: host-volume
+        hostPath:
+          path: /mnt/sean_gpt
+          type: Directory
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

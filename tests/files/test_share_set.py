@@ -21,7 +21,7 @@
 # DELETE (protected, verified)
 #   Delete a share set
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.util.describe import describe
 
@@ -34,10 +34,10 @@ Args:
     client (TestClient): The test client.
     verified_new_user (dict): A verified new user.
 """)
-def test_create_share_set(client: TestClient, verified_new_user: dict):
+def test_create_share_set(sean_gpt_host: str, verified_new_user: dict):
     # Create a share set
-    response = client.post(
-        "/share_set",
+    response = httpx.post(
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
         json={"name": "test share set"}
     )
@@ -60,16 +60,16 @@ Args:
     client (TestClient): The test client.
     verified_new_user (dict): A verified new user.
 """)
-def test_get_share_sets(client: TestClient, verified_new_user: dict):
+def test_get_share_sets(sean_gpt_host: str, verified_new_user: dict):
     # First, create a share set
-    share_set = client.post(
-        "/share_set",
+    share_set = httpx.post(
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
         json={"name": "test share set"}
     ).json()
     # Get all share sets
-    response = client.get(
-        "/share_set",
+    response = httpx.get(
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
     )
     # The response should be:
@@ -90,16 +90,16 @@ Args:
     client (TestClient): The test client.
     verified_new_user (dict): A verified new user.
 """)
-def test_delete_share_set(client: TestClient, verified_new_user: dict):
+def test_delete_share_set(sean_gpt_host: str, verified_new_user: dict):
     # First, create a share set
-    share_set = client.post(
-        "/share_set",
+    share_set = httpx.post(
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
         json={"name": "test share set"}
     ).json()
     # Delete the share set
-    response = client.delete(
-        f"/share_set/{share_set['id']}",
+    response = httpx.delete(
+        f"{sean_gpt_host}/share_set/{share_set['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
     )
     # The response should be:
@@ -107,7 +107,7 @@ def test_delete_share_set(client: TestClient, verified_new_user: dict):
     assert response.status_code == 204, f"Expected 204 No Content, got {response.status_code}"
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_and_authorized(verified_new_user, client):
+def test_verified_and_authorized(verified_new_user, sean_gpt_host):
     # Create a share set to use for testing
     share_set = client.post(
         "/share_set",
@@ -115,13 +115,16 @@ def test_verified_and_authorized(verified_new_user, client):
         json={"name": "test share set"}
     ).json()
     check_verified_route("POST",
+                         sean_gpt_host,
                            "/share_set",
                            body={"name": "test share set"},
-                           verified_user=verified_new_user, client=client)
+                           verified_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                             "/share_set",
-                            verified_user=verified_new_user, client=client)
+                            verified_user=verified_new_user)
     check_verified_route("DELETE",
+                         sean_gpt_host,
                            "/share_set",
                            body={"id": share_set["id"]},
-                           verified_user=verified_new_user, client=client)
+                           verified_user=verified_new_user)

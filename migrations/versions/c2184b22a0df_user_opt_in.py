@@ -1,8 +1,8 @@
-"""add sms opt-in
+"""User opt in
 
-Revision ID: 8dbadb217ee4
-Revises: 6676b56757aa
-Create Date: 2024-01-11 23:46:28.630447
+Revision ID: c2184b22a0df
+Revises: b552fc6476cd
+Create Date: 2024-01-14 21:47:45.972804
 
 """
 from typing import Sequence, Union
@@ -13,8 +13,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8dbadb217ee4'
-down_revision: Union[str, None] = '6676b56757aa'
+revision: str = 'c2184b22a0df'
+down_revision: Union[str, None] = 'b552fc6476cd'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

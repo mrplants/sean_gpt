@@ -7,7 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .util.database import create_tables_if_necessary, reset_db_connection
+from .util.database import reset_db_connection
 from .routers import chat
 from .routers import user
 from .routers import twilio
@@ -21,7 +21,6 @@ if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
 async def lifespan(_): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
-    create_tables_if_necessary()
     if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
         mock.startup()
     yield

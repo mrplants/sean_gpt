@@ -64,12 +64,6 @@ def create_admin_if_necessary(): # pylint: disable=missing-function-docstring
             session.add(admin_user)
             session.commit()
 
-@describe(""" Create and initialize the tables in the database. """)
-def create_tables_if_necessary(): # pylint: disable=missing-function-docstring
-    db_engine = get_db_engine()
-    SQLModel.metadata.create_all(db_engine)
-    create_admin_if_necessary()
-
 @describe(
 """ FastAPI dependency to get a database session. """)
 def get_session(): # pylint: disable=missing-function-docstring

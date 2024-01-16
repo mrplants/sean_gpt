@@ -1,6 +1,0 @@
-seangpt:
-- sean_gpt:
-    image: "sean_gpt_local:latest"
-- sean_gpt_frontend:
-    image: "sean_gpt_frontend_local:latest"
-- local: true

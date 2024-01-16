@@ -5,9 +5,6 @@ from pydantic import Field
 
 from .util.env import yaml_env
 
-yaml_env('sean_gpt_chart/values.yaml', ['env'], 'sean_gpt_')
-yaml_env('sean_gpt_chart/test_secrets.yaml', ['secrets'], 'sean_gpt_')
-
 class Settings(BaseSettings):
     """ Configuration for the app. """
     debug: bool = False
@@ -25,8 +22,8 @@ class Settings(BaseSettings):
     twilio_test_auth_token: str = Field(alias='sean_gpt_twilio_test_auth_token')
     twilio_sid: str = Field( alias='sean_gpt_twilio_sid')
     twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
-    minio_root_user: str = Field(alias='sean_gpt_minio_root_user')
-    minio_root_password: str = Field(alias='sean_gpt_minio_root_password')
+    minio_root_user: str = Field(alias='sean_gpt_minio_rootUser')
+    minio_root_password: str = Field(alias='sean_gpt_minio_rootPassword')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')

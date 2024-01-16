@@ -1,0 +1,11 @@
+# dialect+driver://username:password@host:port/database
+# The "+" should be included in the driver env variable below
+database:
+  dialect: "postgresql"
+  driver: ""
+  host: "postgres-postgresql.postgres.svc.cluster.local"
+  port: 5432
+  name: "sean_gpt"
+
+redis:
+  host: "redis"

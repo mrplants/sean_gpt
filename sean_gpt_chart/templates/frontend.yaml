@@ -1,28 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sean-gpt-frontend
+  name: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sean-gpt-frontend
+      app: frontend
   template:
     metadata:
       labels:
-        app: sean-gpt-frontend
+        app: frontend
     spec:
       containers:
-      - name: sean-gpt-frontend
+      - name: frontend
 {{- if .Values.local }}
         imagePullPolicy: IfNotPresent
 {{- end }}
-        image: {{ .Values.sean_gpt_frontend.image }}
+        image: {{ .Values.frontend.image }}
         ports:
         - containerPort: 80
         env:
+{{- if .Values.local }}
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
+{{- end }}
         - name: REACT_APP_API_ENDPOINT
           value: "{{ .Values.api_domain }}"
 
@@ -31,10 +33,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sean-gpt-frontend
+  name: frontend
 spec:
   selector:
-    app: sean-gpt-frontend
+    app: frontend
   ports:
     - protocol: TCP
       port: 80

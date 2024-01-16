@@ -1,0 +1,99 @@
+{{/*
+recursiveFlattenDictEnv - Recursively flattens a nested dictionary for env variables.
+Args:
+    dict: The dictionary to flatten.
+    prefix: The string to prefix to keys (used for recursion).
+*/}}
+{{- define "recursiveFlattenDictEnv" -}}
+    {{- $localCtx := . -}}
+    {{- range $key, $value := .dict -}}
+        {{- if kindOf $value | eq "map" -}}
+            {{- include "recursiveFlattenDictEnv" (dict "dict" $value "prefix" (printf "%s%s_" $localCtx.prefix $key)) -}}
+        {{- else -}}
+            {{- printf "- name: %s%s\n  value: \"%v\"\n" $localCtx.prefix $key $value -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      initContainers:
+      - name: alembic-migration
+        image: {{ .Values.seangpt.migrate_image.image_name }}:{{ .Values.seangpt.migrate_image.image_tag }}
+{{- if .Values.local }}
+        imagePullPolicy: IfNotPresent
+{{- end }}
+        command: ["/bin/sh"]
+        args:
+        - |
+          until pg_isready -h {{ .Values.database.host }} -p {{ .Values.database.port }}; -d {{ .Values.database.name }} -U {{ .Values.api_db_user }} -P {{ .Values.api_db_password }} do
+            echo "Waiting for postgres database to be ready..."
+            sleep 2
+          done
+          alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head
+
+        args: ["-c", "-x", "alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head"]
+        env:
+        {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
+{{- if .Values.local }}
+        - name: LAST_DEPLOYED
+          value: "{{ now | unixEpoch }}"
+{{- end }}
+      containers:
+      - name: api
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.api.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+        image: {{ .Values.api.image }}
+{{- if .Values.local }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: host-volume
+          mountPath: /app/sean_gpt
+{{- end }}
+        env:
+        {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
+{{- if .Values.local }}
+        - name: LAST_DEPLOYED
+          value: "{{ now | unixEpoch }}"
+{{- end }}
+      volumes:
+{{- if .Values.local }}
+      - name: host-volume
+        hostPath:
+          path: /mnt/sean_gpt
+          type: Directory
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+  ports:
+    - port: {{ .Values.api.port }}
+      targetPort: {{ .Values.api.port }}

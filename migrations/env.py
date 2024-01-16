@@ -6,24 +6,63 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-generate_or_migrate = config.get_main_option('generate_or_migrate')
+# Function to parse custom arguments
+def parse_custom_args(custom_args):
+    args_dict = {}
+    for arg in custom_args:
+        if '=' not in arg:
+            continue
+        key, value = arg.split('=')
+        args_dict[key] = value
+    return args_dict
+
+def retrieve_env(env):
+    from sean_gpt.util.env import yaml_env
+    yaml_env('sean_gpt_chart/values.yaml', drill_down_path=['env'], prefix='sean_gpt_')
+    yaml_env('config/values.yaml', prefix='sean_gpt_')
+    if environment in ('prod', 'production'):
+        yaml_env('config/production/secrets.yaml', prefix='sean_gpt_')
+        yaml_env('config/production/values.yaml', prefix='sean_gpt_')
+    elif environment in ('dev', 'development'):
+        yaml_env('config/development/secrets.yaml', prefix='sean_gpt_')
+        yaml_env('config/development/values.yaml', prefix='sean_gpt_')
+    elif environment == 'local':
+        yaml_env('config/local/test_secrets.yaml', prefix='sean_gpt_')
+        yaml_env('config/local/values.yaml', prefix='sean_gpt_')
+    else:
+        raise ValueError('environment must be set to either "local", "development", or "production"')
+
+# Accessing the custom arguments
+custom_args = parse_custom_args(context.config.cmd_opts.x) if context.config.cmd_opts.x else {}
+
+# values to indicate whether the script is generating or applying a migration
+# alembic -x generate_or_migrate=generate revision --autogenerate -m "Initialize database"
+# alembic -x generate_or_migrate=migrate upgrade head
+# generate_or_migrate = generate or migrate
+# environment = local, development (dev), or production (prod)
+generate_or_migrate = custom_args.get('generate_or_migrate', None)
+environment = custom_args.get('environment', 'local')
+migrate_outside_kubernetes = 'migrate_outside_kubernetes' in context.config.cmd_opts.x
 
 if generate_or_migrate == 'generate':
     # setup for autogeneration
-    from sean_gpt.util.env import yaml_env
-    yaml_env('sean_gpt_chart/values.yaml', ['env'], 'sean_gpt_')
-    yaml_env('sean_gpt_chart/test_secrets.yaml', ['secrets'], 'sean_gpt_')
+    retrieve_env(environment)
+    os.environ['sean_gpt_database_host'] = 'localhost'
+    for env, val in os.environ.items():
+        print(f'{env}={val}')
     from sean_gpt.model.ai import AI
     from sean_gpt.model.authenticated_user import AuthenticatedUser
     from sean_gpt.model.chat import Chat
     from sean_gpt.model.message import Message
     from sean_gpt.model.verification_token import VerificationToken
-elif generate_or_migrate == 'generate':
-    # setup for normal migrations
-    pass
+elif generate_or_migrate == 'migrate':
+    # setup for migrations
+    if migrate_outside_kubernetes:
+        # Need to retrieve env variables if running outside of kubernetes
+        retrieve_env(environment)
+        os.environ['sean_gpt_database_host'] = 'localhost'
 else:
-    print('Error: generate_or_migrate must be set to either "generate" or "migrate"')
-    exit(1)
+    raise ValueError('generate_or_migrate must be set to either "generate" or "migrate"')
 
 from logging.config import fileConfig
 

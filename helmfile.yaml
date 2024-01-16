@@ -1,18 +1,24 @@
 environments:
   production: &prod
     values:
-    - values/production.yaml
-    - sean_gpt_chart/secrets.yaml
+    - config/values.yaml
+    - config/production/values.yaml
+    - config/production/secrets.yaml
+    kubeContext: sean-gpt-aks
   prod: *prod
   development: &dev
     values:
-    - values/development.yaml
-    - sean_gpt_chart/secrets.yaml
+    - config/values.yaml
+    - config/development/values.yaml
+    - config/development/secrets.yaml
+    kubeContext: sean-gpt-aks
   dev: *dev
   local: &default
     values:
-    - values/local.yaml
-    - sean_gpt_chart/local_secrets.yaml
+    - config/values.yaml
+    - config/local/values.yaml
+    - config/local/test_secrets.yaml
+    kubeContext: kind-kind
   default: *default
 ---
 repositories:
@@ -30,6 +36,10 @@ repositories:
     url: https://kubernetes.github.io/dashboard/
   - name: jetstack
     url: https://charts.jetstack.io
+
+helmDefaults:
+  args:
+    - "--debug"
 
 releases:
   # - name: milvus
@@ -87,16 +97,46 @@ releases:
     chart: kubernetes-dashboard/kubernetes-dashboard
     createNamespace: true
     namespace: kubernetes-dashboard
-# Access with:
-# $ kubectl proxy
-# http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+    # Access with:
+    # $ kubectl proxy
+    # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+  - name: postgres
+    chart: bitnami/postgresql
+    createNamespace: true
+    namespace: postgres
+    set:
+    - name: auth.database
+      value: {{ .Environment.Values.database.name }}
+    - name: auth.password
+      value: {{ .Environment.Values.api_db_password }}
+    - name: auth.username
+      value: {{ .Environment.Values.api_db_user }}
+    - name: primary.service.ports.postgresql
+      value: {{ .Environment.Values.database.port }}
 
   - name: "seangpt"
     chart: "./sean_gpt_chart"
     createNamespace: true
     namespace: seangpt
+    set:
+    - name: environment
+      value: {{ .Environment.Name | quote }}
     values:
-    {{ toYaml .Environment.Values.seangpt | nindent 6 }}
+    - {{ toYaml .Environment.Values | nindent 6}}
+    hooks:
+    - name: "build-and-push-api-image"
+      events: ["preapply"]
+      command: "/bin/sh"
+      args: ["-c", "-e", "{{ .Environment.Values.seangpt.api_image.build_and_push_command }} "]
+    - name: "build-and-push-migrate-image"
+      events: ["preapply"]
+      command: "/bin/sh"
+      args: ["-c", "-e", "{{ .Environment.Values.seangpt.migrate_image.build_and_push_command }} "]
+    - name: "build-and-push-frontend-image"
+      events: ["preapply"]
+      command: "/bin/sh"
+      args: ["-c", "-e", "{{ .Environment.Values.seangpt.frontend_image.build_and_push_command }} "]
 
 #############################################################################
 # The following are for Ingress and TLS/SSL termination.  Dev and Prod only #

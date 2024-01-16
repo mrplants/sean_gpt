@@ -1,0 +1,29 @@
+seangpt:
+  api_image:
+    image_name: "sean_gpt_api_local"
+    image_tag: "latest"
+    # Don't need to build since the local image has a host mount directly to the source code
+    build_and_push_command: |
+      poetry export -f requirements.txt --output 'dist/requirements.txt' && 
+      docker build -t sean_gpt_api_local:latest -f Dockerfile.local.api . && 
+      kind load docker-image sean_gpt_api_local:latest
+
+  migrate_image:
+    image_name: "sean_gpt_migrate_local"
+    image_tag: "latest"
+    build_and_push_command: |
+      docker build --build-arg ENV=local -t sean_gpt_migrate_local:latest -f Dockerfile.migrate . && 
+      kind load docker-image sean_gpt_migrate_local:latest
+
+  frontend_image:
+    image_name: "sean_gpt_frontend_local"
+    image_tag: "latest"
+    # Need to compile the react app first
+    build_and_push_command: |
+      pushd sean_gpt_frontend && 
+      CI=true npm run build && 
+      popd && 
+      docker build -t sean_gpt_frontend_local:latest -f Dockerfile.frontend . && 
+      kind load docker-image sean_gpt_frontend_local:latest
+
+local: true

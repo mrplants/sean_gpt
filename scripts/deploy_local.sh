@@ -32,7 +32,7 @@ pushd "$SCRIPT_DIR/../sean_gpt_frontend"
 CI=true npm run build
 popd
 
-# Create requirements.txt and build the wheel
+# Create requirements.txt
 poetry export -f requirements.txt --output "$SCRIPT_DIR/../dist/requirements.txt"
 
 # Build the API docker image and push to kind

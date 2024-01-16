@@ -1,7 +1,7 @@
 """ Database utilities for the Sean GPT API. """
 from typing import Annotated, Any
 
-from sqlmodel import create_engine, SQLModel, Session, select
+from sqlmodel import create_engine, Session, select
 from fastapi import Depends
 import aioredis
 
@@ -11,10 +11,8 @@ from .describe import describe
 
 # Import all the models, so that they're registered with sqlmodel
 from ..model.authenticated_user import AuthenticatedUser
-from ..model.message import Message # pylint: disable=unused-import
 from ..model.chat import Chat
 from ..model.ai import AI
-from ..model.verification_token import VerificationToken # pylint: disable=unused-import
 
 # Module-level variable to store the database engine instance
 _DB_ENGINE = None

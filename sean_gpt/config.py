@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     twilio_test_auth_token: str = Field(alias='sean_gpt_twilio_test_auth_token')
     twilio_sid: str = Field( alias='sean_gpt_twilio_sid')
     twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
+    minio_root_user: str = Field(alias='sean_gpt_minio_root_user')
+    minio_root_password: str = Field(alias='sean_gpt_minio_root_password')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')

@@ -1,4 +1,3 @@
-# Check if the values file has the local flag set to true
 {{- if .Values.local }}
 {{- else }}
 apiVersion: cert-manager.io/v1

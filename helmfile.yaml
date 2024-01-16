@@ -1,0 +1,117 @@
+environments:
+  production: &prod
+    values:
+    - values/production.yaml
+    - sean_gpt_chart/secrets.yaml
+  prod: *prod
+  development: &dev
+    values:
+    - values/development.yaml
+    - sean_gpt_chart/secrets.yaml
+  dev: *dev
+  local: &default
+    values:
+    - values/local.yaml
+    - sean_gpt_chart/local_secrets.yaml
+  default: *default
+---
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: kedacore
+    url: https://kedacore.github.io/charts
+  - name: milvus
+    url: https://zilliztech.github.io/milvus-helm/
+  - name: minio
+    url: https://charts.min.io/
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+  - name: kubernetes-dashboard
+    url: https://kubernetes.github.io/dashboard/
+  - name: jetstack
+    url: https://charts.jetstack.io
+
+releases:
+  # - name: milvus
+  #   chart: milvus/milvus
+  #   createNamespace: true
+  #   namespace: milvus
+  #   set:
+  #   - name: cluster.enabled
+  #     value: false
+  #   - name: etcd.replicaCount
+  #     value: 1
+  #   - name: minio.mode
+  #     value: standalone
+  #   - name: pulsar.enabled
+  #     value: false
+
+  # - name: minio
+  #   chart: minio/minio
+  #   createNamespace: true
+  #   namespace: minio
+  #   set:
+  #   - name: mode
+  #     value: standalone
+  #   - name: replicas
+  #     value: 1
+  #   - name: resources.requests.memory
+  #     value: 512Mi
+  #   - name: users[0].accessKey
+  #     value: ""
+  #   - name: users[0].secretKey
+  #     value: ""
+
+  # - name: kafka
+  #   chart: bitnami/kafka
+  #   createNamespace: true
+  #   namespace: kafka
+  #   set:
+  #   - name: listeners.client.protocol
+  #     value: "PLAINTEXT"
+  #   {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace kafka --output json || true") }}
+  #   - name: sasl.interbroker.password
+  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
+  #   - name: sasl.controller.password
+  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
+  #   - name: kraft.clusterId
+  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
+  #   {{ end }}
+      
+  # - name: keda
+  #   chart: kedacore/keda
+  #   createNamespace: true
+  #   namespace: keda
+
+  - name: kubernetes-dashboard
+    chart: kubernetes-dashboard/kubernetes-dashboard
+    createNamespace: true
+    namespace: kubernetes-dashboard
+# Access with:
+# $ kubectl proxy
+# http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+  - name: "seangpt"
+    chart: "./sean_gpt_chart"
+    createNamespace: true
+    namespace: seangpt
+    values:
+    {{ toYaml .Environment.Values.seangpt | nindent 6 }}
+
+#############################################################################
+# The following are for Ingress and TLS/SSL termination.  Dev and Prod only #
+#############################################################################
+  - name: ingress-nginx
+    chart: ingress-nginx/ingress-nginx
+    installed: {{ or (eq .Environment.Name "development") (eq .Environment.Name "production") }}
+    createNamespace: true
+    namespace: ingress-nginx
+
+  - name: cert-manager
+    chart: jetstack/cert-manager
+    installed: {{ or (eq .Environment.Name "development") (eq .Environment.Name "production") }}
+    createNamespace: true
+    namespace: cert-manager
+    set:
+      - name: installCRDs
+        value: true

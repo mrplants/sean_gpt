@@ -59,18 +59,3 @@ local: false
 domain: "sean-gpt.com"
 api_domain: "api.sean-gpt.com"
 cert_prefix: "sean-gpt"
-
-milvus:
-  cluster:
-    enabled: false
-  etcd:
-    replicaCount: 1
-  minio:
-    mode: standalone
-  pulsar:
-    enabled: false
-
-kafka:
-  listeners:
-    client:
-      protocol: "PLAINTEXT"

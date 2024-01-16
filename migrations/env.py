@@ -1,19 +1,4 @@
-from logging.config import fileConfig
 import os
-
-from sean_gpt.util.env import yaml_env
-yaml_env('sean_gpt_chart/secrets.yaml', ['secrets'], 'sean_gpt_')
-
-from sean_gpt.config import settings
-from sean_gpt.model.ai import AI
-from sean_gpt.model.authenticated_user import AuthenticatedUser
-from sean_gpt.model.chat import Chat
-from sean_gpt.model.message import Message
-from sean_gpt.model.verification_token import VerificationToken
-from sqlmodel import SQLModel
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 
 from alembic import context
 
@@ -21,7 +6,37 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = f"{settings.database_dialect}{settings.database_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}" # pylint: disable=line-too-long
+generate_or_migrate = config.get_main_option('generate_or_migrate')
+
+if generate_or_migrate == 'generate':
+    # setup for autogeneration
+    from sean_gpt.util.env import yaml_env
+    yaml_env('sean_gpt_chart/values.yaml', ['env'], 'sean_gpt_')
+    yaml_env('sean_gpt_chart/test_secrets.yaml', ['secrets'], 'sean_gpt_')
+    from sean_gpt.model.ai import AI
+    from sean_gpt.model.authenticated_user import AuthenticatedUser
+    from sean_gpt.model.chat import Chat
+    from sean_gpt.model.message import Message
+    from sean_gpt.model.verification_token import VerificationToken
+elif generate_or_migrate == 'generate':
+    # setup for normal migrations
+    pass
+else:
+    print('Error: generate_or_migrate must be set to either "generate" or "migrate"')
+    exit(1)
+
+from logging.config import fileConfig
+
+from sqlmodel import SQLModel
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+database_url = (
+    f"{os.environ['sean_gpt_database_dialect']}{os.environ['sean_gpt_database_driver']}://"
+    f"{os.environ['sean_gpt_api_db_user']}:{os.environ['sean_gpt_api_db_password']}@"
+    f"{os.environ['sean_gpt_database_host']}:{os.environ['sean_gpt_database_port']}/"
+    f"{os.environ['sean_gpt_database_name']}")
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

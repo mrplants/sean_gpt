@@ -7,11 +7,12 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .util.database import reset_db_connection
+from .util.database import reset_db_connection, create_admin_if_necessary
 from .routers import chat
 from .routers import user
 from .routers import twilio
 from .routers import generate
+from .routers import file
 from .util.user import IsVerifiedUserDep
 
 if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
@@ -21,6 +22,7 @@ if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
 async def lifespan(_): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
+    create_admin_if_necessary()
     if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
         mock.startup()
     yield
@@ -47,6 +49,7 @@ app.include_router(user.router)
 app.include_router(chat.router, dependencies=[IsVerifiedUserDep])
 app.include_router(twilio.router)
 app.include_router(generate.router)
+app.include_router(file.router)
 
 @app.get("/health")
 async def health_check():

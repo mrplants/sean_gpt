@@ -21,15 +21,10 @@ app:
   phone_verification_message: "Your verification code is: {}"
   chat_token_timeout_seconds: 30
 
-api:
-  replicas: 1
-  image: "ghcr.io/mrplants/sean_gpt:latest"
-  port: 8000
-
-frontend:
-  image: "ghcr.io/mrplants/sean_gpt_frontend:latest"
-
-local: false
 domain: "sean-gpt.com"
 api_domain: "api.sean-gpt.com"
 cert_prefix: "sean-gpt"
+
+api:
+  replicas: 1
+  port: 8000

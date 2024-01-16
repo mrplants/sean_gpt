@@ -18,7 +18,7 @@ environments:
     - config/values.yaml
     - config/local/values.yaml
     - config/local/test_secrets.yaml
-    kubeContext: kind-kind
+    kubeContext: kind-sean-gpt-local
   default: *default
 ---
 repositories:
@@ -37,61 +37,57 @@ repositories:
   - name: jetstack
     url: https://charts.jetstack.io
 
-helmDefaults:
-  args:
-    - "--debug"
-
 releases:
-  # - name: milvus
-  #   chart: milvus/milvus
-  #   createNamespace: true
-  #   namespace: milvus
-  #   set:
-  #   - name: cluster.enabled
-  #     value: false
-  #   - name: etcd.replicaCount
-  #     value: 1
-  #   - name: minio.mode
-  #     value: standalone
-  #   - name: pulsar.enabled
-  #     value: false
+  - name: milvus
+    chart: milvus/milvus
+    createNamespace: true
+    namespace: milvus
+    set:
+    - name: cluster.enabled
+      value: false
+    - name: etcd.replicaCount
+      value: 1
+    - name: minio.mode
+      value: standalone
+    - name: pulsar.enabled
+      value: false
 
-  # - name: minio
-  #   chart: minio/minio
-  #   createNamespace: true
-  #   namespace: minio
-  #   set:
-  #   - name: mode
-  #     value: standalone
-  #   - name: replicas
-  #     value: 1
-  #   - name: resources.requests.memory
-  #     value: 512Mi
-  #   - name: users[0].accessKey
-  #     value: ""
-  #   - name: users[0].secretKey
-  #     value: ""
+  - name: minio
+    chart: minio/minio
+    createNamespace: true
+    namespace: minio
+    set:
+    - name: mode
+      value: standalone
+    - name: replicas
+      value: 1
+    - name: resources.requests.memory
+      value: 512Mi
+    - name: users[0].accessKey
+      value: ""
+    - name: users[0].secretKey
+      value: ""
 
-  # - name: kafka
-  #   chart: bitnami/kafka
-  #   createNamespace: true
-  #   namespace: kafka
-  #   set:
-  #   - name: listeners.client.protocol
-  #     value: "PLAINTEXT"
-  #   {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace kafka --output json || true") }}
-  #   - name: sasl.interbroker.password
-  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
-  #   - name: sasl.controller.password
-  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
-  #   - name: kraft.clusterId
-  #     value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
-  #   {{ end }}
+  - name: kafka
+    chart: bitnami/kafka
+    createNamespace: true
+    namespace: kafka
+    set:
+    - name: listeners.client.protocol
+      value: "PLAINTEXT"
+    {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace kafka --output json || true") }}
+    - name: sasl.interbroker.password
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
+    - name: sasl.controller.password
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
+    - name: kraft.clusterId
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
+    {{ end }}
       
-  # - name: keda
-  #   chart: kedacore/keda
-  #   createNamespace: true
-  #   namespace: keda
+  - name: keda
+    chart: kedacore/keda
+    createNamespace: true
+    namespace: keda
 
   - name: kubernetes-dashboard
     chart: kubernetes-dashboard/kubernetes-dashboard
@@ -115,13 +111,23 @@ releases:
     - name: primary.service.ports.postgresql
       value: {{ .Environment.Values.database.port }}
 
+  - name: redis
+    chart: bitnami/redis
+    createNamespace: true
+    namespace: redis
+    set:
+    - name: architecture
+      value: standalone
+    - name: auth.enabled
+      value: false
+
   - name: "seangpt"
     chart: "./sean_gpt_chart"
     createNamespace: true
     namespace: seangpt
     set:
     - name: environment
-      value: {{ .Environment.Name | quote }}
+      value: {{ if eq .Environment.Name "default" }}"local"{{ else }}{{ .Environment.Name | quote }}{{ end }}
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
     hooks:

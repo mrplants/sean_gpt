@@ -6,14 +6,14 @@ seangpt:
     build_and_push_command: |
       poetry export -f requirements.txt --output 'dist/requirements.txt' && 
       docker build -t sean_gpt_api_local:latest -f Dockerfile.local.api . && 
-      kind load docker-image sean_gpt_api_local:latest
+      kind load docker-image sean_gpt_api_local:latest -n sean-gpt-local
 
   migrate_image:
     image_name: "sean_gpt_migrate_local"
     image_tag: "latest"
     build_and_push_command: |
       docker build --build-arg ENV=local -t sean_gpt_migrate_local:latest -f Dockerfile.migrate . && 
-      kind load docker-image sean_gpt_migrate_local:latest
+      kind load docker-image sean_gpt_migrate_local:latest -n sean-gpt-local
 
   frontend_image:
     image_name: "sean_gpt_frontend_local"
@@ -24,6 +24,4 @@ seangpt:
       CI=true npm run build && 
       popd && 
       docker build -t sean_gpt_frontend_local:latest -f Dockerfile.frontend . && 
-      kind load docker-image sean_gpt_frontend_local:latest
-
-local: true
+      kind load docker-image sean_gpt_frontend_local:latest -n sean-gpt-local

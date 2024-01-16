@@ -11,37 +11,26 @@ import subprocess
 import time
 
 import pytest
-from fastapi.testclient import TestClient
 
 from sean_gpt.util.describe import describe
 
+from .fixtures.kubernetes import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 from .fixtures.auth import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 
 @describe(""" Test fixture to provide a test client for the application. """)
 @pytest.fixture(scope="session")
-def sean_gpt_host() -> TestClient:
-    # Monitor the kafka logs
-    kafka_stern_process = subprocess.Popen(['stern',
-                                            'seangpt-local-kafka-controller-*',
-                                            "--since",
-                                            "1s"])
-    # Monitor the milvus logs
-    milvus_stern_process = subprocess.Popen(['stern',
-                                             'seangpt-local-milvus-standalone-*',
-                                             "--since",
-                                             "1s"])
-    # Monitor the postgres logs
-    postgres_stern_process = subprocess.Popen(['stern', 'postgres-*', "--since", "1s"])
-    # Monitor the redis logs
-    redis_stern_process = subprocess.Popen(['stern', 'redis-*', "--since", "1s"])
-    # Monitor the sean-gpt logs
-    sean_gpt_stern_process = subprocess.Popen(['stern', 'sean-gpt-*', "--since", "1s"])
+def sean_gpt_host() -> str:
+
+    # Monitor the api logs
+    api_stern_process = subprocess.Popen(['stern', 'api-*', "-n", "seangpt", "--since", "1s"])
 
     # port-forward the Sean GPT deployment in the background
     seangpt_port_process = subprocess.Popen([
         "kubectl",
         "port-forward",
-        "deployments/sean-gpt",
+        "deployments/api",
+        "--namespace",
+        "seangpt",
         "8000:8000"
     ])
     # wait for the port-forward to be ready
@@ -52,8 +41,4 @@ def sean_gpt_host() -> TestClient:
     seangpt_port_process.terminate()
 
     # Stop monitoring the logs
-    kafka_stern_process.terminate()
-    milvus_stern_process.terminate()
-    postgres_stern_process.terminate()
-    redis_stern_process.terminate()
-    sean_gpt_stern_process.terminate()
+    api_stern_process.terminate()

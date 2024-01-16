@@ -7,7 +7,6 @@
 # Disable pylint flags for new type of docstring:
 # pylint: disable=missing-function-docstring
 
-from unittest.mock import Mock
 import random
 
 import pytest

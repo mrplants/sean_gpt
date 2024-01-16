@@ -8,4 +8,4 @@ database:
   name: "sean_gpt"
 
 redis:
-  host: "redis"
+  host: "redis-master.redis.svc.cluster.local"

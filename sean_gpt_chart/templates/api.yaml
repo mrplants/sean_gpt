@@ -37,7 +37,7 @@ spec:
       initContainers:
       - name: alembic-migration
         image: {{ .Values.seangpt.migrate_image.image_name }}:{{ .Values.seangpt.migrate_image.image_tag }}
-{{- if .Values.local }}
+{{- if eq .Values.environment "local" }}
         imagePullPolicy: IfNotPresent
 {{- end }}
         command: ["/bin/sh"]
@@ -52,7 +52,7 @@ spec:
         args: ["-c", "-x", "alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head"]
         env:
         {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
-{{- if .Values.local }}
+{{ if eq .Values.environment "local" }}
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}
@@ -65,8 +65,8 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 1
-        image: {{ .Values.api.image }}
-{{- if .Values.local }}
+        image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
+{{ if eq .Values.environment "local" }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: host-volume
@@ -74,12 +74,12 @@ spec:
 {{- end }}
         env:
         {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
-{{- if .Values.local }}
+{{ if eq .Values.environment "local" }}
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}
       volumes:
-{{- if .Values.local }}
+{{ if eq .Values.environment "local" }}
       - name: host-volume
         hostPath:
           path: /mnt/sean_gpt

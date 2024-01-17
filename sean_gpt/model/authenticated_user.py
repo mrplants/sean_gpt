@@ -38,4 +38,9 @@ class AuthenticatedUser(UserBase, table=True):
         sa_relationship_kwargs={"cascade": "all, delete"})
     chats: List["Chat"] = Relationship(back_populates="user",
                                        sa_relationship_kwargs={"cascade": "all, delete"})
+
+    files: List["File"] = Relationship(back_populates="owner",
+                                       sa_relationship_kwargs={"cascade": "all, delete"})
     
+    share_sets: List["ShareSet"] = Relationship(back_populates="owner",
+                                                sa_relationship_kwargs={"cascade": "all, delete"})

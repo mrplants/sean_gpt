@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
+from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
 from ...util.minio_client import MinioClientDep, USER_UPLOAD_BUCKET_NAME
 from ...util.describe import describe
@@ -25,10 +26,12 @@ async def delete_file( # pylint: disable=missing-function-docstring
     *,
     file_id: uuid.UUID,
     session: SessionDep,
-    minio_client: MinioClientDep) -> None:
+    minio_client: MinioClientDep,
+    current_user: AuthenticatedUserDep) -> None:
     # Delete the file from the database
     file_record = session.exec(select(File).where(File.id == file_id)).first()
-    if file_record is None:
+    # Only the file owner can delete the file
+    if file_record is None or file_record.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="File not found")
     
     # Delete the all the file's share set links from the database

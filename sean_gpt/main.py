@@ -13,6 +13,7 @@ from .routers import user
 from .routers import twilio
 from .routers import generate
 from .routers import file
+from .routers import share_set
 from .util.user import IsVerifiedUserDep
 
 if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
@@ -50,6 +51,7 @@ app.include_router(chat.router, dependencies=[IsVerifiedUserDep])
 app.include_router(twilio.router)
 app.include_router(generate.router)
 app.include_router(file.router)
+app.include_router(share_set.router)
 
 @app.get("/health")
 async def health_check():

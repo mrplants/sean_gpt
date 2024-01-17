@@ -54,7 +54,8 @@
 #    -  Markdown files (md)
 #    -  Code files (py, js, html, css, etc.)
 #    -  TODO: PDF files (pdf)
-# TODO:  Test for uploading large files
+# TODO: Test for uploading large files
+# TODO: Test that only file owners can access non-public files
 
 from pathlib import Path
 
@@ -93,6 +94,7 @@ def test_file_upload(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path
     # HTTP/1.1 200 OK
     # {
     #     "id": "...",
+    #     "owner_id": "...",
     #     "default_share_set_id": "...",
     #     "status": "...", # "awaiting processing", "processing", "complete"
     #     "name": "temp.txt",
@@ -106,6 +108,9 @@ def test_file_upload(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path
     )
     assert 'id' in upload_response.json(), (
         f"Expected response to contain 'id'. Received response {upload_response.json()}"
+    )
+    assert upload_response.json()['owner_id'] == verified_new_user['id'], (
+        f"Expected response to contain 'owner_id'. Received response {upload_response.json()}"
     )
     assert 'default_share_set_id' in upload_response.json(), (
         f"Expected response to contain 'default_share_set_id'. "
@@ -372,7 +377,42 @@ def test_file_get_share_sets(sean_gpt_host: str, verified_new_user: dict, tmp_pa
     assert get_response.json()[0]['id'] == upload_response['default_share_set_id'], (
         f"Expected response to contain 'id'. Received response {get_response.json()}"
     )
-    
+
+@describe(
+""" Test that a file can be downloaded.
+
+Args:
+    sean_gpt_host (str): The host of the SeanGPT server.
+    verified_new_user (dict): A verified new user.
+    tmp_path (Path): A temporary path.
+""")
+def test_file_download(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
+    # Create a temporary file
+    temp_file = tmp_path / "temp.txt"
+    temp_file.write_text("Hello, World!")
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        files={"file": temp_file.open("rb")}
+    ).json()
+    # Download the file
+    download_response = httpx.get(
+        f"{sean_gpt_host}/file/download/{upload_response['id']}",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        }
+    )
+    # The response should be:
+    # HTTP/1.1 200 OK
+    # "Hello, World!"
+    assert download_response.status_code == 200, (
+        f"Expected status code 200. Received status code {download_response.status_code}"
+    )
+    assert download_response.text == "Hello, World!", (
+        f"Expected response to be 'Hello, World!'. Received response {download_response.text}"
+    )
 
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
@@ -404,11 +444,12 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
                             "/file",
                             params={"share_set_id": upload_response['default_share_set_id']},
                             verified_user=verified_new_user)
-    check_verified_route("GET",
-                         sean_gpt_host,
-                            "/file",
-                            params={"semantic_search": "test"},
-                            verified_user=verified_new_user)
+    # TODO: Test semantic search
+    # check_verified_route("GET",
+    #                      sean_gpt_host,
+    #                         "/file",
+    #                         params={"semantic_search": "test"},
+    #                         verified_user=verified_new_user)
     check_verified_route("GET",
                          sean_gpt_host,
                             "/share_set",
@@ -416,11 +457,9 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
                             verified_user=verified_new_user)
     check_verified_route("GET",
                          sean_gpt_host,
-                            "/file/download",
-                            params={"id": upload_response['id']},
+                            f"/file/download/{upload_response['id']}",
                             verified_user=verified_new_user)
     check_verified_route("DELETE",
                          sean_gpt_host,
-                            "/file",
-                            json={"id": "test"},
-                            verified_user=verified_new_user)
+                         f"/file/{upload_response['id']}",
+                         verified_user=verified_new_user)

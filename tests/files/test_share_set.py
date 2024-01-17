@@ -49,9 +49,11 @@ def test_create_share_set(sean_gpt_host: str, verified_new_user: dict):
     #     "is_public": false,
     # }
     assert response.status_code == 200
-    assert "id" in response.json()
-    assert response.json()["name"] == "test share set"
-    assert response.json()["is_public"] == False
+    assert "id" in response.json(), f"Share set id not found in response: {response.json()}"
+    assert response.json()["name"] == "test share set", (
+        f"Share set name not found in response: {response.json()}")
+    assert response.json()["is_public"] == False, (
+        f"Share set is_public not found in response: {response.json()}")
 
 @describe(
 """ Test that a share set can be retrieved.
@@ -109,15 +111,15 @@ def test_delete_share_set(sean_gpt_host: str, verified_new_user: dict):
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_and_authorized(verified_new_user, sean_gpt_host):
     # Create a share set to use for testing
-    share_set = client.post(
-        "/share_set",
+    share_set = httpx.post(
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
         json={"name": "test share set"}
     ).json()
     check_verified_route("POST",
                          sean_gpt_host,
                            "/share_set",
-                           body={"name": "test share set"},
+                           json={"name": "test share set"},
                            verified_user=verified_new_user)
     check_verified_route("GET",
                          sean_gpt_host,
@@ -125,6 +127,5 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host):
                             verified_user=verified_new_user)
     check_verified_route("DELETE",
                          sean_gpt_host,
-                           "/share_set",
-                           body={"id": share_set["id"]},
+                           f"/share_set/{share_set['id']}",
                            verified_user=verified_new_user)

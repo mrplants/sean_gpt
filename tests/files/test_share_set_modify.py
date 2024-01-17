@@ -60,10 +60,10 @@ def test_update_share_set_name(sean_gpt_host: str, verified_new_user: dict):
         json={"name": "test share set"}
     )
     # Update the share set name
-    response = httpx.put(
-        f"{sean_gpt_host}/share_set/name",
+    response = httpx.patch(
+        f"{sean_gpt_host}/share_set/{response.json()['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        json={"id": response.json()["id"], "name": "test share set 2"}
+        json={"name": "test share set 2"}
     )
     # The response should be:
     # HTTP/1.1 200 OK
@@ -101,10 +101,10 @@ def test_add_file_to_share_set(sean_gpt_host: str, verified_new_user: dict, tmp_
         json={"name": "test share set"}
     ).json()
     # Add a file to the share set
-    add_response = httpx.put(
-        f"{sean_gpt_host}/share_set/file",
+    add_response = httpx.post(
+        f"{sean_gpt_host}/share_set/{share_set['id']}/file/{uploaded_file['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        json={"id": share_set["id"], "file_id": uploaded_file["id"]}
+        json={"share_set_id": share_set["id"], "file_id": uploaded_file["id"]}
     )
     # The response should be:
     # HTTP/1.1 204 No Content
@@ -115,7 +115,7 @@ def test_add_file_to_share_set(sean_gpt_host: str, verified_new_user: dict, tmp_
     get_response = httpx.get(
         f"{sean_gpt_host}/file",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        params={"share_set_id": share_set['default_share_set_id']}
+        params={"share_set_id": share_set['id']}
     )
     # The response should be:
     # HTTP/1.1 200 OK
@@ -152,16 +152,14 @@ def test_remove_file_from_share_set(sean_gpt_host: str, verified_new_user: dict,
         json={"name": "test share set"}
     ).json()
     # Add a file to the share set
-    httpx.put(
-        f"{sean_gpt_host}/share_set/file",
+    httpx.post(
+        f"{sean_gpt_host}/share_set/{share_set['id']}/file/{uploaded_file['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        json={"id": share_set["id"], "file_id": uploaded_file["id"]}
     )
     # Remove the file from the share set
     remove_response = httpx.delete(
-        f"{sean_gpt_host}/share_set/file",
+        f"{sean_gpt_host}/share_set/{share_set['id']}/file/{uploaded_file['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        json={"id": share_set["id"], "file_id": uploaded_file["id"]}
     )
     # The response should be
     # HTTP/1.1 204 No Content
@@ -172,7 +170,7 @@ def test_remove_file_from_share_set(sean_gpt_host: str, verified_new_user: dict,
     get_response = httpx.get(
         f"{sean_gpt_host}/file",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        params={"share_set_id": share_set['default_share_set_id']}
+        params={"share_set_id": share_set['id']}
     )
     # The response should be:
     # HTTP/1.1 200 OK
@@ -195,10 +193,10 @@ def test_update_share_set_public_status(sean_gpt_host: str, verified_new_user: d
         json={"name": "test share set"}
     ).json()
     # Update the share set's public status
-    response = httpx.put(
-        f"{sean_gpt_host}/share_set/is_public",
+    response = httpx.patch(
+        f"{sean_gpt_host}/share_set/{share_set['id']}",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
-        json={"id": share_set["id"], "is_public": True}
+        json={"is_public": True}
     )
     # The response should be:
     # HTTP/1.1 200 OK
@@ -222,27 +220,25 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
     ).json()
     # Create a share set to use for testing
     share_set = httpx.post(
-        "/share_set",
+        f"{sean_gpt_host}/share_set",
         headers={"Authorization": f"Bearer {verified_new_user['access_token']}"},
         json={"name": "test share set"}
     ).json()
-    check_verified_route("PUT",
+    check_verified_route("PATCH",
                          sean_gpt_host,
-                           "/share_set/name",
-                           body={"name": "test share set"},
+                           f"/share_set/{share_set['id']}",
+                           json={"name": "test share set2"},
                            verified_user=verified_new_user)
-    check_verified_route("PUT",
+    check_verified_route("PATCH",
                          sean_gpt_host,
-                            "/share_set/file",
-                            body={"id": share_set["id"], "file_id": uploaded_file["id"]},
+                           f"/share_set/{share_set['id']}",
+                            json={"is_public": True},
+                            verified_user=verified_new_user)
+    check_verified_route("POST",
+                         sean_gpt_host,
+                            f"/share_set/{share_set['id']}/file/{uploaded_file['id']}",
                             verified_user=verified_new_user)
     check_verified_route("DELETE",
                          sean_gpt_host,
-                            "/share_set/file",
-                            body={"id": share_set["id"], "file_id": uploaded_file["id"]},
-                            verified_user=verified_new_user)
-    check_verified_route("PUT",
-                         sean_gpt_host,
-                            "/share_set/is_public",
-                            body={"id": share_set["id"], "is_public": True},
+                            f"/share_set/{share_set['id']}/file/{uploaded_file['id']}",
                             verified_user=verified_new_user)

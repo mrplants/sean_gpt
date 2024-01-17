@@ -24,7 +24,8 @@ def check_authorized_route(
         "get": httpx.get,
         "post": httpx.post,
         "put": httpx.put,
-        "delete": httpx.delete
+        "delete": httpx.delete,
+        "patch": httpx.patch,
     }[request_type.lower()]
     headers = {
         "Authorization": f"Bearer {authorized_user['access_token']}"
@@ -86,7 +87,8 @@ def check_verified_route(
         "get": httpx.get,
         "post": httpx.post,
         "put": httpx.put,
-        "delete": httpx.delete
+        "delete": httpx.delete,
+        "patch": httpx.patch,
     }[request_type.lower()]
     headers = {
         "Authorization": f"Bearer {verified_user['access_token']}"

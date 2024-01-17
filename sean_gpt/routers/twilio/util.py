@@ -25,7 +25,10 @@ async def validate_twilio(request: Request):
     validator = RequestValidator(settings.twilio_auth_token)
 
     # Get the full URL that Twilio requested
+    # Replace "http" with "https" because Twilio only sends requests over HTTPS and this endpoint is
+    # behind a reverse proxy for SSL/TLS termination
     url = str(request.url)
+    url = url.replace("http://", "https://")
 
     # Get the POST parameters
     form = await request.form()
@@ -33,22 +36,9 @@ async def validate_twilio(request: Request):
 
     # Get the signature from the `X-Twilio-Signature` header
     signature = request.headers.get('X-Twilio-Signature', '')
-    # This isn't validating, so print out the entire request:  Header, body
-    print('Request headers:')
-    print(request.headers)
-    print('Request body:')
-    print(await request.body())
-    print('Request url:')
-    print(request.url)
-    print('Request form:')
-    print(form)
-    print('Request form parameters:')
-    print(parameters)
-    print('Request signature:')
-    print(signature)    
 
     # Validate the request
-    if not validator.validate(url, request.body(), signature):
+    if not validator.validate(url, parameters, signature):
         raise HTTPException(status_code=400, detail="Invalid Twilio Signature")
 
 def twilio_get_or_create_user(

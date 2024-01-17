@@ -40,16 +40,8 @@ spec:
 {{- if eq .Values.environment "local" }}
         imagePullPolicy: IfNotPresent
 {{- end }}
-        command: ["/bin/sh"]
-        args:
-        - |
-          until pg_isready -h {{ .Values.database.host }} -p {{ .Values.database.port }}; -d {{ .Values.database.name }} -U {{ .Values.api_db_user }} -P {{ .Values.api_db_password }} do
-            echo "Waiting for postgres database to be ready..."
-            sleep 2
-          done
-          alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head
-
-        args: ["-c", "-x", "alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head"]
+        command: ["/bin/sh", "-c"]
+        args: ["alembic -x generate_or_migrate=migrate -x environment={{ .Values.environment }} upgrade head"]
         env:
         {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
 {{ if eq .Values.environment "local" }}
@@ -58,6 +50,8 @@ spec:
 {{- end }}
       containers:
       - name: api
+        command: ["/bin/sh", "-c"]
+        args: ["uvicorn sean_gpt.main:app --host 0.0.0.0 --port 8000 --reload"]
         readinessProbe:
           httpGet:
             path: /health

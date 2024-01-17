@@ -1,8 +1,8 @@
 """Initialize database
 
-Revision ID: b555042d7e9d
+Revision ID: 1a8c09642471
 Revises: 
-Create Date: 2024-01-16 09:26:58.907321
+Create Date: 2024-01-16 20:38:58.458606
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b555042d7e9d'
+revision: str = '1a8c09642471'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,6 +31,7 @@ def upgrade() -> None:
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('referral_code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('is_phone_verified', sa.Boolean(), nullable=False),
+    sa.Column('opted_into_sms', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('referrer_user_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.Column('twilio_chat_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),

@@ -54,6 +54,7 @@
 #    -  Markdown files (md)
 #    -  Code files (py, js, html, css, etc.)
 #    -  TODO: PDF files (pdf)
+# TODO:  Test for uploading large files
 
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def test_file_upload(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path
     # {
     #     "id": "...",
     #     "default_share_set_id": "...",
-    #     "status": "...", # "pending", "processing", "complete"
+    #     "status": "...", # "awaiting processing", "processing", "complete"
     #     "name": "temp.txt",
     #     "type": "txt",
     #     "hash": "...",

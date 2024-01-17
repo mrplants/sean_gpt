@@ -9,3 +9,7 @@ database:
 
 redis:
   host: "redis-master.redis.svc.cluster.local"
+
+minio:
+  host: "minio.minio.svc.cluster.local"
+  port: 9000

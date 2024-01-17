@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     twilio_test_auth_token: str = Field(alias='sean_gpt_twilio_test_auth_token')
     twilio_sid: str = Field( alias='sean_gpt_twilio_sid')
     twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
-    minio_root_user: str = Field(alias='sean_gpt_minio_rootUser')
-    minio_root_password: str = Field(alias='sean_gpt_minio_rootPassword')
+    minio_access_key: str = Field(alias='sean_gpt_minio_access_key')
+    minio_secret_key: str = Field(alias='sean_gpt_minio_secret_key')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')
@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     database_name: str = Field(alias='sean_gpt_database_name')
 
     redis_host: str = Field(alias='sean_gpt_redis_host')
+
+    minio_host: str = Field(alias='sean_gpt_minio_host')
+    minio_port: str = Field(alias='sean_gpt_minio_port')
 
     app_phone_number: str = Field(alias='sean_gpt_app_phone_number')
     app_welcome_message: str = Field(alias='sean_gpt_app_welcome_message')

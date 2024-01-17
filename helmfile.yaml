@@ -68,9 +68,11 @@ releases:
     - name: resources.requests.memory
       value: 512Mi
     - name: users[0].accessKey
-      value: ""
+      value: {{ .Environment.Values.minio.access_key | quote}}
     - name: users[0].secretKey
-      value: ""
+      value: {{ .Environment.Values.minio.secret_key | quote}}
+    - name: users[0].policy
+      value: readwrite
 
   - name: kafka
     chart: bitnami/kafka

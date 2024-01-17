@@ -18,7 +18,7 @@ def parse_custom_args(custom_args):
 
 def retrieve_env(env):
     from sean_gpt.util.env import yaml_env
-    yaml_env('sean_gpt_chart/values.yaml', drill_down_path=['env'], prefix='sean_gpt_')
+    yaml_env('sean_gpt_chart/values.yaml', prefix='sean_gpt_')
     yaml_env('config/values.yaml', prefix='sean_gpt_')
     if environment in ('prod', 'production'):
         yaml_env('config/production/secrets.yaml', prefix='sean_gpt_')
@@ -38,6 +38,7 @@ custom_args = parse_custom_args(context.config.cmd_opts.x) if context.config.cmd
 # values to indicate whether the script is generating or applying a migration
 # alembic -x generate_or_migrate=generate revision --autogenerate -m "Initialize database"
 # alembic -x generate_or_migrate=migrate upgrade head
+# alembic -x generate_or_migrate=migrate -x migrate_outside_kubernetes upgrade head
 # generate_or_migrate = generate or migrate
 # environment = local, development (dev), or production (prod)
 generate_or_migrate = custom_args.get('generate_or_migrate', None)
@@ -55,6 +56,8 @@ if generate_or_migrate == 'generate':
     from sean_gpt.model.chat import Chat
     from sean_gpt.model.message import Message
     from sean_gpt.model.verification_token import VerificationToken
+    from sean_gpt.model.file import File
+    from sean_gpt.model.share_set import ShareSet
 elif generate_or_migrate == 'migrate':
     # setup for migrations
     if migrate_outside_kubernetes:

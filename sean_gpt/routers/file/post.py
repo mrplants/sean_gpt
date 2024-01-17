@@ -1,0 +1,77 @@
+""" File POST endpoint.
+"""
+import hashlib
+import tempfile
+import os
+import uuid
+
+from fastapi import APIRouter, UploadFile, File
+
+from ...util.database import SessionDep
+from ...util.minio import MinioClientDep, USER_UPLOAD_BUCKET_NAME
+from ...util.describe import describe
+from ...model.file import (
+    File as FileModel,
+    FILE_STATUS_AWAITING_PROCESSING
+)
+from ...model.share_set import ShareSet
+
+router = APIRouter(
+    prefix="/file"
+)
+
+@describe(
+""" Uploads a file.
+
+Args:
+    files (List[UploadFile]): The files to upload.
+""")
+@router.post("")
+async def upload_file( # pylint: disable=missing-function-docstring
+    *,
+    file: UploadFile = File(...),
+    session: SessionDep,
+    minio_client: MinioClientDep) -> FileModel:
+    # Create the default share set for this file
+    default_share_set = ShareSet(name="", is_public=False)
+    session.add(default_share_set)
+    # Create the file's unique id
+    file_id = uuid.uuid4()
+    # Hash the file, calculate its size, and put it in temporary storage
+    sha256_hash = hashlib.sha256()
+    # file_size = 0
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    chunk_size = 8192
+    chunk = await file.read(chunk_size)
+    while len(chunk) > 0:
+        sha256_hash.update(chunk)
+        # file_size += len(chunk)
+        temp_file.write(chunk)
+        chunk = await file.read(chunk_size)
+    file_hash = sha256_hash.hexdigest()
+    temp_file.close()
+    # Store the file in the minio service
+    try:
+        minio_client.fput_object(
+            USER_UPLOAD_BUCKET_NAME,
+            str(file_id),
+            temp_file.name
+        )
+    finally:
+        # Remove the temporary file
+        os.unlink(temp_file.name)
+    # Create a file record in the database
+    file_record = FileModel(
+        id=file_id,
+        default_share_set_id=default_share_set.id,
+        status=FILE_STATUS_AWAITING_PROCESSING,
+        name=file.filename,
+        type=file.content_type,
+        hash=file_hash,
+        size=file.size
+    )
+    session.add(file_record)
+    session.commit()
+    session.refresh(file_record)
+    # Return the file record
+    return file_record

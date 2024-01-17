@@ -8,14 +8,15 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
 from ...util.database import SessionDep
-from ...util.minio import MinioClientDep, USER_UPLOAD_BUCKET_NAME
+from ...util.minio_client import MinioClientDep, USER_UPLOAD_BUCKET_NAME
 from ...util.describe import describe
 from ...model.file import (
     File as FileModel,
     FILE_STATUS_AWAITING_PROCESSING,
-    SUPPORTED_FILE_TYPES
+    SUPPORTED_FILE_TYPES,
+    ShareSet,
+    FileShareSetLink
 )
-from ...model.share_set import ShareSet
 
 router = APIRouter(
     prefix="/file"
@@ -81,6 +82,13 @@ async def upload_file( # pylint: disable=missing-function-docstring
         size=file.size
     )
     session.add(file_record)
+    session.commit()
+    # Create the link between the file and its default share set
+    file_share_set_link = FileShareSetLink(
+        file_id=file_id,
+        share_set_id=default_share_set.id
+    )
+    session.add(file_share_set_link)
     session.commit()
     session.refresh(file_record)
     # Return the file record

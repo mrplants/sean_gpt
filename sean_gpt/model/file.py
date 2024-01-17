@@ -47,3 +47,18 @@ class File(SQLModel, table=True):
     hash: str
     uploaded_at: int = Field(default_factory=lambda: int(datetime.now().timestamp()), index=True)
     size: int
+
+class ShareSet(SQLModel, table=True):
+    """ ShareSet model. """
+    id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str
+    is_public: bool
+
+class FileShareSetLink(SQLModel, table=True):
+    """ FileShareSetLink model. """
+    file_id: UUID = Field(
+        default=None, foreign_key="file.id", primary_key=True
+    )
+    share_set_id: UUID = Field(
+        default=None, foreign_key="shareset.id", primary_key=True
+    )

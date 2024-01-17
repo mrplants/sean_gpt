@@ -56,8 +56,7 @@ if generate_or_migrate == 'generate':
     from sean_gpt.model.chat import Chat
     from sean_gpt.model.message import Message
     from sean_gpt.model.verification_token import VerificationToken
-    from sean_gpt.model.file import File
-    from sean_gpt.model.share_set import ShareSet
+    from sean_gpt.model.file import File, ShareSet, FileShareSetLink
 elif generate_or_migrate == 'migrate':
     # setup for migrations
     if migrate_outside_kubernetes:

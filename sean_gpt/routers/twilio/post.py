@@ -1,7 +1,8 @@
 """ Twilio webhook endpoint """
 import uuid
+from typing import Annotated, Optional, List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Form, Depends
 from fastapi.responses import Response
 from sqlmodel import select
 from openai import AsyncOpenAI
@@ -33,10 +34,48 @@ Returns:
 """)
 @router.post("")
 async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements disable=too-many-branches disable=too-many-return-statements
-    incoming_message: TwilioMessage,
-    current_user: TwilioGetUserDep,
-    session: SessionDep,
-    redis_conn: RedisConnectionDep):
+    message_sid: Annotated[str, Form(...)] = Form(..., alias='MessageSid'),
+    sms_sid: Annotated[str, Form(...)] = Form(..., alias='SmsSid'),
+    account_sid: Annotated[str, Form(...)] = Form(..., alias='AccountSid'),
+    messaging_service_sid: Annotated[str, Form(...)] = Form(..., alias='MessagingServiceSid'),
+    from_: Annotated[str, Form(...)] = Form(..., alias='From'),
+    to: Annotated[str, Form(...)] = Form(..., alias='To'),
+    body: Annotated[str, Form(...)] = Form(..., alias='Body'),
+    num_media: Annotated[int, Form(...)] = Form(..., alias='NumMedia'),
+    media_content_type: Annotated[Optional[List[str]], Form(None)] = Form(None, alias='MediaContentType'),
+    media_url: Annotated[Optional[List[str]], Form(None)] = Form(None, alias='MediaUrl'),
+    from_city: Annotated[Optional[str], Form(None)] = Form(None, alias='FromCity'),
+    from_state: Annotated[Optional[str], Form(None)] = Form(None, alias='FromState'),
+    from_zip: Annotated[Optional[str], Form(None)] = Form(None, alias='FromZip'),
+    from_country: Annotated[Optional[str], Form(None)] = Form(None, alias='FromCountry'),
+    to_city: Annotated[Optional[str], Form(None)] = Form(None, alias='ToCity'),
+    to_state: Annotated[Optional[str], Form(None)] = Form(None, alias='ToState'),
+    to_zip: Annotated[Optional[str], Form(None)] = Form(None, alias='ToZip'),
+    to_country: Annotated[Optional[str], Form(None)] = Form(None, alias='ToCountry'),
+    current_user: TwilioGetUserDep = Depends(),
+    session: SessionDep = Depends(),
+    redis_conn: RedisConnectionDep = Depends()
+):
+    incoming_message = TwilioMessage(
+        message_sid=message_sid,
+        sms_sid=sms_sid,
+        account_sid=account_sid,
+        messaging_service_sid=messaging_service_sid,
+        from_=from_,
+        to=to,
+        body=body,
+        num_media=num_media,
+        media_content_type=media_content_type,
+        media_url=media_url,
+        from_city=from_city,
+        from_state=from_state,
+        from_zip=from_zip,
+        from_country=from_country,
+        to_city=to_city,
+        to_state=to_state,
+        to_zip=to_zip,
+        to_country=to_country
+    )
     # - Verify that this is not a whatsapp message
     if incoming_message.from_.startswith('whatsapp:'):
         twiml_response = twiml.MessagingResponse()

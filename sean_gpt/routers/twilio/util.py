@@ -38,9 +38,17 @@ async def validate_twilio(request: Request):
     print(request.headers)
     print('Request body:')
     print(await request.body())
+    print('Request url:')
+    print(request.url)
+    print('Request form:')
+    print(form)
+    print('Request form parameters:')
+    print(parameters)
+    print('Request signature:')
+    print(signature)    
 
     # Validate the request
-    if not validator.validate(url, parameters, signature):
+    if not validator.validate(url, request.body(), signature):
         raise HTTPException(status_code=400, detail="Invalid Twilio Signature")
 
 def twilio_get_or_create_user(

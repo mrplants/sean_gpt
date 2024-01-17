@@ -10,6 +10,33 @@ FILE_STATUS_AWAITING_PROCESSING = "awaiting processing"
 FILE_STATUS_PROCESSING = "processing"
 FILE_STATUS_COMPLETE = "complete"
 
+SUPPORTED_FILE_TYPES = (
+    # Plaintext file types
+    "txt",
+    "md",
+    "rst",
+
+    # Code file types
+    "py",
+    "c",
+    "cpp",
+    "h",
+    "hpp",
+    "java",
+    "js",
+    "ts",
+    "html",
+    "css",
+    "json",
+
+    # Data file types
+    "xml",
+    "yaml",
+    "yml",
+    "csv",
+    "tsv",
+)
+
 class File(SQLModel, table=True):
     """ File model. """
     id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)

@@ -61,6 +61,10 @@ from pathlib import Path
 import httpx
 
 from sean_gpt.util.describe import describe
+from sean_gpt.model.file import (
+    FILE_STATUS_COMPLETE,
+    FILE_STATUS_PROCESSING,
+    FILE_STATUS_AWAITING_PROCESSING)
 from sean_gpt.config import settings
 
 from ..util.check_routes import check_verified_route
@@ -106,7 +110,9 @@ def test_file_upload(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path
         f"Expected response to contain 'default_share_set_id'. "
         f"Received response {upload_response.json()}"
     )
-    assert upload_response.json()['status'] in ("pending", "processing", "complete"), (
+    assert upload_response.json()['status'] in (FILE_STATUS_AWAITING_PROCESSING,
+                                                FILE_STATUS_COMPLETE,
+                                                FILE_STATUS_PROCESSING), (
         f"Expected response to contain 'status'. Received response {upload_response.json()}"
     )
     assert upload_response.json()['name'] == "temp.txt", (

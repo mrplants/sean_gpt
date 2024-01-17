@@ -5,14 +5,15 @@ import tempfile
 import os
 import uuid
 
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
 
 from ...util.database import SessionDep
 from ...util.minio import MinioClientDep, USER_UPLOAD_BUCKET_NAME
 from ...util.describe import describe
 from ...model.file import (
     File as FileModel,
-    FILE_STATUS_AWAITING_PROCESSING
+    FILE_STATUS_AWAITING_PROCESSING,
+    SUPPORTED_FILE_TYPES
 )
 from ...model.share_set import ShareSet
 
@@ -35,6 +36,8 @@ async def upload_file( # pylint: disable=missing-function-docstring
     # Create the default share set for this file
     default_share_set = ShareSet(name="", is_public=False)
     session.add(default_share_set)
+    session.commit()
+    session.refresh(default_share_set)
     # Create the file's unique id
     file_id = uuid.uuid4()
     # Hash the file, calculate its size, and put it in temporary storage
@@ -60,13 +63,20 @@ async def upload_file( # pylint: disable=missing-function-docstring
     finally:
         # Remove the temporary file
         os.unlink(temp_file.name)
+    # Determine the file type from the file extension
+    file_extension = os.path.splitext(file.filename)[1][1:]
+    if file_extension not in SUPPORTED_FILE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File type {file_extension} is not supported."
+        )
     # Create a file record in the database
     file_record = FileModel(
         id=file_id,
         default_share_set_id=default_share_set.id,
         status=FILE_STATUS_AWAITING_PROCESSING,
         name=file.filename,
-        type=file.content_type,
+        type=file_extension,
         hash=file_hash,
         size=file.size
     )

@@ -33,6 +33,11 @@ async def validate_twilio(request: Request):
 
     # Get the signature from the `X-Twilio-Signature` header
     signature = request.headers.get('X-Twilio-Signature', '')
+    # This isn't validating, so print out the entire request:  Header, body
+    print('Request headers:')
+    print(request.headers)
+    print('Request body:')
+    print(await request.body())
 
     # Validate the request
     if not validator.validate(url, parameters, signature):

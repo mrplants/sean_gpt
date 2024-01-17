@@ -36,6 +36,10 @@ repositories:
     url: https://kubernetes.github.io/dashboard/
   - name: jetstack
     url: https://charts.jetstack.io
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
 
 releases:
   - name: milvus
@@ -120,6 +124,42 @@ releases:
       value: standalone
     - name: auth.enabled
       value: false
+
+  - name: grafana
+    chart: grafana/grafana
+    createNamespace: true
+    namespace: monitoring
+    set:
+      - name: adminUser
+        value: admin
+      - name: adminPassword
+        value: "yourStrongPassword"
+      - name: persistence.enabled
+        value: true
+
+  - name: prometheus
+    chart: prometheus-community/prometheus
+    createNamespace: true
+    namespace: monitoring
+    values:
+    - extraScrapeConfigs: |
+        - job_name: prometheus-postgres-exporter
+          metrics_path: /metrics
+          static_configs:
+          - targets: ['postgres-exporter-prometheus-postgres-exporter.postgres.svc.cluster.local:80']
+
+  - name: postgres-exporter
+    chart: prometheus-community/prometheus-postgres-exporter
+    namespace: postgres  # same as your PostgreSQL service
+    set:
+      - name: config.datasource.host
+        value: {{ .Environment.Values.database.host }}
+      - name: config.datasource.user
+        value: {{ .Environment.Values.api_db_user }}
+      - name: config.datasource.password
+        value: {{ .Environment.Values.api_db_password }}
+      - name: config.datasource.database
+        value: {{ .Environment.Values.database.name }}
 
   - name: "seangpt"
     chart: "./sean_gpt_chart"

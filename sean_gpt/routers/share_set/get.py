@@ -44,6 +44,6 @@ async def get_share_sets(# pylint: disable=missing-function-docstring
         query = query.where(ShareSet.id == share_set_id)
 
     # Finally, continue to filter share sets by current owner or public
-    query = query.where((ShareSet.owner_id == current_user.id) | (ShareSet.is_public == True))
+    query = query.where((ShareSet.owner_id == current_user.id) | (ShareSet.is_public))
 
     return session.exec(query).all()

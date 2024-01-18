@@ -109,7 +109,7 @@ async def download_file( # pylint: disable=missing-function-docstring
                                                                 file.default_share_set_id)).first()
         if not default_share_set.is_public:
             raise HTTPException(status_code=404, detail="File not found.")
-    
+
     # Retrieve the file from minio, directly to a temporary file
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         minio_client.fget_object(
@@ -117,7 +117,7 @@ async def download_file( # pylint: disable=missing-function-docstring
             str(file.id),
             temp_file.name
         )
-    
+
     async def delete_temp_file():
         """ Deletes the temporary file. """
         os.unlink(temp_file.name)

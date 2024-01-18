@@ -41,6 +41,6 @@ class AuthenticatedUser(UserBase, table=True):
 
     files: List["File"] = Relationship(back_populates="owner",
                                        sa_relationship_kwargs={"cascade": "all, delete"})
-    
+
     share_sets: List["ShareSet"] = Relationship(back_populates="owner",
                                                 sa_relationship_kwargs={"cascade": "all, delete"})

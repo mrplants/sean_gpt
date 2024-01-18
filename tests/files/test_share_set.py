@@ -52,7 +52,7 @@ def test_create_share_set(sean_gpt_host: str, verified_new_user: dict):
     assert "id" in response.json(), f"Share set id not found in response: {response.json()}"
     assert response.json()["name"] == "test share set", (
         f"Share set name not found in response: {response.json()}")
-    assert response.json()["is_public"] == False, (
+    assert not response.json()["is_public"], (
         f"Share set is_public not found in response: {response.json()}")
 
 @describe(

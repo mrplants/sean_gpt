@@ -173,8 +173,8 @@ def test_multi_message(verified_opted_in_user: dict, sean_gpt_host: str):
         f"Expected second child element to be 'Redirect', got {root[1].tag}")
 
     # Check that the text of the 'Redirect' element is the SMS endpoint
-    assert root[1].text == './', (
-        f"Expected second child element text to be './', got {root[1].text}")
+    assert root[1].text == './twilio', (
+        f"Expected second child element text to be './twilio', got {root[1].text}")
 
     # Check that there are no more child elements
     assert len(root) == 2, f"Expected only two child elements, got {len(root)}"
@@ -498,7 +498,7 @@ def test_followon_messages(verified_opted_in_user: dict, sean_gpt_host: str):
             assert root[1].tag == 'Redirect', (
                 f"Expected second child element to be 'Redirect', got {root[1].tag}")
             # Check that the text of the 'Redirect' element is the SMS endpoint
-            assert root[1].text == './', (
-                f"Expected second child element text to be './', got {root[1].text}")
+            assert root[1].text == './twilio', (
+                f"Expected second child element text to be './twilio', got {root[1].text}")
             # Check that there are no more child elements
             assert len(root) == 2, f"Expected only two child elements, got {len(root)}"

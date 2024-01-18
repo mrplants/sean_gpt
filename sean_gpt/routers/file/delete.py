@@ -33,9 +33,10 @@ async def delete_file( # pylint: disable=missing-function-docstring
     # Only the file owner can delete the file
     if file_record is None or file_record.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     # Delete the all the file's share set links from the database
-    share_set_links = session.exec(select(FileShareSetLink).where(FileShareSetLink.file_id == file_id)).all()
+    share_set_links = session.exec(select(FileShareSetLink)
+                                   .where(FileShareSetLink.file_id == file_id)).all()
     for share_set_link in share_set_links:
         session.delete(share_set_link)
     # Need to unlink the share sets and files before deleting
@@ -56,6 +57,6 @@ async def delete_file( # pylint: disable=missing-function-docstring
         )
     except Exception as exception:
         raise HTTPException(status_code=500, detail=str(exception)) from exception
-        
+
     session.delete(share_set)
     session.commit()

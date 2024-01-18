@@ -12,7 +12,6 @@
 ###############
 # POST (protected):  Login and retrieve a user's auth token
 
-from fastapi.testclient import TestClient
 from jose import jwt
 import httpx
 
@@ -23,7 +22,7 @@ from sean_gpt.util.describe import describe
 def test_generate_token(sean_gpt_host: str):
     # Generate a token
     response = httpx.post(
-        f"{sean_gpt_host}/user/token",
+        sean_gpt_host+"/user/token",
         data={
             "grant_type": "password",
             "username": settings.user_admin_phone,
@@ -63,7 +62,7 @@ def test_token_expiration(admin_auth_token: str):
 def test_generate_token_incorrect_password(sean_gpt_host: str):
     # Generate a token
     response = httpx.post(
-        f"{sean_gpt_host}/user/token",
+        sean_gpt_host+"/user/token",
         data={
             "grant_type": "password",
             "username": settings.user_admin_phone,

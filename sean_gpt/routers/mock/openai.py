@@ -57,7 +57,6 @@ def post_openai_response(*, response: str = Body(...),
     redis_conn = redis.from_url(f"redis://{settings.redis_host}")
     redis_conn.set("openai_response", response)
     redis_conn.set("openai_response_delay", delay)
-    return
 
 @router.get("/async_completions")
 def get_openai_response():
@@ -69,33 +68,42 @@ def get_openai_response():
     }
 
 class AsyncMockStream:
+    """ Mocks an asynchronous iterable that yields streaming API responses.
+    """
     def __init__(self, content, delay):
+        """ Initializes the mock stream."""
         self.content = content
         self.delay = delay
         self.index = 0
 
     async def __call__(self, *args: Any, **kwds: Any) -> Any:
+        """ Returns the mock stream. """
         return self
 
     def __aiter__(self):
+        """ Returns the mock stream. """
         return self
 
     async def __anext__(self):
+        """ Yields the next character in the mock stream. """
         if self.index < len(self.content):
             char = self.content[self.index]
             self.index += 1
             await asyncio.sleep(self.delay)
 
-            class ChoiceDelta:
+            class ChoiceDelta: # pylint: disable=too-few-public-methods
+                """ Mocks the ChoiceDelta class from the OpenAI API. """
                 def __init__(self, content='', role=None):
                     self.content = content
                     self.role = role
 
-            class Choice:
+            class Choice: # pylint: disable=too-few-public-methods
+                """ Mocks the Choice class from the OpenAI API."""
                 def __init__(self, delta):
                     self.delta = delta
 
-            class ChatCompletionChunk:
+            class ChatCompletionChunk: # pylint: disable=too-few-public-methods
+                """ Mocks the ChatCompletionChunk class from the OpenAI API."""
                 def __init__(self, choices, created, model):
                     self.choices = choices
                     self.created = created

@@ -69,4 +69,3 @@ def post_validator(*, valid: bool = Body(...)):
     """ Mock Twilio validator endpoint."""
     redis_conn = redis.from_url(f"redis://{settings.redis_host}")
     redis_conn.set("twilio_validator", str(valid))
-    return

@@ -1,6 +1,5 @@
 """ Twilio webhook endpoint """
 import uuid
-from typing import Annotated, Optional, List
 
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
@@ -40,7 +39,7 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     redis_conn: RedisConnectionDep):
     incoming_message = TwilioMessage(**dict(await request.form()))
     # - Verify that this is not a whatsapp message
-    if incoming_message.from_.startswith('whatsapp:'):
+    if incoming_message.from_.startswith('whatsapp:'): # pylint: disable=no-member
         twiml_response = twiml.MessagingResponse()
         twiml_response.message(settings.app_no_whatsapp_message)
         return Response(content=twiml_response.to_xml(),
@@ -58,7 +57,7 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     print(f"current_user.opted_into_sms: {current_user.opted_into_sms}")
     if not current_user.opted_into_sms:
         # Check if the user has sent "AGREE" to opt in
-        if incoming_message.body.lower() == "agree":
+        if incoming_message.body.lower() == "agree": # pylint: disable=no-member
             current_user.opted_into_sms = True
             session.add(current_user)
             session.commit()

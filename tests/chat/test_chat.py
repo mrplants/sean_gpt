@@ -359,7 +359,8 @@ def test_update_chat(verified_new_user: dict, sean_gpt_host: str):
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     assert create_chat_response.status_code == 201, (
-        f'incorrect status code: {create_chat_response.status_code}, response: {create_chat_response.json()}')
+        f'incorrect status code: {create_chat_response.status_code}, '
+        f"response: {create_chat_response.json()}")
 
     # Update the chat name.
     new_test_chat_name = f"test{random.randint(0, 1000000)}"

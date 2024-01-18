@@ -276,7 +276,7 @@ def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict
     #     },
     #     params={
     #         "semantic_search": "Welcome, Globe!",
-    #         "threshold": 0.5 # This is a very low threshold.  Just for testing that it is accepted.
+    #         "threshold": 0.5 # This is a very low threshold. Just for testing that it is accepted.
     #     }
     # )
     # # The response should be:

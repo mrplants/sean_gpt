@@ -125,6 +125,7 @@ async def delete_share_set_file(# pylint: disable=missing-function-docstring
                                FileShareSetLink.share_set_id == share_set_id)).first()
     print(f'link: {link}')
     if link is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in share set.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="File not found in share set.")
     session.delete(link)
     session.commit()

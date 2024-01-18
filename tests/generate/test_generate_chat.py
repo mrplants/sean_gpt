@@ -81,7 +81,8 @@ def test_generate_chat(sean_gpt_host: str, verified_new_user: dict):
     with patch_openai_async_completions(sean_gpt_host, expected_response, 0.001):
         # Put in a try block to catch any disconnect exceptions
         try:
-            with connect_ws(f"{sean_gpt_host}/generate/chat/ws?token={token}".replace('http','ws')) as ws:
+            with connect_ws(f"{sean_gpt_host}/generate/chat/ws?token={token}".replace('http',
+                                                                                      'ws')) as ws:
                 # The first messagein the exchange is the prior: a list of messages.
                 ws.send(json.dumps({
                     'action': 'chat_completion',

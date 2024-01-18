@@ -2,7 +2,7 @@
 import uuid
 from typing import Annotated, Optional, List
 
-from fastapi import APIRouter, Form, Depends
+from fastapi import APIRouter, Request
 from fastapi.responses import Response
 from sqlmodel import select
 from openai import AsyncOpenAI
@@ -34,48 +34,11 @@ Returns:
 """)
 @router.post("")
 async def twilio_webhook( # pylint: disable=missing-function-docstring disable=too-many-locals disable=too-many-statements disable=too-many-branches disable=too-many-return-statements
-    *,
-    MessageSid: Annotated[str, Form()],
-    SmsSid: Annotated[str, Form()],
-    AccountSid: Annotated[str, Form()],
-    MessagingServiceSid: Annotated[str, Form()],
-    From: Annotated[str, Form()],
-    To: Annotated[str, Form()],
-    Body: Annotated[str, Form()],
-    NumMedia: Annotated[int, Form()],
-    MediaContentType: Annotated[Optional[List[str]], Form()] = None,
-    MediaUrl: Annotated[Optional[List[str]], Form()] = None,
-    FromCity: Annotated[Optional[str], Form()] = None,
-    FromState: Annotated[Optional[str], Form()] = None,
-    FromZip: Annotated[Optional[str], Form()] = None,
-    FromCountry: Annotated[Optional[str], Form()] = None,
-    ToCity: Annotated[Optional[str], Form()] = None,
-    ToState: Annotated[Optional[str], Form()] = None,
-    ToZip: Annotated[Optional[str], Form()] = None,
-    ToCountry: Annotated[Optional[str], Form()] = None,
+    request: Request,
     current_user: TwilioGetUserDep,
     session: SessionDep,
     redis_conn: RedisConnectionDep):
-    incoming_message = TwilioMessage(
-        message_sid=MessageSid,
-        sms_sid=SmsSid,
-        account_sid=AccountSid,
-        messaging_service_sid=MessagingServiceSid,
-        from_=From,
-        to=To,
-        body=Body,
-        num_media=NumMedia,
-        media_content_type=MediaContentType,
-        media_url=MediaUrl,
-        from_city=FromCity,
-        from_state=FromState,
-        from_zip=FromZip,
-        from_country=FromCountry,
-        to_city=ToCity,
-        to_state=ToState,
-        to_zip=ToZip,
-        to_country=ToCountry
-    )
+    incoming_message = TwilioMessage(**dict(await request.form()))
     # - Verify that this is not a whatsapp message
     if incoming_message.from_.startswith('whatsapp:'):
         twiml_response = twiml.MessagingResponse()

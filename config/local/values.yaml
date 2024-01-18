@@ -25,3 +25,5 @@ seangpt:
       popd && 
       docker build -t sean_gpt_frontend_local:latest -f Dockerfile.frontend . && 
       kind load docker-image sean_gpt_frontend_local:latest -n sean-gpt-local
+
+env: local

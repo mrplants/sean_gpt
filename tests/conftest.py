@@ -9,6 +9,7 @@
 # pylint: disable=missing-function-docstring
 import subprocess
 import time
+import os
 
 import pytest
 
@@ -23,6 +24,7 @@ def sean_gpt_host() -> str:
 
     # Monitor the api logs
     api_stern_process = subprocess.Popen(['stern', 'api-*', "-n", "seangpt", "--since", "1s"])
+    env = os.environ['ENV'] if 'ENV' in os.environ else "local"
 
     # port-forward the Sean GPT deployment in the background
     seangpt_port_process = subprocess.Popen([
@@ -30,7 +32,7 @@ def sean_gpt_host() -> str:
         "port-forward",
         "deployments/api",
         "--namespace",
-        "seangpt",
+        f"{env}-seangpt",
         "8000:8000"
     ])
     # wait for the port-forward to be ready

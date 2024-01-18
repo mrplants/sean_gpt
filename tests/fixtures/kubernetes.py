@@ -17,8 +17,10 @@ config.load_kube_config()
 # Create a client for the Kubernetes API
 v1 = client.CoreV1Api()
 
+env = os.environ['ENV'] if 'ENV' in os.environ else "local"
+
 # Get the pods for the deployment
-pods = v1.list_namespaced_pod(namespace="seangpt", label_selector="app=api")
+pods = v1.list_namespaced_pod(namespace=f"{env}-seangpt", label_selector="app=api")
 
 # Get the first pod
 pod = pods.items[0]

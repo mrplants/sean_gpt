@@ -21,6 +21,7 @@ environments:
     kubeContext: kind-sean-gpt-local
   default: *default
 ---
+# Rest of your Helmfile
 repositories:
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
@@ -45,7 +46,7 @@ releases:
   - name: milvus
     chart: milvus/milvus
     createNamespace: true
-    namespace: milvus
+    namespace: {{.Environment.Values.env}}-milvus
     set:
     - name: cluster.enabled
       value: false
@@ -59,7 +60,7 @@ releases:
   - name: minio
     chart: minio/minio
     createNamespace: true
-    namespace: minio
+    namespace: {{.Environment.Values.env}}-minio
     set:
     - name: mode
       value: standalone
@@ -77,28 +78,28 @@ releases:
   - name: kafka
     chart: bitnami/kafka
     createNamespace: true
-    namespace: kafka
+    namespace: {{.Environment.Values.env}}-kafka
     set:
     - name: listeners.client.protocol
       value: "PLAINTEXT"
-    {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace kafka --output json || true") }}
+    {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace {{.Environment.Values.env}}-kafka --output json || true") }}
     - name: sasl.interbroker.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
     - name: sasl.controller.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
     - name: kraft.clusterId
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
     {{ end }}
       
   - name: keda
     chart: kedacore/keda
     createNamespace: true
-    namespace: keda
+    namespace: {{.Environment.Values.env}}-keda
 
   - name: kubernetes-dashboard
     chart: kubernetes-dashboard/kubernetes-dashboard
     createNamespace: true
-    namespace: kubernetes-dashboard
+    namespace: {{.Environment.Values.env}}-kubernetes-dashboard
     # Access with:
     # $ kubectl proxy
     # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
@@ -106,7 +107,7 @@ releases:
   - name: postgres
     chart: bitnami/postgresql
     createNamespace: true
-    namespace: postgres
+    namespace: {{.Environment.Values.env}}-postgres
     set:
     - name: auth.database
       value: {{ .Environment.Values.database.name }}
@@ -120,7 +121,7 @@ releases:
   - name: redis
     chart: bitnami/redis
     createNamespace: true
-    namespace: redis
+    namespace: {{.Environment.Values.env}}-redis
     set:
     - name: architecture
       value: standalone
@@ -130,7 +131,7 @@ releases:
   - name: grafana
     chart: grafana/grafana
     createNamespace: true
-    namespace: monitoring
+    namespace: {{.Environment.Values.env}}-monitoring
     set:
       - name: adminUser
         value: admin
@@ -142,7 +143,7 @@ releases:
   - name: prometheus
     chart: prometheus-community/prometheus
     createNamespace: true
-    namespace: monitoring
+    namespace: {{.Environment.Values.env}}-monitoring
     values:
     - extraScrapeConfigs: |
         - job_name: prometheus-postgres-exporter
@@ -152,7 +153,7 @@ releases:
 
   - name: postgres-exporter
     chart: prometheus-community/prometheus-postgres-exporter
-    namespace: postgres  # same as your PostgreSQL service
+    namespace: {{.Environment.Values.env}}-postgres
     set:
       - name: config.datasource.host
         value: {{ .Environment.Values.database.host }}
@@ -166,10 +167,14 @@ releases:
   - name: "seangpt"
     chart: "./sean_gpt_chart"
     createNamespace: true
-    namespace: seangpt
+    namespace: {{.Environment.Values.env}}-seangpt
     set:
     - name: environment
-      value: {{ if eq .Environment.Name "default" }}"local"{{ else }}{{ .Environment.Name | quote }}{{ end }}
+      value: {{ .Environment.Values.env }}
+    - name: database.host
+      value: "postgres-postgresql.{{.Environment.Values.env}}-postgres.svc.cluster.local"
+    - name: redis.host
+      value: "redis-master.{{.Environment.Values.env}}-redis.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
     hooks:
@@ -191,13 +196,13 @@ releases:
 #############################################################################
   - name: ingress-nginx
     chart: ingress-nginx/ingress-nginx
-    installed: {{ or (eq .Environment.Name "development") (eq .Environment.Name "production") }}
+    installed: {{ or (eq .Environment.Values.env "dev") (eq .Environment.Values.env "prod") }}
     createNamespace: true
     namespace: ingress-nginx
 
   - name: cert-manager
     chart: jetstack/cert-manager
-    installed: {{ or (eq .Environment.Name "development") (eq .Environment.Name "production") }}
+    installed: {{ or (eq .Environment.Values.env "dev") (eq .Environment.Values.env "prod") }}
     createNamespace: true
     namespace: cert-manager
     set:

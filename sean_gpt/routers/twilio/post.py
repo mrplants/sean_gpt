@@ -46,12 +46,16 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - If the current_user could not be found, return a static message requesting referral code
+    # DEBUG
+    print(f"current_user: {current_user}")
     if not current_user:
         twiml_response = twiml.MessagingResponse()
         twiml_response.message(settings.app_request_referral_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - Verify that the user is opted into messaging
+    # DEBUG
+    print(f"current_user.opted_into_sms: {current_user.opted_into_sms}")
     if not current_user.opted_into_sms:
         # Check if the user has sent "AGREE" to opt in
         if incoming_message.body.lower() == "agree":
@@ -64,6 +68,8 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
             twiml_response.message(settings.app_sms_opt_in_message)
             return Response(content=twiml_response.to_xml(),
                             media_type="application/xml")
+    # DEBUG
+    print(f"incoming_message.num_media: {incoming_message.num_media}")
     # - Verify that this is not a MMS
     if incoming_message.num_media > 0:
         twiml_response = twiml.MessagingResponse()
@@ -73,6 +79,8 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     # Create a request ID.  It will be thrown away at the end, but used to
     # identify the request in the redis interrupts.
     request_id = str(uuid.uuid4())
+    # DEBUG
+    print(f"request_id: {request_id}")
     # - Retrieve the user's twilio chat
     twilio_chat = session.exec(select(Chat).where(Chat.id == current_user.twilio_chat_id)).first()
     # Subscribe to stream interrupt events
@@ -89,6 +97,8 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     session.refresh(twilio_chat)
     # Check if this is a new user (twilio chat has no messages yet)
     # If so, send the static welcome message.
+    # DEBUG
+    print(f"twilio_chat.messages: {twilio_chat.messages}")
     if not twilio_chat.messages:
         twiml_response = twiml.MessagingResponse()
         twiml_response.message(settings.app_welcome_message)
@@ -117,6 +127,8 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
                       .where(Message.chat_id == twilio_chat.id)
                       .order_by(Message.chat_index.desc()) # pylint: disable=no-member
                       .limit(settings.app_chat_history_length-1)).all())
+    # DEBUG
+    print(f"messages: {messages}")
     # Put them in openai format, prepend the system message
     openai_messages = ([openai_system_message] +
                        [{"role": msg.role.value, "content": msg.content} for msg in messages][::-1])
@@ -168,11 +180,15 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     session.add(ai_message)
     session.commit()
     session.refresh(ai_message)
+    # DEBUG
+    print(f"ai_message: {ai_message}")
     # - Send the response to Twilio, with a redirect if the stream was incomplete.
     twiml_response = twiml.MessagingResponse()
     twiml_response.message(ai_message.content)
     if requires_redirect:
         twiml_response.redirect('./')
-    return Response(content=twiml_response.to_xml(),
-                    media_type="application/xml")
+    response = Response(content=twiml_response.to_xml(), media_type="application/xml")
+    # DEBUG
+    print(f"response: {response}")
+    return response
     # TODO: Think about how to identify a redirect, so a user's message is not repeated.

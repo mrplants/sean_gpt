@@ -25,7 +25,10 @@ async def validate_twilio(request: Request):
     validator = RequestValidator(settings.twilio_auth_token)
 
     # Get the full URL that Twilio requested
+    # Replace "http" with "https" because Twilio only sends requests over HTTPS and this endpoint is
+    # behind a reverse proxy for SSL/TLS termination
     url = str(request.url)
+    url = url.replace("http://", "https://")
 
     # Get the POST parameters
     form = await request.form()
@@ -38,8 +41,8 @@ async def validate_twilio(request: Request):
     if not validator.validate(url, parameters, signature):
         raise HTTPException(status_code=400, detail="Invalid Twilio Signature")
 
-def twilio_get_or_create_user(
-        incoming_message: TwilioMessage,
+async def twilio_get_or_create_user(
+        request: Request,
         session: SessionDep,
         ai:AI = Depends(default_ai)) -> Optional[AuthenticatedUser]:
     """ Gets or creates a user from a Twilio message.
@@ -52,6 +55,9 @@ def twilio_get_or_create_user(
     Returns:
         Optional[AuthenticatedUser]: The user.
     """
+    # - Get the incoming message
+    incoming_message = TwilioMessage(**dict(await request.form()))
+
     # - Retrieve the user's phone number
     user_phone = incoming_message.from_
     # - Check if the user exists

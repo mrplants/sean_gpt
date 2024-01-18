@@ -102,6 +102,16 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     if not twilio_chat.messages:
         twiml_response = twiml.MessagingResponse()
         twiml_response.message(settings.app_welcome_message)
+        # - Save the incoming message to the database (commit and refresh)
+        user_message = Message(
+            chat_index=len(twilio_chat.messages),
+            chat_id=twilio_chat.id,
+            role='user',
+            content=incoming_message.body,
+        )
+        session.add(user_message)
+        session.commit()
+        session.refresh(user_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
     # - Save the incoming message to the database (commit and refresh)

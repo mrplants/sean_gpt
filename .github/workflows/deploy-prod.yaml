@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy to Production
 
 on:
   workflow_dispatch:
@@ -84,6 +84,5 @@ jobs:
       
     - name: Deploy to kubernetes using helm
       run: |
-        cd sean_gpt_chart
-        helm upgrade --install seangpt-stable . -f secrets.yaml --namespace stable
+        helmfile apply -e production
 

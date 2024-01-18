@@ -16,7 +16,7 @@ from .routers import file
 from .routers import share_set
 from .util.user import IsVerifiedUserDep
 
-if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+if 'SEAN_GPT_DEBUG' in os.environ and os.environ['SEAN_GPT_DEBUG']:
     from .routers import mock
 
 @asynccontextmanager
@@ -24,10 +24,10 @@ async def lifespan(_): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
     create_admin_if_necessary()
-    if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+    if 'SEAN_GPT_DEBUG' in os.environ and os.environ['SEAN_GPT_DEBUG']:
         mock.startup()
     yield
-    if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+    if 'SEAN_GPT_DEBUG' in os.environ and os.environ['SEAN_GPT_DEBUG']:
         mock.shutdown()
     # Shutdown logic
 
@@ -59,5 +59,5 @@ async def health_check():
     """
     return {"status": "ok"}
 
-if 'DEBUG_MOCK' in os.environ and os.environ['DEBUG_MOCK']:
+if 'SEAN_GPT_DEBUG' in os.environ and os.environ['SEAN_GPT_DEBUG']:
     app.include_router(mock.router)

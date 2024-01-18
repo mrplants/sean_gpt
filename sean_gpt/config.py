@@ -1,13 +1,15 @@
-
 """ Configuration for the app. """
+import os
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
-from .util.env import yaml_env
+if 'SEAN_GPT_DEBUG' not in os.environ:
+    os.environ['SEAN_GPT_DEBUG'] = 'False'
 
 class Settings(BaseSettings):
     """ Configuration for the app. """
-    debug: bool = False
+    debug: bool|None = Field(alias='SEAN_GPT_DEBUG')
 
     # SECRETS
     # Values from secrets need default values for testing because we do not load

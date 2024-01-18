@@ -3,13 +3,8 @@
 database:
   dialect: "postgresql"
   driver: ""
-  host: "postgres-postgresql.postgres.svc.cluster.local"
   port: 5432
   name: "sean_gpt"
 
-redis:
-  host: "redis-master.redis.svc.cluster.local"
-
 minio:
-  host: "minio.minio.svc.cluster.local"
   port: 9000

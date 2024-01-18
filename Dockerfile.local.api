@@ -11,8 +11,8 @@ COPY dist/requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set the DEBUG_MOCK environment variable
-ENV DEBUG_MOCK=1
+# Set the SEAN_GPT_DEBUG environment variable
+ENV SEAN_GPT_DEBUG=1
 
 # Expose the port the app runs on
 EXPOSE 8000

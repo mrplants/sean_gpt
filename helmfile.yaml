@@ -82,15 +82,15 @@ releases:
     set:
     - name: listeners.client.protocol
       value: "PLAINTEXT"
-    {{ if exec "/bin/sh" (list "-c" "helm history kafka --namespace {{.Environment.Values.env}}-kafka --output json || true") }}
+    {{ $namespace := printf "%s-kafka" .Environment.Values.env }}
+    {{ if exec "/bin/sh" (list "-c" (printf "helm history kafka --namespace %s --output json || true" $namespace)) }}
     - name: sasl.interbroker.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
     - name: sasl.controller.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
     - name: kraft.clusterId
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "{{.Environment.Values.env}}-kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
-    {{ end }}
-      
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
+    {{ end }}      
   - name: keda
     chart: kedacore/keda
     createNamespace: true
@@ -156,7 +156,7 @@ releases:
     namespace: {{.Environment.Values.env}}-postgres
     set:
       - name: config.datasource.host
-        value: {{ .Environment.Values.database.host }}
+        value: "postgres-postgresql.{{.Environment.Values.env}}-postgres.svc.cluster.local"
       - name: config.datasource.user
         value: {{ .Environment.Values.api_db_user }}
       - name: config.datasource.password
@@ -175,6 +175,8 @@ releases:
       value: "postgres-postgresql.{{.Environment.Values.env}}-postgres.svc.cluster.local"
     - name: redis.host
       value: "redis-master.{{.Environment.Values.env}}-redis.svc.cluster.local"
+    - name: minio.host
+      value: "minio.{{.Environment.Values.env}}-minio.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
     hooks:

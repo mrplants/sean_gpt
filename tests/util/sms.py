@@ -67,16 +67,16 @@ def send_text(
     }
     with patch_twilio_validator(host, valid):
         if patch_openai_api:
-            with patch_openai_async_completions(host, openai_response, delay=delay) as retrieve_call_args:
+            with patch_openai_async_completions(host, openai_response, delay=delay):
                 response = httpx.post(
                     f"{host}/twilio",
-                    json=message
+                    data=message
                 )
         else:
             httpx.post(f"{host}/mock/twilio/validator", json={"valid": valid})
             response = httpx.post(
                 f"{host}/twilio",
-                json=message
+                data=message
             )
     return response
 #pylint: enable=too-many-arguments

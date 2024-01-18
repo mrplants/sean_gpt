@@ -196,7 +196,7 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring disable=t
     twiml_response = twiml.MessagingResponse()
     twiml_response.message(ai_message.content)
     if requires_redirect:
-        twiml_response.redirect('./')
+        twiml_response.redirect('./twilio')
     response = Response(content=twiml_response.to_xml(), media_type="application/xml")
     # DEBUG
     print(f"response: {response}")

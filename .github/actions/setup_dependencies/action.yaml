@@ -37,5 +37,5 @@ runs:
         # find "$(poetry config cache-dir)" -name '*.lock' -type f -delete
         poetry cache clear --all .
         rm -rf $(poetry config cache-dir)/artifacts
-        poetry install
+        poetry install --no-cache
       shell: bash

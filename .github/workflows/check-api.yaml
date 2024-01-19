@@ -55,7 +55,9 @@ jobs:
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v5
-      #----------------------------------------------
+        with:
+          python-version-file: 'pyproject.toml' # Read python version from a file pyproject.toml
+        #----------------------------------------------
       #  -----  install & configure poetry  -----
       #----------------------------------------------
       - name: Install Poetry
@@ -90,5 +92,5 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest tests/
+          poetry run pytest tests/
           coverage report

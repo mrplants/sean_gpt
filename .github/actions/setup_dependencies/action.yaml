@@ -34,7 +34,7 @@ runs:
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: |
-        find "$(poetry config cache-dir)" -name '*.lock' -type f -delete
+        # find "$(poetry config cache-dir)" -name '*.lock' -type f -delete
         poetry cache clear --all .
         rm -rf $(poetry config cache-dir)/artifacts
         poetry install

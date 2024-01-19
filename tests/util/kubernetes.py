@@ -4,6 +4,18 @@ import time
 import contextlib
 import shutil
 
+def is_ready(env):
+    """ Check if the api deployment is ready using status rollout. """
+    result = subprocess.run([
+        "kubectl",
+        "rollout",
+        "status",
+        "deployments/api",
+        "--namespace",
+        f"{env}-seangpt",
+    ], check=True, capture_output=True)
+    return result.returncode == 0
+
 def is_command_available(command):
     """Check if a command is available."""
     return shutil.which(command) is not None

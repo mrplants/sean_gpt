@@ -5,6 +5,11 @@ runs:
   using: 'composite'
   steps:
 
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
     - name: Set up python
       id: setup-python
       uses: actions/setup-python@v5
@@ -34,8 +39,5 @@ runs:
     #----------------------------------------------
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: |
-        # pip install --upgrade pip
-        # python -m pip install -r dist/requirements.txt
-        poetry install
+      run: |        poetry install
       shell: bash

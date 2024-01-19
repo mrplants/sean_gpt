@@ -20,9 +20,9 @@ seangpt:
     image_tag: "latest"
     # Need to compile the react app first
     build_and_push_command: |
-      pushd sean_gpt_frontend && 
+      cd sean_gpt_frontend && 
       CI=true npm run build && 
-      popd && 
+      cd .. && 
       docker build -t sean_gpt_frontend_local:latest -f Dockerfile.frontend . && 
       kind load docker-image sean_gpt_frontend_local:latest -n sean-gpt-local
 

@@ -29,9 +29,9 @@ jobs:
       #----------------------------------------------
       #          install and run linters
       #----------------------------------------------
-      - run: python -m pip install pytest
+      - run: python -m pip install pylint
       - run: |
-          pytest sean_gpt tests
+          cd sean_gpt && pylint sean_gpt tests
 
   test-api:
     runs-on: ubuntu-latest
@@ -92,5 +92,5 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          poetry run pytest tests/
+          cd sean_gpt && poetry run pytest tests/
           coverage report

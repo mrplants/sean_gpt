@@ -13,13 +13,14 @@ def monitor_logs(env):
     """ Monitor the logs of the api deployment. """
     if not is_command_available('stern'):
         print("stern is not installed, skipping log monitoring.")
-        return
-    api_stern_process = subprocess.Popen(
-        ['stern', 'api-*', "-n", f"{env}-seangpt", "--since", "1s"])
-    try:
         yield
-    finally:
-        api_stern_process.terminate()
+    else:
+        api_stern_process = subprocess.Popen(
+            ['stern', 'api-*', "-n", f"{env}-seangpt", "--since", "1s"])
+        try:
+            yield
+        finally:
+            api_stern_process.terminate()
 
 @contextlib.contextmanager
 def port_forward(env, port):

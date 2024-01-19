@@ -1,0 +1,30 @@
+{{ $latest_wheel := exec "poetry" (list "run" "python" "scripts/find_latest_whl.py" "dist") | trim }}
+seangpt:
+  api_image:
+    image_name: "sean_gpt_api_test"
+    image_tag: "latest"
+    # Don't need to build since the local image has a host mount directly to the source code
+    build_and_push_command: |
+      poetry export -f requirements.txt --output 'dist/requirements.txt' && 
+      docker build --build-arg WHEEL_FILE="{{$latest_wheel}}" -t sean_gpt_api_test:latest -f Dockerfile.api . && 
+      kind load docker-image sean_gpt_api_test:latest -n sean-gpt-local
+
+  migrate_image:
+    image_name: "sean_gpt_migrate"
+    image_tag: "latest"
+    build_and_push_command: |
+      docker build --build-arg ENV=local -t sean_gpt_migrate:latest -f Dockerfile.migrate . && 
+      kind load docker-image sean_gpt_migrate:latest -n sean-gpt-local
+
+  frontend_image:
+    image_name: "sean_gpt_frontend"
+    image_tag: "latest"
+    # Need to compile the react app first
+    build_and_push_command: |
+      cd sean_gpt_frontend && 
+      CI=true npm run build && 
+      cd .. && 
+      docker build -t sean_gpt_frontend:latest -f Dockerfile.frontend . && 
+      kind load docker-image sean_gpt_frontend:latest -n sean-gpt-local
+
+env: local

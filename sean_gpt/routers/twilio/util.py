@@ -1,6 +1,6 @@
 """ Twilio utility functions """
 from typing import Annotated, Optional
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager
 import uuid
 from uuid import UUID
 import math
@@ -134,6 +134,7 @@ def check_for_unsupported_msg(msg: TwilioMessage) -> Response|None:
         twiml_response.message(settings.app_no_mms_message)
         return Response(content=twiml_response.to_xml(),
                         media_type="application/xml")
+    return None
 
 def check_user_sms(user: AuthenticatedUser, msg: TwilioMessage, session: Session) -> Response|None:
     """ Verifies that the user exists and has opted into SMS.
@@ -164,9 +165,19 @@ def check_user_sms(user: AuthenticatedUser, msg: TwilioMessage, session: Session
             twiml_response.message(settings.app_sms_opt_in_message)
             return Response(content=twiml_response.to_xml(),
                             media_type="application/xml")
+    return None
 
 @asynccontextmanager
 async def chat_response_session(chat_id: UUID, redis_conn, session: Session):
+    """ Context manager for a chat response session.
+    
+    Args:
+        chat_id (UUID): The chat ID.
+        redis_conn: The redis connection.
+        session (Session): The database session.
+        
+    Yields:
+        Tuple[str, Chat, ai.Message]: The chat response session ID, chat, and interrupt pubsub."""
     # # Create a chat response session ID.  Used to identify the request in the redis interrupts.
     chat_response_session_id = str(uuid.uuid4())
 
@@ -185,12 +196,25 @@ async def chat_response_session(chat_id: UUID, redis_conn, session: Session):
 
     yield chat_response_session_id, chat, interrupt_pubsub
 
-async def create_and_save_twiml_response(chat:Chat,
+async def create_and_save_twiml_response(chat:Chat, # pylint: disable=too-many-arguments
                                          incoming_message,
                                          msg_body:str,
                                          session:Session,
                                          redis_conn,
                                          requires_redirect:bool = False) -> Response:
+    """ Creates and saves a twiml response.
+
+    Args:
+        chat (Chat): The chat.
+        incoming_message (TwilioMessage): The incoming message.
+        msg_body (str): The message body.
+        session (Session): The database session.
+        redis_conn: The redis connection.
+        requires_redirect (bool): Whether the response requires a redirect.
+
+    Returns:
+        Response: The twiml response.
+    """
     twiml_response = twiml.MessagingResponse()
     twiml_response.message(msg_body)
     # - Save the message to the database (commit and refresh)
@@ -212,12 +236,28 @@ async def create_and_save_twiml_response(chat:Chat,
                     media_type="application/xml")
 
 async def is_twilio_redirect(msg: TwilioMessage, redis_conn) -> bool:
+    """ Checks if a twilio message is a redirect.
+
+    Args:
+        msg (TwilioMessage): The twilio message.
+        redis_conn: The redis connection.
+
+    Returns:
+        bool: Whether the message is a redirect.
+    """
     print(f'checking for redirect for SID: {msg.message_sid}')
     print(f'is redirect? {await redis_conn.get(f"multi-part message with SID: {msg.message_sid}")}')
 
     return (await redis_conn.get(f'multi-part message with SID: {msg.message_sid}')) is not None
 
 def save_user_twilio_message(chat, msg, session):
+    """ Saves a user's twilio message to the database.
+
+    Args:
+        chat (Chat): The chat.
+        msg (TwilioMessage): The twilio message.
+        session (Session): The database session.
+    """
     # - Save the incoming message to the database (commit and refresh)
     user_message = Message(
         chat_index=len(chat.messages),
@@ -230,6 +270,15 @@ def save_user_twilio_message(chat, msg, session):
     session.refresh(user_message)
 
 def get_messages_openai(chat_id, session):
+    """ Gets the messages in a chat in the OpenAI format.
+
+    Args:
+        chat_id (UUID): The chat ID.
+        session (Session): The database session.
+
+    Returns:
+        List[Dict[str, str]]: The messages in the OpenAI format.
+    """
     # Create the system and user messages
     openai_system_message = {
         "role": "system",
@@ -249,6 +298,15 @@ def get_messages_openai(chat_id, session):
     return openai_messages
 
 async def check_for_interrupts(interrupt_pubsub, chat_response_session_id):
+    """ Checks for interrupts to the stream.
+
+    Args:
+        interrupt_pubsub: The interrupt pubsub.
+        chat_response_session_id (str): The chat response session ID.
+
+    Raises:
+        HTTPException: If the response was interrupted.
+    """
     # Stop the stream and return early
     # Raise an error indicating that the response was interrupted
     message = await interrupt_pubsub.get_message(ignore_subscribe_messages=True)
@@ -256,7 +314,24 @@ async def check_for_interrupts(interrupt_pubsub, chat_response_session_id):
         raise HTTPException("Twilio response interrupted.")
 
 def num_twiml_segments(msg_body:str):
+    """ Gets the number of TwiML segments required to send a message.
+
+    Args:
+        msg_body (str): The message body.
+
+    Returns:
+        int: The number of TwiML segments required to send the message.
+    """
     return math.ceil(len(msg_body) / settings.app_max_sms_characters)
 
 def trim_twiml_segments(msg_body, suffix):
+    """ Trims a message to the maximum TwiML segment length.
+
+    Args:
+        msg_body (str): The message body.
+        suffix (str): The suffix to append to the message.
+
+    Returns:
+        str: The trimmed message.
+    """
     return msg_body[:settings.app_max_sms_characters-len(suffix)] + suffix

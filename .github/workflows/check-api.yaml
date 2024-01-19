@@ -47,7 +47,7 @@ jobs:
         with:
           helmfile-version: 'v0.160.0'
           helm-version: 'v3.13.3'
-          helmfile-args: apply --environment local --suppress-diff
+          helmfile-args: apply --environment local --suppress-diff --quiet
 
       #----------------------------------------------
       #              run test suite

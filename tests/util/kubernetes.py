@@ -13,6 +13,8 @@ def is_ready(env):
         "deployments/api",
         "--namespace",
         f"{env}-seangpt",
+        "--timeout",
+        "1m"
     ], check=True, capture_output=True)
     return result.returncode == 0
 

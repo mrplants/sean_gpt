@@ -10,6 +10,9 @@ runs:
       with:
         node-version: '18'
 
+    - name: Install Node.js dependencies
+      run: cd sean_gpt_frontend && npm install
+
     - name: Set up python
       id: setup-python
       uses: actions/setup-python@v5

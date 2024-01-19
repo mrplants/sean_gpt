@@ -4,9 +4,9 @@ import time
 import contextlib
 
 @contextlib.contextmanager
-def monitor_logs():
+def monitor_logs(env):
     """ Monitor the logs of the api deployment. """
-    api_stern_process = subprocess.Popen(['stern', 'api-*', "-n", "seangpt", "--since", "1s"])
+    api_stern_process = subprocess.Popen(['stern', 'api-*', "-n", f"{env}-seangpt", "--since", "1s"])
     try:
         yield
     finally:

@@ -23,5 +23,5 @@ def sean_gpt_host() -> str:
     # Get the environment
     env = os.environ['ENV'] if 'ENV' in os.environ else "local"
 
-    with monitor_logs(), port_forward(env, 8000):
+    with monitor_logs(env), port_forward(env, 8000):
         yield "http://localhost:8000"

@@ -24,7 +24,7 @@ jobs:
         id: read_toml
         with:
           file: 'pyproject.toml'
-          field: 'package.version'
+          field: 'tool.poetry.version'
 
       - name: Compare TOML version with latest wheel
         run: |
@@ -47,7 +47,7 @@ jobs:
         id: read_toml
         with:
           file: 'pyproject.toml'
-          field: 'package.version'
+          field: 'tool.poetry.version'
 
       - name: Fetch Tags from Main Branch
         run: git fetch --tags origin main

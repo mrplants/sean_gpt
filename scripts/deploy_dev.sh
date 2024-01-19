@@ -26,7 +26,7 @@ poetry build
 
 # Create requirements.txt and build the wheel
 poetry export -f requirements.txt --output dist/requirements.txt
-LATEST_WHEEL=$(poetry run python scripts/find_latest_whl.py dist)
+LATEST_WHEEL=$(poetry run python scripts/get_latest_whl.py dist)
 echo "Latest wheel: $LATEST_WHEEL"
 
 # Build the API docker image and push to GHCR

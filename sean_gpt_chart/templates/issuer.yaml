@@ -1,5 +1,4 @@
-{{ if eq .Values.environment "local" }}
-{{- else }}
+{{- if or (eq .Values.environment "dev") (eq .Values.environment "prod") }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

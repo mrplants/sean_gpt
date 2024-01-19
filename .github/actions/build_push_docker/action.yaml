@@ -29,8 +29,8 @@ runs:
     - name: Determine the name of the latest wheel file
       id: get_wheel_file
       run: |
-        echo $(python scripts/find_latest_whl.py dist)
-        echo "wheel_file=$(python scripts/find_latest_whl.py dist)" >> $GITHUB_OUTPUT
+        echo $(python scripts/get_latest_whl.py dist)
+        echo "wheel_file=$(python scripts/get_latest_whl.py dist)" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Build and Push Docker Image

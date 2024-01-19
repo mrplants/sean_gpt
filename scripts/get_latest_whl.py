@@ -2,7 +2,7 @@ import argparse
 import os
 from packaging.version import parse
 
-def find_latest_wheel(directory):
+def get_latest_wheel(directory):
     """Find the latest wheel file in the specified directory."""
     wheel_files = [f for f in os.listdir(directory) if f.endswith('.whl')]
     if not wheel_files:
@@ -17,7 +17,7 @@ def main():
 
     args = parser.parse_args()
 
-    latest_wheel = find_latest_wheel(args.directory)
+    latest_wheel = get_latest_wheel(args.directory)
     print(latest_wheel)
 
 if __name__ == "__main__":

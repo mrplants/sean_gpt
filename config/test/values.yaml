@@ -1,12 +1,12 @@
-{{ $latest_wheel := exec "poetry" (list "run" "python" "scripts/find_latest_whl.py" "dist") | trim }}
 seangpt:
   api_image:
     image_name: "sean_gpt_api_test"
     image_tag: "latest"
     # Don't need to build since the test image has a host mount directly to the source code
     build_and_push_command: |
+      LATEST_WHEEL=$(poetry run python scripts/get_latest_whl.py dist) &&
       poetry export -f requirements.txt --output 'dist/requirements.txt' && 
-      docker build --build-arg WHEEL_FILE="{{$latest_wheel}}" -t sean_gpt_api_test:latest -f Dockerfile.api . && 
+      docker build --build-arg WHEEL_FILE=$LATEST_WHEEL -t sean_gpt_api_test:latest -f Dockerfile.api . && 
       kind load docker-image sean_gpt_api_test:latest -n sean-gpt-test
 
   migrate_image:

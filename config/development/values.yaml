@@ -1,6 +1,3 @@
-{{ $contents := readFile "pyproject.toml" }}
-{{ $version := exec "python" (list "-c" "import toml; print(toml.loads('''" $contents "''')['tool']['poetry']['version'])") | trim }}
-{{ $latest_wheel := exec "poetry" (list "run" "python" "scripts/find_latest_whl.py" "dist") | trim }}
 seangpt:
   api_image:
     image_name: "ghcr.io/mrplants/sean_gpt_api_dev"
@@ -8,6 +5,7 @@ seangpt:
     # Need to create a poetry build first
     build_and_push_command: |
       poetry build && 
+      LATEST_WHEEL=$(poetry run python scripts/get_latest_whl.py dist) &&
       poetry export -f requirements.txt --output 'dist/requirements.txt' && 
       docker build --platform=linux/amd64 --build-arg WHEEL_FILE="{{$latest_wheel}}" -t ghcr.io/mrplants/sean_gpt_api_dev:{{ $version }} -f Dockerfile.api . && 
       docker push ghcr.io/mrplants/sean_gpt_api_dev:{{ $version }}

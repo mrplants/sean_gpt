@@ -13,12 +13,6 @@ environments:
     - config/development/secrets.yaml
     kubeContext: sean-gpt-aks
   dev: *dev
-  test:
-    values:
-    - config/values.yaml
-    - config/test/values.yaml
-    - config/test/test_secrets.yaml
-    kubeContext: kind-sean-gpt-local
   local: &default
     values:
     - config/values.yaml
@@ -26,6 +20,12 @@ environments:
     - config/local/test_secrets.yaml
     kubeContext: kind-sean-gpt-local
   default: *default
+  test:
+    values:
+    - config/values.yaml
+    - config/test/values.yaml
+    - config/test/test_secrets.yaml
+    kubeContext: kind-sean-gpt-test
 ---
 # Rest of your Helmfile
 repositories:

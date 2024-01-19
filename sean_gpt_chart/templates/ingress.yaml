@@ -1,5 +1,4 @@
-{{ if eq .Values.environment "local" }}
-{{- else }}
+{{- if or (eq .Values.environment "dev") (eq .Values.environment "prod") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

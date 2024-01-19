@@ -3,8 +3,8 @@ name: Prepare for Release
 on:
   workflow_dispatch:
   pull_request:
-    branches:
-      - main
+    # branches:
+    #   - main
 
 permissions:
   contents: write

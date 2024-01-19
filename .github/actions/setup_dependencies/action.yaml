@@ -12,6 +12,7 @@ runs:
 
     - name: Install Node.js dependencies
       run: cd sean_gpt_frontend && npm install
+      shell: bash
 
     - name: Set up python
       id: setup-python

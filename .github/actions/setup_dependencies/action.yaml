@@ -35,9 +35,6 @@ runs:
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: |
-        # find "$(poetry config cache-dir)" -name '*.lock' -type f -delete
-        # poetry cache clear --all .
-        # rm -rf $(poetry config cache-dir)/artifacts
-        poetry config installer.modern-installation false
-        POETRY_INSTALLER_MODERN_INSTALLATION=false poetry install --no-cache
+        python -m pip install -r dist/requirements.txt
+        poetry install
       shell: bash

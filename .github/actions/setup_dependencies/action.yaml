@@ -1,5 +1,5 @@
 name: 'Setup SeanGPT Dependencies'
-description: 'Installs helmfile and its dependencies, as well as the project and its dependencies'
+description: 'Installs the project and its dependencies'
 
 runs:
   using: 'composite'
@@ -34,8 +34,10 @@ runs:
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --no-interaction --no-root
+      shell: bash
     #----------------------------------------------
     # install your root project, if required
     #----------------------------------------------
     - name: Install project
       run: poetry install --no-interaction
+      shell: bash

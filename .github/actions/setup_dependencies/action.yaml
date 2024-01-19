@@ -19,7 +19,7 @@ runs:
         version: 1.7.1
         virtualenvs-create: true
         virtualenvs-in-project: true
-        installer-parallel: true
+        installer-parallel: false
     #----------------------------------------------
     #       load cached venv if cache exists
     #----------------------------------------------

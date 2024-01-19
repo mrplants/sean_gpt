@@ -28,10 +28,10 @@ jobs:
 
       - name: Compare TOML version with latest wheel
         run: |
-          version_wheel=$(ls dist/*.whl | sed -e 's/dist\///g' -e 's/-.*//g')
           version_toml=${{ steps.read_toml.outputs.value }}
-          if [ "$version_wheel" != "$version_toml" ]; then
-            echo "The version in pyproject.toml ($version_toml) does not match the latest wheel."
+          wheel_files=$(ls dist/*.whl)
+          if [[ ! $wheel_files =~ $version_toml ]]; then
+            echo "The version in pyproject.toml ($version_toml) does not match any wheel file."
             exit 1
           fi
 

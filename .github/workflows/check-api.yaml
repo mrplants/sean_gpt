@@ -22,7 +22,7 @@ jobs:
       #----------------------------------------------
       #          install and run linters
       #----------------------------------------------
-      - run: cd sean_gpt && pylint sean_gpt tests
+      - run: cd sean_gpt && poetry run pylint sean_gpt tests
 
   test-api:
     runs-on: ubuntu-latest

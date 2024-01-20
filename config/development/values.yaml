@@ -1,31 +1,29 @@
 seangpt:
   api_image:
     image_name: "ghcr.io/mrplants/sean_gpt_api_dev"
-    image_tag: {{ $version }}
     # Need to create a poetry build first
     build_and_push_command: |
       poetry build && 
-      LATEST_WHEEL=$(poetry run python scripts/get_latest_whl.py dist) &&
+      LATEST_WHEEL=$(poetry run python scripts/get_latest_whl.py dist) && 
+      VERSION=$(poetry run python scripts/get_version.py pyproject.toml) && 
       poetry export -f requirements.txt --output 'dist/requirements.txt' && 
-      docker build --platform=linux/amd64 --build-arg WHEEL_FILE="{{$latest_wheel}}" -t ghcr.io/mrplants/sean_gpt_api_dev:{{ $version }} -f Dockerfile.api . && 
-      docker push ghcr.io/mrplants/sean_gpt_api_dev:{{ $version }}
+      docker build --platform=linux/amd64 --build-arg WHEEL_FILE=$LATEST_WHEEL -t ghcr.io/mrplants/sean_gpt_api_dev:{{ $version }} -f Dockerfile.api . && 
+      docker push ghcr.io/mrplants/sean_gpt_api_dev:$VERSION
 
   migrate_image:
     image_name: "ghcr.io/mrplants/sean_gpt_migrate_dev"
-    image_tag: {{ $version }}
     build_and_push_command: |
-      docker build --build-arg ENV=dev -t ghcr.io/mrplants/sean_gpt_migrate_dev:{{ $version }} -f Dockerfile.migrate . && 
-      docker push ghcr.io/mrplants/sean_gpt_migrate_dev:{{ $version }}
+      docker build --build-arg ENV=dev -t ghcr.io/mrplants/sean_gpt_migrate_dev:$VERSION -f Dockerfile.migrate . && 
+      docker push ghcr.io/mrplants/sean_gpt_migrate_dev:$VERSION
 
   frontend_image:
     image_name: "ghcr.io/mrplants/sean_gpt_frontend_dev"
-    image_tag: {{ $version }}
     # Need to compile the react app first
     build_and_push_command: |
       pushd sean_gpt_frontend && 
       CI=true npm run build && 
       popd && 
-      docker build -t ghcr.io/mrplants/sean_gpt_frontend_dev:{{ $version }} -f Dockerfile.frontend . && 
-      docker push ghcr.io/mrplants/sean_gpt_frontend_dev:{{ $version }}
+      docker build -t ghcr.io/mrplants/sean_gpt_frontend_dev:$VERSION -f Dockerfile.frontend . && 
+      docker push ghcr.io/mrplants/sean_gpt_frontend_dev:$VERSION
 
 env: dev

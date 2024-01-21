@@ -10,5 +10,3 @@ seangpt:
   frontend_image:
     image_name: "sean_gpt_frontend"
     image_tag: "latest"
-
-env: local

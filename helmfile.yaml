@@ -13,7 +13,6 @@ environments:
     kubeContext: kind-sean-gpt-local
   default: *default
 ---
-# Rest of your Helmfile
 repositories:
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
@@ -37,7 +36,7 @@ repositories:
 releases:
   - name: ingress-nginx
     chart: ingress-nginx/ingress-nginx
-    installed: {{ eq .Environment.Values.env "prod" }}
+    installed: {{ eq .Environment.Name "prod" }}
     createNamespace: true
     namespace: ingress-nginx
     set:
@@ -47,7 +46,7 @@ releases:
 
   - name: cert-manager
     chart: jetstack/cert-manager
-    installed: {{ eq .Environment.Values.env "prod" }}
+    installed: {{ eq .Environment.Name "prod" }}
     createNamespace: true
     namespace: cert-manager
     set:
@@ -71,25 +70,30 @@ releases:
     - name: pulsar.enabled
       value: false
 
-  - name: minio
-    chart: minio/minio
+  - name: minio-operator
+    chart: minio-operator/operator
     createNamespace: true
-    namespace: minio
+    namespace: minio-operator
+  
+  - name: minio-tenant
+    chart: minio-operator/tenant
+    createNamespace: true
+    namespace: minio-tenant
+    needs:
+    - minio-operator/minio-operator
     set:
-    - name: mode
-      value: standalone
-    - name: replicas
+    - name: tenant.pools[0].servers
       value: 1
-    - name: resources.requests.memory
-      value: 512Mi
-    - name: persistence.size
-      value: 10Gi
-    - name: users[0].accessKey
-      value: {{ .Environment.Values.minio.access_key | quote}}
-    - name: users[0].secretKey
-      value: {{ .Environment.Values.minio.secret_key | quote}}
-    - name: users[0].policy
-      value: readwrite
+    - name: tenant.metrics.enabled
+      value: true
+    - name: tenant.configuration.name
+      value: {{ .Environment.Values.minio.config_name }}
+    - name: secrets.name
+      value: {{ .Environment.Values.minio.config_name }}
+    - name: secrets.accessKey
+      value: {{ .Environment.Values.minio.access_key }}
+    - name: secrets.secretKey
+      value: {{ .Environment.Values.minio.secret_key }}
 
   - name: kafka
     chart: bitnami/kafka
@@ -182,7 +186,9 @@ releases:
     namespace: seangpt
     set:
     - name: environment
-      value: {{ .Environment.Values.env }}
+      value: {{ .Environment.Name }}
+    - name: env
+      value: {{ .Environment.Name }}
     - name: database.host
       value: "postgres-postgresql.postgres.svc.cluster.local"
     - name: redis.host

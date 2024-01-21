@@ -1,18 +1,16 @@
 seangpt:
   api_image:
     image_name: "ghcr.io/mrplants/sean_gpt_api"
-    image_tag: "dev"
+    image_tag: "latest"
 
   migrate_image:
     image_name: "ghcr.io/mrplants/sean_gpt_migrate"
-    image_tag: "dev"
+    image_tag: "latest"
 
   frontend_image:
     image_name: "ghcr.io/mrplants/sean_gpt_frontend"
-    image_tag: "dev"
+    image_tag: "latest"
 
-domain: "dev.sean-gpt.com"
-api_domain: "api.dev.sean-gpt.com"
-cert_prefix: "dev-sean-gpt"
-
-env: dev
+domain: "sean-gpt.com"
+api_domain: "api.sean-gpt.com"
+cert_prefix: "sean-gpt"

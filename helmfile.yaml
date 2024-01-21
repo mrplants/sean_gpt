@@ -1,18 +1,10 @@
 environments:
-  production: &prod
+  prod:
     values:
     - config/values.yaml
     - config/production/values.yaml
     - config/production/secrets.yaml
     kubeContext: sean-gpt-aks
-  prod: *prod
-  development: &dev
-    values:
-    - config/values.yaml
-    - config/development/values.yaml
-    - config/development/secrets.yaml
-    kubeContext: sean-gpt-aks
-  dev: *dev
   local: &default
     values:
     - config/values.yaml
@@ -20,12 +12,6 @@ environments:
     - config/local/test_secrets.yaml
     kubeContext: kind-sean-gpt-local
   default: *default
-  test:
-    values:
-    - config/values.yaml
-    - config/test/values.yaml
-    - config/test/test_secrets.yaml
-    kubeContext: kind-sean-gpt-test
 ---
 # Rest of your Helmfile
 repositories:
@@ -49,10 +35,30 @@ repositories:
     url: https://grafana.github.io/helm-charts
 
 releases:
+  - name: ingress-nginx
+    chart: ingress-nginx/ingress-nginx
+    installed: {{ eq .Environment.Values.env "prod" }}
+    createNamespace: true
+    namespace: ingress-nginx
+    set:
+      - name: controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"
+        value: "/healthz"
+# helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+
+  - name: cert-manager
+    chart: jetstack/cert-manager
+    installed: {{ eq .Environment.Values.env "prod" }}
+    createNamespace: true
+    namespace: cert-manager
+    set:
+      - name: installCRDs
+        value: true
+# helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+
   - name: milvus
     chart: milvus/milvus
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-milvus
+    namespace: milvus
     set:
     - name: cluster.enabled
       value: false
@@ -60,13 +66,15 @@ releases:
       value: 1
     - name: minio.mode
       value: standalone
+    - name: minio.persistence.size
+      value: 10Gi
     - name: pulsar.enabled
       value: false
 
   - name: minio
     chart: minio/minio
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-minio
+    namespace: minio
     set:
     - name: mode
       value: standalone
@@ -74,6 +82,8 @@ releases:
       value: 1
     - name: resources.requests.memory
       value: 512Mi
+    - name: persistence.size
+      value: 10Gi
     - name: users[0].accessKey
       value: {{ .Environment.Values.minio.access_key | quote}}
     - name: users[0].secretKey
@@ -84,28 +94,24 @@ releases:
   - name: kafka
     chart: bitnami/kafka
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-kafka
+    namespace: kafka
     set:
     - name: listeners.client.protocol
       value: "PLAINTEXT"
-    {{ $namespace := printf "%s-kafka" .Environment.Values.env }}
-    {{ if exec "/bin/sh" (list "-c" (printf "helm history kafka --namespace %s --output json || true" $namespace)) }}
     - name: sasl.interbroker.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-user-passwords" "-o" "jsonpath={.data.inter-broker-password}") | exec "base64" (list "-d") }}
+      value: {{ .Environment.Values.kafka.sasl.interbroker.password | quote}}
     - name: sasl.controller.password
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-user-passwords" "-o" "jsonpath={.data.controller-password}") | exec "base64" (list "-d") }}
-    - name: kraft.clusterId
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" $namespace "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}") | exec "base64" (list "-d") }}
-    {{ end }}      
+      value: {{ .Environment.Values.kafka.sasl.controller.password | quote}}
+
   - name: keda
     chart: kedacore/keda
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-keda
+    namespace: keda
 
   - name: kubernetes-dashboard
     chart: kubernetes-dashboard/kubernetes-dashboard
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-kubernetes-dashboard
+    namespace: kubernetes-dashboard
     # Access with:
     # $ kubectl proxy
     # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
@@ -113,7 +119,7 @@ releases:
   - name: postgres
     chart: bitnami/postgresql
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-postgres
+    namespace: postgres
     set:
     - name: auth.database
       value: {{ .Environment.Values.database.name }}
@@ -127,7 +133,7 @@ releases:
   - name: redis
     chart: bitnami/redis
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-redis
+    namespace: redis
     set:
     - name: architecture
       value: standalone
@@ -137,19 +143,19 @@ releases:
   - name: grafana
     chart: grafana/grafana
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-monitoring
+    namespace: monitoring
     set:
       - name: adminUser
-        value: admin
+        value: {{ .Environment.Values.grafana.adminUser }}
       - name: adminPassword
-        value: "yourStrongPassword"
+        value: {{ .Environment.Values.grafana.adminPassword }}
       - name: persistence.enabled
         value: true
 
   - name: prometheus
     chart: prometheus-community/prometheus
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-monitoring
+    namespace: monitoring
     values:
     - extraScrapeConfigs: |
         - job_name: prometheus-postgres-exporter
@@ -159,10 +165,10 @@ releases:
 
   - name: postgres-exporter
     chart: prometheus-community/prometheus-postgres-exporter
-    namespace: {{.Environment.Values.env}}-postgres
+    namespace: postgres
     set:
       - name: config.datasource.host
-        value: "postgres-postgresql.{{.Environment.Values.env}}-postgres.svc.cluster.local"
+        value: "postgres-postgresql.postgres.svc.cluster.local"
       - name: config.datasource.user
         value: {{ .Environment.Values.api_db_user }}
       - name: config.datasource.password
@@ -173,46 +179,15 @@ releases:
   - name: "seangpt"
     chart: "./sean_gpt_chart"
     createNamespace: true
-    namespace: {{.Environment.Values.env}}-seangpt
+    namespace: seangpt
     set:
     - name: environment
       value: {{ .Environment.Values.env }}
     - name: database.host
-      value: "postgres-postgresql.{{.Environment.Values.env}}-postgres.svc.cluster.local"
+      value: "postgres-postgresql.postgres.svc.cluster.local"
     - name: redis.host
-      value: "redis-master.{{.Environment.Values.env}}-redis.svc.cluster.local"
+      value: "redis-master.redis.svc.cluster.local"
     - name: minio.host
-      value: "minio.{{.Environment.Values.env}}-minio.svc.cluster.local"
+      value: "minio.minio.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
-    hooks:
-    - name: "build-and-push-api-image"
-      events: ["preapply"]
-      command: "/bin/sh"
-      args: ["-c", "-e", "{{ .Environment.Values.seangpt.api_image.build_and_push_command }} "]
-    - name: "build-and-push-migrate-image"
-      events: ["preapply"]
-      command: "/bin/sh"
-      args: ["-c", "-e", "{{ .Environment.Values.seangpt.migrate_image.build_and_push_command }} "]
-    - name: "build-and-push-frontend-image"
-      events: ["preapply"]
-      command: "/bin/sh"
-      args: ["-c", "-e", "{{ .Environment.Values.seangpt.frontend_image.build_and_push_command }} "]
-
-#############################################################################
-# The following are for Ingress and TLS/SSL termination.  Dev and Prod only #
-#############################################################################
-  - name: ingress-nginx
-    chart: ingress-nginx/ingress-nginx
-    installed: {{ or (eq .Environment.Values.env "dev") (eq .Environment.Values.env "prod") }}
-    createNamespace: true
-    namespace: ingress-nginx
-
-  - name: cert-manager
-    chart: jetstack/cert-manager
-    installed: {{ or (eq .Environment.Values.env "dev") (eq .Environment.Values.env "prod") }}
-    createNamespace: true
-    namespace: cert-manager
-    set:
-      - name: installCRDs
-        value: true

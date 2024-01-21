@@ -215,6 +215,7 @@ async def create_and_save_twiml_response(chat:Chat, # pylint: disable=too-many-a
     Returns:
         Response: The twiml response.
     """
+    print(f'Sending message: {msg_body}')
     twiml_response = twiml.MessagingResponse()
     twiml_response.message(msg_body)
     # - Save the message to the database (commit and refresh)
@@ -229,7 +230,6 @@ async def create_and_save_twiml_response(chat:Chat, # pylint: disable=too-many-a
     # - Send the response to Twilio, with a redirect if the stream was incomplete.
     if requires_redirect:
         # Save that this is a redirect
-        print(f'posting redirect for SID: {incoming_message.message_sid}')
         await redis_conn.set(f'multi-part message with SID: {incoming_message.message_sid}', 'True')
         twiml_response.redirect('./twilio')
     return Response(content=twiml_response.to_xml(),
@@ -245,9 +245,6 @@ async def is_twilio_redirect(msg: TwilioMessage, redis_conn) -> bool:
     Returns:
         bool: Whether the message is a redirect.
     """
-    print(f'checking for redirect for SID: {msg.message_sid}')
-    print(f'is redirect? {await redis_conn.get(f"multi-part message with SID: {msg.message_sid}")}')
-
     return (await redis_conn.get(f'multi-part message with SID: {msg.message_sid}')) is not None
 
 def save_user_twilio_message(chat, msg, session):
@@ -324,7 +321,7 @@ def num_twiml_segments(msg_body:str):
     """
     return math.ceil(len(msg_body) / settings.app_max_sms_characters)
 
-def trim_twiml_segments(msg_body, suffix):
+def trim_twiml_segments(msg_body, suffix=""):
     """ Trims a message to the maximum TwiML segment length.
 
     Args:

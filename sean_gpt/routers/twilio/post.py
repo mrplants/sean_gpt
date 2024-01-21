@@ -77,8 +77,7 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring
         )
 
         # Create the partial_response
-        print(f'is twilio redirect? {await is_twilio_redirect(incoming_message, redis_conn)}')
-        partial_response = "..." if await is_twilio_redirect(incoming_message, redis_conn) else ""
+        partial_response = ""
         async for chunk in response_stream:
             # Check the interrupt channel for interrupts
             # This will raise an exception if it finds one
@@ -87,7 +86,8 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring
             partial_response += chunk.choices[0].delta.content or ""
             # Check if the partial response is over the character limit
             if num_twiml_segments(partial_response) > 1:
-                trimmed_response = trim_twiml_segments(partial_response, suffix="...")
+                print(f'Partial response is over the character limit: {partial_response}')
+                trimmed_response = trim_twiml_segments(partial_response)
                 return await create_and_save_twiml_response(chat,
                                                       incoming_message,
                                                       trimmed_response,
@@ -97,6 +97,7 @@ async def twilio_webhook( # pylint: disable=missing-function-docstring
 
             # Check if the partial response has a message break
             if "|" in partial_response:
+                print(f'Partial response has a message break: {partial_response}')
                 # Break at that message and stop streaming.  Return the message.
                 partial_response = partial_response.split("|")[0]
                 return await create_and_save_twiml_response(chat,

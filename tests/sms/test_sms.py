@@ -165,7 +165,7 @@ def test_multi_message(verified_opted_in_user: dict, sean_gpt_host: str):
     # Check that the text of the 'Message' element is the outgoing message
     # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis appended.
-    expected_message = outgoing_msg[:settings.app_max_sms_characters-len('...')] + '...'
+    expected_message = outgoing_msg[:settings.app_max_sms_characters]
     assert root[0].text == expected_message, (
         f"Expected first child element text to be '{expected_message}', got {root[0].text}")
 
@@ -472,25 +472,6 @@ def test_followon_messages(verified_opted_in_user: dict, sean_gpt_host: str):
                              openai_response=assistant_response,
                              from_number=verified_opted_in_user["phone"],
                              message_sid=message_sid)
-        response_msg = parse_twiml_msg(response)
-        # For the first message, check that it ends with an ellipsis but does not start with one
-        if msg_index == 0:
-            assert response_msg.endswith('...'), (
-                f"Expected message response to end with '...', got {response_msg}")
-            assert not response_msg.startswith('...'), (
-                f"Expected message response to not start with '...', got {response_msg}")
-        # For the middle messages, check that it starts and ends with an ellipsis
-        elif msg_index < len(assistant_responses) - 1:
-            assert response_msg.startswith('...'), (
-                f"Expected message response to start with '...', got {response_msg}")
-            assert response_msg.endswith('...'), (
-                f"Expected message response to end with '...', got {response_msg}")
-        # For the last message, check that it starts with, but does not end with an ellipsis
-        else:
-            assert response_msg.startswith('...'), (
-                f"Expected message response to start with '...', got {response_msg}")
-            assert not response_msg.endswith('...'), (
-                f"Expected message response to not end with '...', got {response_msg}")
         # Only check for redirects if this is not the last message
         if msg_index < len(assistant_responses) - 1:
             # Parse the XML response

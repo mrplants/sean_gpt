@@ -21,7 +21,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt-frontend
+            name: frontend
             port:
               number: 80
   - host: {{ .Values.api_domain }}
@@ -31,7 +31,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt
+            name: api
             port:
               number: 8000
   ingressClassName: nginx

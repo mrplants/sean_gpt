@@ -1,24 +1,21 @@
 """ Utility functions for testing the Twilio endpoint.
 """
-
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
 # pylint: disable=missing-function-docstring
 
-from unittest.mock import patch, Mock
 import xml.etree.ElementTree as ET
 import uuid
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.config import settings
 from sean_gpt.util.describe import describe
 
-from .chat import async_create_mock_streaming_openai_api
+from .mock import patch_twilio_validator, patch_openai_async_completions
 
 @describe(
 """ Sends a mock text message via a POST request to the "/twilio" endpoint.
@@ -46,7 +43,7 @@ Returns:
 """)
 # pylint: disable=too-many-arguments
 def send_text(
-    client: TestClient,
+    host: str,
     body:str = 'This is a test twilio message.',
     from_number:str = '+14017122661',
     to_number:str = settings.app_phone_number,
@@ -58,41 +55,28 @@ def send_text(
     message_sid:str = None):
     if message_sid is None:
         message_sid = 'SM' + str(uuid.uuid4()).replace('-', '').upper()
-    if patch_openai_api:
-        with patch('openai.resources.chat.AsyncCompletions.create',
-                   new_callable=Mock) as mock_openai_api:
-            mock_openai_api.side_effect = async_create_mock_streaming_openai_api(openai_response,
-                                                                                 delay=delay)
-            with patch('twilio.request_validator.RequestValidator.validate',
-                    return_value=valid):
-                response = client.post(
-                    "/twilio",
-                    json={
-                        "MessageSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                        "SmsSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                        "AccountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                        "MessagingServiceSid": "MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                        "From": from_number,
-                        "To": to_number,
-                        "Body": body,
-                        "NumMedia": str(num_media)
-                    }
+    message = {
+        "MessageSid": message_sid,
+        "SmsSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "AccountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "MessagingServiceSid": "MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "From": from_number,
+        "To": to_number,
+        "Body": body,
+        "NumMedia": str(num_media)
+    }
+    with patch_twilio_validator(host, valid):
+        if patch_openai_api:
+            with patch_openai_async_completions(host, openai_response, delay=delay):
+                response = httpx.post(
+                    f"{host}/twilio",
+                    data=message
                 )
-    else:
-        with patch('twilio.request_validator.RequestValidator.validate',
-                return_value=valid):
-            response = client.post(
-                "/twilio",
-                json={
-                    "MessageSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                    "SmsSid": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                    "AccountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                    "MessagingServiceSid": "MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                    "From": from_number,
-                    "To": to_number,
-                    "Body": body,
-                    "NumMedia": str(num_media)
-                }
+        else:
+            httpx.post(f"{host}/mock/twilio/validator", json={"valid": valid})
+            response = httpx.post(
+                f"{host}/twilio",
+                data=message
             )
     return response
 #pylint: enable=too-many-arguments

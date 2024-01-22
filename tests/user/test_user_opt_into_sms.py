@@ -1,5 +1,12 @@
 """ Tests for user opt-in to SMS notifications. """
-from fastapi.testclient import TestClient
+# Disable pylint flags for test fixtures:
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
+# Disable pylint flags for new type of docstring:
+# pylint: disable=missing-function-docstring
+
+import httpx
 
 from sean_gpt.util.describe import describe
 from sean_gpt.config import settings
@@ -14,10 +21,10 @@ Args:
     new_user (dict): A new user created by the fixture.
     client (TestClient): A FastAPI test client.
 """)
-def test_sms_opt_in(new_user: dict, client: TestClient): # pylint: disable=missing-function-docstring
+def test_sms_opt_in(new_user: dict, sean_gpt_host: str): # pylint: disable=missing-function-docstring
     # Change the user's opt-in status
-    response = client.put(
-        "/user/opted_into_sms",
+    response = httpx.put(
+        f"{sean_gpt_host}/user/opted_into_sms",
         headers={"Authorization": f"Bearer {new_user['access_token']}"},
         json={"opted_into_sms": True}
     )
@@ -34,10 +41,10 @@ Args:
     new_user (dict): A new user created by the fixture.
     client (TestClient): A FastAPI test client.
 """)
-def test_sms_opt_out(new_user: dict, client: TestClient): # pylint: disable=missing-function-docstring
+def test_sms_opt_out(new_user: dict, sean_gpt_host: str): # pylint: disable=missing-function-docstring
     # Change the user's opt-in status
-    response = client.put(
-        "/user/opted_into_sms",
+    response = httpx.put(
+        f"{sean_gpt_host}/user/opted_into_sms",
         headers={"Authorization": f"Bearer {new_user['access_token']}"},
         json={"opted_into_sms": False}
     )
@@ -56,8 +63,8 @@ Args:
 """)
 def test_sms_opt_out_sms( # pylint: disable=missing-function-docstring
     new_user: dict,
-    client: TestClient):
-    response = send_text(client,
+    sean_gpt_host: str):
+    response = send_text(sean_gpt_host,
                          from_number=new_user["phone"])
     # Instead of the simulated response, we should see the opt-in request
     # This is a twiml response, so we need to parse it
@@ -67,7 +74,7 @@ def test_sms_opt_out_sms( # pylint: disable=missing-function-docstring
 @describe(""" Test the verified and authorized routes. """)
 def test_verified_authorized_routes( # pylint: disable=missing-function-docstring
     verified_new_user: dict,
-    client: TestClient):
-    check_authorized_route("PUT", "/user/opted_into_sms", json={
+    sean_gpt_host: str):
+    check_authorized_route("PUT", sean_gpt_host, "/user/opted_into_sms", json={
         "opted_into_sms": True
-    }, authorized_user=verified_new_user, client=client)
+    }, authorized_user=verified_new_user)

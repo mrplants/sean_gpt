@@ -1,15 +1,11 @@
+{{- if eq .Values.environment "prod" }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-seangpt
   annotations:
-{{- if .Values.local }}
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-{{- else }}
     cert-manager.io/issuer: "letsencrypt-prod"
-{{- end }}
 spec:
-{{- if not .Values.local }}
   tls:
   - hosts:
     - {{ .Values.domain }}
@@ -17,34 +13,26 @@ spec:
   - hosts:
     - {{ .Values.api_domain }}
     secretName: {{ .Values.cert_prefix }}-api-tls-cert
-{{- end }}
   rules:
-{{- if .Values.local }}
-  - http:
-{{- else }} 
   - host: {{ .Values.domain }}
     http:
-{{- end }}
       paths:
-      - path: /{{- if .Values.local }}static(/|$)(.*){{- end }}
+      - path: /
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt-frontend
+            name: frontend
             port:
               number: 80
-{{- if .Values.local }}
-  - http:
-{{- else }}
   - host: {{ .Values.api_domain }}
     http:
-{{- end }}    
       paths:
-      - path: /{{- if .Values.local }}api(/|$)(.*){{- end }}
+      - path: /
         pathType: Prefix
         backend:
           service:
-            name: sean-gpt
+            name: api
             port:
               number: 8000
   ingressClassName: nginx
+{{- end }}    

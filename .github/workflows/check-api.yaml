@@ -1,0 +1,84 @@
+name: Test API
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:      
+  lint-api:
+    runs-on: ubuntu-latest
+    steps:
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}   
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup_dependencies
+  
+      #----------------------------------------------
+      #          install and run linters
+      #----------------------------------------------
+      - run: poetry run pylint sean_gpt tests
+
+  test-api:
+    runs-on: ubuntu-latest
+    steps:
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}   
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup_dependencies
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.8.0
+        with:
+          cluster_name: sean-gpt-local
+
+      - name: Prepare for Installation
+        run: ./scripts/prepare_test.sh
+  
+      - uses: helmfile/helmfile-action@v1.0.0
+        with:
+          helmfile-version: 'v0.160.0'
+          helm-version: 'v3.13.3'
+          helmfile-args: sync --quiet --set mount_host=false
+
+      #----------------------------------------------
+      #              run test suite
+      #----------------------------------------------
+
+      - name: Wait for initialization
+        run: |
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/redis-master -n redis --timeout 30s || true
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/redis-master -n redis --timeout 30s || true
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/redis-master -n redis --timeout 30s || true
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/redis-master -n redis --timeout 30s || true
+          kubectl get pods --all-namespaces
+
+      - name: Run tests
+        run: |
+          poetry run pytest

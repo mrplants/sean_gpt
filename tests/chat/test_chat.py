@@ -3,7 +3,6 @@
 
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -33,7 +32,7 @@
 
 import random
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.util.describe import describe
 
@@ -49,10 +48,10 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_chat(verified_new_user: dict, client: TestClient):
+def test_create_chat(verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
     # Create a chat with a name.
-    chat_response_1 = client.post("/chat", json={
+    chat_response_1 = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -77,7 +76,7 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     assert not chat_response_1.json()["is_assistant_responding"]
 
     # Create a chat without a name.
-    chat_response_2 = client.post("/chat", json={}, headers={
+    chat_response_2 = httpx.post(f"{sean_gpt_host}/chat", json={}, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     # The response should be:
@@ -100,7 +99,7 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     assert not chat_response_2.json()["is_assistant_responding"]
 
     # Check that both chats appears in the list of chats for the user.
-    response_list = client.get("/chat", headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     # The response should be:
@@ -120,6 +119,16 @@ def test_create_chat(verified_new_user: dict, client: TestClient):
     assert response_list.headers["content-type"] == "application/json"
     assert chat_response_1.json() in response_list.json()
     assert chat_response_2.json() in response_list.json()
+    # clean up by deleting the chat 1
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response_1.json()["id"]
+    })
+    # clean up by deleting the chat 2
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response_2.json()["id"]
+    })
 
 @describe(
 """ Test that a user can delete a chat.
@@ -128,10 +137,10 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_delete_chat(verified_new_user: dict, client: TestClient):
+def test_delete_chat(verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
     # Create a chat with a name.
-    chat_response = client.post("/chat", json={
+    chat_response = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -140,7 +149,7 @@ def test_delete_chat(verified_new_user: dict, client: TestClient):
         f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Delete the chat.
-    delete_response = client.delete("/chat", headers={
+    delete_response = httpx.delete(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}",
         "X-Chat-ID": chat_response.json()["id"]
     })
@@ -150,7 +159,7 @@ def test_delete_chat(verified_new_user: dict, client: TestClient):
         f'incorrect status code: {delete_response.status_code}, response: {delete_response.json()}')
 
     # Check that the chat no longer appears in the list of chats for the user.
-    response_list = client.get("/chat", headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     assert chat_response.json() not in response_list.json()
@@ -163,10 +172,10 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_delete_other_chat(admin_user: dict, verified_new_user: dict, client: TestClient):
+def test_delete_other_chat(admin_user: dict, verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
     # Create a chat with a name.
-    chat_response = client.post("/chat", json={
+    chat_response = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -175,7 +184,7 @@ def test_delete_other_chat(admin_user: dict, verified_new_user: dict, client: Te
         f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Delete the chat as the admin user.
-    delete_response = client.delete("/chat", headers={
+    delete_response = httpx.delete(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {admin_user['access_token']}",
         "X-Chat-ID": chat_response.json()["id"]
     })
@@ -191,10 +200,16 @@ def test_delete_other_chat(admin_user: dict, verified_new_user: dict, client: Te
     assert delete_response.json()["detail"] == "Chat not found"
 
     # Check that the chat still appears in the list of chats for the user.
-    response_list = client.get("/chat", headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     assert chat_response.json() in response_list.json()
+
+    # clean up by deleting the chat
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response.json()["id"]
+    })
 
 @describe(
 """ Test that a user can get a list of chats.
@@ -203,10 +218,10 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_get_chat_list(verified_new_user: dict, client: TestClient):
+def test_get_chat_list(verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
     # Create a chat with a name.
-    chat_response = client.post("/chat", json={
+    chat_response = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -215,7 +230,7 @@ def test_get_chat_list(verified_new_user: dict, client: TestClient):
         f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Check that the chat appears in the list of chats for the user.
-    response_list = client.get("/chat", headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     # The response should be:
@@ -234,6 +249,11 @@ def test_get_chat_list(verified_new_user: dict, client: TestClient):
         f'incorrect status code: {response_list.status_code}, response: {response_list.json()}')
     assert response_list.headers["content-type"] == "application/json"
     assert chat_response.json() in response_list.json()
+    # clean up by deleting the chat
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response.json()["id"]
+    })
 
 @describe(
 """ Test that a user can filter the list of chats.
@@ -242,16 +262,16 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_filter_chat_list(verified_new_user: dict, client: TestClient):
+def test_filter_chat_list(verified_new_user: dict, sean_gpt_host: str):
     # Insert two chats with different names.
     test_chat_name_1 = f"test{random.randint(0, 1000000)}"
     test_chat_name_2 = f"test{random.randint(0, 1000000)}"
-    chat_response_1 = client.post("/chat", json={
+    chat_response_1 = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name_1
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    chat_response_2 = client.post("/chat", json={
+    chat_response_2 = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name_2
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -260,7 +280,7 @@ def test_filter_chat_list(verified_new_user: dict, client: TestClient):
     query_params = {
         "name": test_chat_name_1
     }
-    response_list = client.get("/chat", params=query_params, headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", params=query_params, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     assert chat_response_1.json() in response_list.json()
@@ -269,11 +289,20 @@ def test_filter_chat_list(verified_new_user: dict, client: TestClient):
     query_params = {
         "id": chat_response_1.json()["id"]
     }
-    response_list = client.get("/chat", params=query_params, headers={
+    response_list = httpx.get(f"{sean_gpt_host}/chat", params=query_params, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
     assert chat_response_1.json() in response_list.json()
     assert chat_response_2.json() not in response_list.json()
+    # clean up by deleting the chats
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response_1.json()["id"]
+    })
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": chat_response_2.json()["id"]
+    })
 
 @describe(
 """ Test that a user cannot modify a non-existent chat.
@@ -282,9 +311,9 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_modify_nonexistent_chat(verified_new_user: dict, client: TestClient):
+def test_modify_nonexistent_chat(verified_new_user: dict, sean_gpt_host: str):
     # Test that a chat cannot be updated if the chat id is not in the header.
-    chat_response = client.put("/chat", json={
+    chat_response = httpx.put(f"{sean_gpt_host}/chat", json={
         "name": f"test{random.randint(0, 1000000)}"
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
@@ -295,7 +324,7 @@ def test_modify_nonexistent_chat(verified_new_user: dict, client: TestClient):
         f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
 
     # Test that a chat cannot be updated if the chat id is invalid.
-    chat_response = client.put("/chat", json={
+    chat_response = httpx.put(f"{sean_gpt_host}/chat", json={
         "name": f"test{random.randint(0, 1000000)}"
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}",
@@ -321,53 +350,59 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_update_chat(verified_new_user: dict, client: TestClient):
+def test_update_chat(verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
     # Create a chat with a name.
-    chat_response = client.post("/chat", json={
+    create_chat_response = httpx.post(f"{sean_gpt_host}/chat", json={
         "name": test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}"
     })
-    assert chat_response.status_code == 201, (
-        f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
+    assert create_chat_response.status_code == 201, (
+        f'incorrect status code: {create_chat_response.status_code}, '
+        f"response: {create_chat_response.json()}")
 
     # Update the chat name.
     new_test_chat_name = f"test{random.randint(0, 1000000)}"
-    chat_response = client.put("/chat", json={
+    chat_response = httpx.put(f"{sean_gpt_host}/chat", json={
         "name": new_test_chat_name
     }, headers={
         "Authorization": f"Bearer {verified_new_user['access_token']}",
-        "X-Chat-ID": chat_response.json()["id"]
+        "X-Chat-ID": create_chat_response.json()["id"]
     })
     # The response should be:
     # HTTP/1.1 204 No Content
     assert chat_response.status_code == 204, (
         f'incorrect status code: {chat_response.status_code}, response: {chat_response.json()}')
+    # Clean up by deleting the chat.
+    httpx.delete(f"{sean_gpt_host}/chat", headers={
+        "Authorization": f"Bearer {verified_new_user['access_token']}",
+        "X-Chat-ID": create_chat_response.json()["id"]
+    })
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
+def test_verified_authorized_routes(verified_new_user: dict, sean_gpt_host: str):
     test_chat_name = f"test{random.randint(0, 1000000)}"
-    check_verified_route("POST", "/chat", json={
+    check_verified_route("POST", sean_gpt_host, "/chat", json={
         "name": test_chat_name
-    }, verified_user=verified_new_user, client=client)
-    check_verified_route("GET", "/chat", verified_user=verified_new_user, client=client)
+    }, verified_user=verified_new_user)
+    check_verified_route("GET", sean_gpt_host, "/chat", verified_user=verified_new_user)
     # Check the PUT route
     # First, create the chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
-    check_verified_route("PUT", "/chat", json={
+    check_verified_route("PUT", sean_gpt_host, "/chat", json={
         "name": test_chat_name
-    }, verified_user=verified_new_user, client=client, headers={
+    }, verified_user=verified_new_user, headers={
         "X-Chat-ID": chat["id"]
     })
     # Now check the DELETE route
     check_verified_route(
         "DELETE",
+        sean_gpt_host,
         "/chat",
         verified_user=verified_new_user,
-        client=client,
         headers={
             "X-Chat-ID": chat["id"]
         })

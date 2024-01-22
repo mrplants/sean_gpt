@@ -1,0 +1,203 @@
+environments:
+  prod:
+    values:
+    - config/values.yaml
+    - config/production/values.yaml
+    - config/production/secrets.yaml
+    kubeContext: sean-gpt-aks
+  local: &default
+    values:
+    - config/values.yaml
+    - config/local/values.yaml
+    - config/local/test_secrets.yaml
+    kubeContext: kind-sean-gpt-local
+  default: *default
+---
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: kedacore
+    url: https://kedacore.github.io/charts
+  - name: milvus
+    url: https://zilliztech.github.io/milvus-helm/
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+  - name: kubernetes-dashboard
+    url: https://kubernetes.github.io/dashboard/
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: minio
+    url: https://operator.min.io/
+
+releases:
+  - name: ingress-nginx
+    chart: ingress-nginx/ingress-nginx
+    installed: {{ eq .Environment.Name "prod" }}
+    createNamespace: true
+    namespace: ingress-nginx
+    set:
+      - name: controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"
+        value: "/healthz"
+# helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+
+  - name: cert-manager
+    chart: jetstack/cert-manager
+    installed: {{ eq .Environment.Name "prod" }}
+    createNamespace: true
+    namespace: cert-manager
+    set:
+      - name: installCRDs
+        value: true
+# helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+
+  - name: milvus
+    chart: milvus/milvus
+    createNamespace: true
+    namespace: milvus
+    set:
+    - name: cluster.enabled
+      value: false
+    - name: etcd.replicaCount
+      value: 1
+    - name: minio.mode
+      value: standalone
+    - name: minio.persistence.size
+      value: 10Gi
+    - name: pulsar.enabled
+      value: false
+
+  - name: minio-operator
+    chart: minio/operator
+    createNamespace: true
+    namespace: minio-operator
+  
+  - name: minio-tenant
+    chart: minio/tenant
+    createNamespace: true
+    namespace: minio-tenant
+    needs:
+    - minio-operator/minio-operator
+    set:
+    - name: tenant.pools[0].servers
+      value: 1
+    - name: tenant.metrics.enabled
+      value: true
+    - name: tenant.users[0].name
+      value: "minio-user"
+      
+  - name: kafka
+    chart: bitnami/kafka
+    createNamespace: true
+    namespace: kafka
+    set:
+    - name: listeners.client.protocol
+      value: "PLAINTEXT"
+    - name: sasl.interbroker.password
+      value: {{ .Environment.Values.kafka.sasl.interbroker.password | quote}}
+    - name: sasl.controller.password
+      value: {{ .Environment.Values.kafka.sasl.controller.password | quote}}
+{{ if eq (exec "helm" (list "list" "-f" "kafka" "--namespace" "kafka" "--output" "json" "--kube-context" .Environment.KubeContext)) "[]" }}
+    - name: kraft.clusterId
+      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}" "--context" .Environment.KubeContext) | exec "base64" (list "-d") | quote }}
+{{ end }}
+
+  - name: keda
+    chart: kedacore/keda
+    createNamespace: true
+    namespace: keda
+
+  - name: kubernetes-dashboard
+    chart: kubernetes-dashboard/kubernetes-dashboard
+    createNamespace: true
+    namespace: kubernetes-dashboard
+    # Access with:
+    # $ kubectl proxy
+    # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+  - name: postgres
+    chart: bitnami/postgresql
+    createNamespace: true
+    namespace: postgres
+    set:
+    - name: auth.database
+      value: {{ .Environment.Values.database.name }}
+    - name: auth.password
+      value: {{ .Environment.Values.api_db_password }}
+    - name: auth.username
+      value: {{ .Environment.Values.api_db_user }}
+    - name: primary.service.ports.postgresql
+      value: {{ .Environment.Values.database.port }}
+
+  - name: redis
+    chart: bitnami/redis
+    createNamespace: true
+    namespace: redis
+    set:
+    - name: architecture
+      value: standalone
+    - name: auth.enabled
+      value: false
+
+  - name: grafana
+    chart: grafana/grafana
+    createNamespace: true
+    namespace: monitoring
+    set:
+      - name: adminUser
+        value: {{ .Environment.Values.grafana.adminUser }}
+      - name: adminPassword
+        value: {{ .Environment.Values.grafana.adminPassword }}
+      - name: persistence.enabled
+        value: true
+
+  - name: prometheus
+    chart: prometheus-community/prometheus
+    createNamespace: true
+    namespace: monitoring
+    values:
+    - extraScrapeConfigs: |
+        - job_name: prometheus-postgres-exporter
+          metrics_path: /metrics
+          static_configs:
+          - targets: ['postgres-exporter-prometheus-postgres-exporter.postgres.svc.cluster.local:80']
+
+  - name: postgres-exporter
+    chart: prometheus-community/prometheus-postgres-exporter
+    namespace: postgres
+    set:
+      - name: config.datasource.host
+        value: "postgres-postgresql.postgres.svc.cluster.local"
+      - name: config.datasource.user
+        value: {{ .Environment.Values.api_db_user }}
+      - name: config.datasource.password
+        value: {{ .Environment.Values.api_db_password }}
+      - name: config.datasource.database
+        value: {{ .Environment.Values.database.name }}
+
+  - name: "seangpt"
+    chart: "./sean_gpt_chart"
+    createNamespace: true
+    namespace: seangpt
+    set:
+    - name: mount_host
+      value: true
+    - name: environment
+      value: {{ if eq .Environment.Name "default" }}local{{ else }}{{ .Environment.Name }}{{ end }}
+    - name: database.host
+      value: "postgres-postgresql.postgres.svc.cluster.local"
+    - name: redis.host
+      value: "redis-master.redis.svc.cluster.local"
+    - name: minio.host
+      value: "minio.minio-tenant.svc.cluster.local"
+    values:
+    - {{ toYaml .Environment.Values | nindent 6}}
+    needs:
+    - minio-tenant/minio-tenant
+    {{ if eq .Environment.Name "prod" }}
+    - ingress-nginx/ingress-nginx
+    - cert-manager/cert-manager
+    {{ end }}

@@ -21,6 +21,7 @@
 #     chat_index (int):  The index of the message in the chat. 0 is oldest.
 # GET /len (protected, verified)
 #   Get the number of messages in a chat. Chat UUID in header.
+import httpx
 
 from sean_gpt.util.describe import describe
 
@@ -33,29 +34,29 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_get_messages_len(verified_new_user, client):
+def test_get_messages_len(verified_new_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Create a message
-    client.post(
-        "/chat/message",
+    httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]
         },
         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
     # Create another message from an assistant
-    client.post(
-        "/chat/message",
+    httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]
         },
         json={"content": "Hello, world! This is my second message in a chat.",
               "role": "assistant"})
     # Get the messages
-    response = client.get(
-        "/chat/message/len",
+    response = httpx.get(
+        f"{sean_gpt_host}/chat/message/len",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]})
     # The response should be:
@@ -76,14 +77,14 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_message_user(verified_new_user, client):
+def test_create_message_user(verified_new_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Create a message
-    response = client.post(
-        "/chat/message",
+    response = httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]
         },
@@ -110,8 +111,8 @@ def test_create_message_user(verified_new_user, client):
     assert response.json()["chat_index"] == 0
     del response
     # Also test for index incrementation
-    response = client.post(
-        "/chat/message",
+    response = httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]
         },
@@ -136,6 +137,11 @@ def test_create_message_user(verified_new_user, client):
     assert response.json()["chat_id"] == chat["id"]
     assert isinstance(response.json()["created_at"], int)
     assert response.json()["chat_index"] == 1
+    # cleanup
+    httpx.delete(
+        f"{sean_gpt_host}/chat",
+        headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                 "X-Chat-ID": chat["id"]})
 
 @describe(
 """ Tests that a user can create an assistant-message in a chat.
@@ -144,13 +150,13 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_message_assistant(verified_new_user, client):
+def test_create_message_assistant(verified_new_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Create a message
-    response = client.post("/chat/message",
+    response = httpx.post(f"{sean_gpt_host}/chat/message",
                            headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                     "X-Chat-ID": chat["id"]
                                     },
@@ -176,6 +182,11 @@ def test_create_message_assistant(verified_new_user, client):
     assert response.json()["chat_id"] == chat["id"]
     assert isinstance(response.json()["created_at"], int)
     assert response.json()["chat_index"] == 0
+    # cleanup
+    httpx.delete(
+        f"{sean_gpt_host}/chat",
+        headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                 "X-Chat-ID": chat["id"]})
 
 @describe(
 """ Tests that a user can only create messages with roles "user" or "assistant".
@@ -184,13 +195,13 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_message_invalid_role(verified_new_user, client):
+def test_create_message_invalid_role(verified_new_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Create a message
-    response = client.post("/chat/message",
+    response = httpx.post(f"{sean_gpt_host}/chat/message",
                            headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                     "X-Chat-ID": chat["id"]
                                     },
@@ -201,6 +212,11 @@ def test_create_message_invalid_role(verified_new_user, client):
     assert response.status_code == 422, (
         f"Status should be 422, not {response.status_code}. Response: {response.text}"
     )
+    # cleanup
+    httpx.delete(
+        f"{sean_gpt_host}/chat",
+        headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                 "X-Chat-ID": chat["id"]})
 
 @describe(
 """ Tests that a user can retrieve messages in a chat.
@@ -209,20 +225,20 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_get_messages(verified_new_user, client):
+def test_get_messages(verified_new_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Create a message
-    client.post(
-        "/chat/message",
+    httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]
         },
         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
     # Create another message from an assistant
-    client.post("/chat/message",
+    httpx.post(f"{sean_gpt_host}/chat/message",
                            headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                     "X-Chat-ID": chat["id"]
                                     },
@@ -230,7 +246,7 @@ def test_get_messages(verified_new_user, client):
                                  "role": "assistant"})
     # Get a message from the chat
     # No queries should return the oldest message
-    response = client.get("/chat/message",
+    response = httpx.get(f"{sean_gpt_host}/chat/message",
                             headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                      "X-Chat-ID": chat["id"]})
     # The response should be:
@@ -269,7 +285,7 @@ def test_get_messages(verified_new_user, client):
 
     # Get a message from the chat
     # Querying for chat_index=1 should return the second message
-    response = client.get("/chat/message",
+    response = httpx.get(f"{sean_gpt_host}/chat/message",
                             headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                      "X-Chat-ID": chat["id"]},
                             params={"chat_index": 1})
@@ -303,7 +319,7 @@ def test_get_messages(verified_new_user, client):
         f"Chat index should be 1, not {response.json()['chat_index']}. Response: {response.text}")
 
     # Make sure you that negative and out-of-bounds indices return 404
-    response = client.get("/chat/message",
+    response = httpx.get(f"{sean_gpt_host}/chat/message",
                             headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                      "X-Chat-ID": chat["id"]},
                             params={"chat_index": -1})
@@ -312,7 +328,7 @@ def test_get_messages(verified_new_user, client):
     assert response.status_code == 404, (
         f"Status should be 404, not {response.status_code}. Response: {response.text}")
 
-    response = client.get("/chat/message",
+    response = httpx.get(f"{sean_gpt_host}/chat/message",
                             headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                                      "X-Chat-ID": chat["id"]},
                             params={"chat_index": 2})
@@ -320,6 +336,11 @@ def test_get_messages(verified_new_user, client):
     # HTTP/1.1 404 Not Found
     assert response.status_code == 404, (
         f"Status should be 404, not {response.status_code}. Response: {response.text}")
+    # cleanup
+    httpx.delete(
+        f"{sean_gpt_host}/chat",
+        headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                 "X-Chat-ID": chat["id"]})
 
 @describe(
 """ Tests that a user cannot create a message in a chat that they do not own.
@@ -329,14 +350,14 @@ Args:
     verified_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_message_unauthorized(verified_new_user, admin_user, client):
+def test_create_message_unauthorized(verified_new_user, admin_user, sean_gpt_host):
     # Create a chat
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + admin_user["access_token"],},
                        json={}).json()
     # Create a message
-    response = client.post(
-        "/chat/message",
+    response = httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": chat["id"]},
         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
@@ -344,6 +365,12 @@ def test_create_message_unauthorized(verified_new_user, admin_user, client):
     # HTTP/1.1 404 Not Found
     assert response.status_code == 404, (
         f"Status should be 404, not {response.status_code}. Response: {response.text}")
+    # cleanup
+    httpx.delete(
+        f"{sean_gpt_host}/chat",
+        headers={"Authorization": "Bearer " + verified_new_user["access_token"],
+                 "X-Chat-ID": chat["id"]})
+
 
 @describe(
 """ Tests that a user cannot create a message in a chat that does not exist.
@@ -352,10 +379,10 @@ Args:
     verified_new_user (dict):  A verified user.
     client (TestClient):  A test client.
 """)
-def test_create_message_not_found(verified_new_user, client):
+def test_create_message_not_found(verified_new_user, sean_gpt_host):
     # Create a message
-    response = client.post(
-        "/chat/message",
+    response = httpx.post(
+        f"{sean_gpt_host}/chat/message",
         headers={"Authorization": "Bearer " + verified_new_user["access_token"],
                  "X-Chat-ID": "00000000-0000-0000-0000-000000000000"},
         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"})
@@ -365,22 +392,22 @@ def test_create_message_not_found(verified_new_user, client):
         f"Status should be 404, not {response.status_code}. Response: {response.text}")
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_and_authorized(verified_new_user, client):
+def test_verified_and_authorized(verified_new_user, sean_gpt_host):
     # First, create a chat for messages
-    chat = client.post("/chat",
+    chat = httpx.post(f"{sean_gpt_host}/chat",
                        headers={"Authorization": "Bearer " + verified_new_user["access_token"],},
                        json={}).json()
     # Check the routes
     check_verified_route(
         "post",
+        sean_gpt_host,
         "/chat/message",
         verified_new_user,
-        client,
         json={"content": "Hello, world! This is my first message in a chat.", "role":"user"},
         headers={"X-Chat-ID": chat["id"]})
     check_verified_route(
         "get",
+        sean_gpt_host,
         "/chat/message",
         verified_new_user,
-        client,
         headers={"X-Chat-ID": chat["id"]})

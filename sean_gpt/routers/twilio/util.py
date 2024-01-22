@@ -215,7 +215,6 @@ async def create_and_save_twiml_response(chat:Chat, # pylint: disable=too-many-a
     Returns:
         Response: The twiml response.
     """
-    print(f'Sending message: {msg_body}')
     twiml_response = twiml.MessagingResponse()
     twiml_response.message(msg_body)
     # - Save the message to the database (commit and refresh)

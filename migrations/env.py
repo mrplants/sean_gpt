@@ -49,8 +49,6 @@ if generate_or_migrate == 'generate':
     # setup for autogeneration
     retrieve_env(environment)
     os.environ['sean_gpt_database_host'] = 'localhost'
-    for env, val in os.environ.items():
-        print(f'{env}={val}')
     from sean_gpt.model.ai import AI
     from sean_gpt.model.authenticated_user import AuthenticatedUser
     from sean_gpt.model.chat import Chat

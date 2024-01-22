@@ -59,15 +59,13 @@ spec:
           timeoutSeconds: 1
         image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
         imagePullPolicy: IfNotPresent
-{{ if eq .Values.environment "local" }}
         volumeMounts:
         - name: host-volume
           mountPath: /app/sean_gpt
-{{- end }}
         env:
 {{ if eq .Values.environment "local" }}
         - name: SEAN_GPT_DEBUG
-          value: 1
+          value: "1"
 {{ end }}
         {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
 {{ if ne .Values.environment "prod" }}
@@ -75,12 +73,10 @@ spec:
           value: "{{ now | unixEpoch }}"
 {{- end }}
       volumes:
-{{ if eq .Values.environment "local" }}
       - name: host-volume
         hostPath:
           path: /mnt/sean_gpt
           type: Directory
-{{- end }}
 ---
 apiVersion: v1
 kind: Service

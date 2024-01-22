@@ -104,7 +104,6 @@ def test_messages_saved(verified_opted_in_user: dict, sean_gpt_host: str):
             },
             params={"chat_index": chat_index}).json())
     # Check that the first message is the incoming message
-    print(f'saved_messages: {saved_messages}')
     assert saved_messages[1]['role'] == 'user', (
         f"Expected first message to have role='user', got {saved_messages}"
     )

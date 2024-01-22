@@ -112,18 +112,15 @@ async def delete_share_set_file(# pylint: disable=missing-function-docstring
     file = session.exec(select(File).where(File.id == file_id)).first()
     if file is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
-    print(f'file.owner_id: {file.owner_id}')
     if file.owner_id != current_user.id:
         default_share_set = session.exec(select(ShareSet).where(ShareSet.id ==
                                                                 file.default_share_set_id)).first()
         if not default_share_set.is_public:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
-    print(f'file_id: {file_id}')
     # Delete the link between the file and the share set
     link = session.exec(select(FileShareSetLink)
                         .where(FileShareSetLink.file_id == file_id,
                                FileShareSetLink.share_set_id == share_set_id)).first()
-    print(f'link: {link}')
     if link is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="File not found in share set.")

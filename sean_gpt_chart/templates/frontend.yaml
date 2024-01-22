@@ -23,8 +23,6 @@ spec:
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}
-        - name: REACT_APP_API_ENDPOINT
-          value: "{{ .Values.api_domain }}"
 
 ---
 

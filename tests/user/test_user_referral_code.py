@@ -1,9 +1,7 @@
 """ Tests for the /user/referral_code route.
 """
-
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -14,28 +12,28 @@
 #######################
 # GET (protected, verified):  Get a user's referral code
 
-from fastapi.testclient import TestClient
+import httpx
 
 from sean_gpt.util.describe import describe
 
 from ..util.check_routes import check_authorized_route, check_verified_route
 
 @describe(""" Test the verified and authorized routes. """)
-def test_verified_authorized_routes(verified_new_user: dict, client: TestClient):
+def test_verified_authorized_routes(verified_new_user: dict, sean_gpt_host: str):
     check_authorized_route("GET",
+                           sean_gpt_host,
                            "/user/referral_code",
-                           authorized_user=verified_new_user,
-                           client=client)
+                           authorized_user=verified_new_user)
     check_verified_route("GET",
+                         sean_gpt_host,
                          "/user/referral_code",
-                         verified_user=verified_new_user,
-                         client=client)
+                         verified_user=verified_new_user)
 
 @describe(""" Test that a referral code can be generated. """)
-def test_referral_code_generation(admin_user: dict, client: TestClient):
+def test_referral_code_generation(admin_user: dict, sean_gpt_host: str):
     # Generate a referral code
-    response = client.get(
-        "/user/referral_code",
+    response = httpx.get(
+        f"{sean_gpt_host}/user/referral_code",
         headers={"Authorization": f"Bearer {admin_user['access_token']}"}
     )
     # The response should be:
@@ -50,7 +48,7 @@ def test_referral_code_generation(admin_user: dict, client: TestClient):
     assert isinstance(response.json()["referral_code"], str)
 
 @describe(""" Test that a referral code cannot be generated for an unverified user. """)
-def test_referral_code_generation_unverified(new_user: dict, client: TestClient):
+def test_referral_code_generation_unverified(new_user: dict, sean_gpt_host: str):
     # TODO: Re-enable this when Twilio campaign is ready
     # # Generate a referral code
     # response = client.get(

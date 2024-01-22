@@ -1,9 +1,7 @@
 """ Tests for the user/token route.
 """
-
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -14,17 +12,17 @@
 ###############
 # POST (protected):  Login and retrieve a user's auth token
 
-from fastapi.testclient import TestClient
 from jose import jwt
+import httpx
 
 from sean_gpt.config import settings
 from sean_gpt.util.describe import describe
 
 @describe(""" Test that an authorization token can be generated. """)
-def test_generate_token(client: TestClient):
+def test_generate_token(sean_gpt_host: str):
     # Generate a token
-    response = client.post(
-        "/user/token",
+    response = httpx.post(
+        sean_gpt_host+"/user/token",
         data={
             "grant_type": "password",
             "username": settings.user_admin_phone,
@@ -45,7 +43,7 @@ def test_generate_token(client: TestClient):
     assert isinstance(response.json()["access_token"], str)
 
 @describe(""" Test that an authorization token will expire. """)
-def test_token_expiration(admin_auth_token: str, client: TestClient):
+def test_token_expiration(admin_auth_token: str):
     # Check the expiration date of the token using JWT
     # The JWT expiration can be decoded and checked without the secret key.
     # Decode the token without verification
@@ -61,10 +59,10 @@ def test_token_expiration(admin_auth_token: str, client: TestClient):
     assert decoded["exp"] - decoded["iat"] == settings.jwt_access_token_expire_minutes * 60
 
 @describe(""" Test that an authorization token will not be generated with an incorrect password """)
-def test_generate_token_incorrect_password(client: TestClient):
+def test_generate_token_incorrect_password(sean_gpt_host: str):
     # Generate a token
-    response = client.post(
-        "/user/token",
+    response = httpx.post(
+        sean_gpt_host+"/user/token",
         data={
             "grant_type": "password",
             "username": settings.user_admin_phone,

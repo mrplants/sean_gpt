@@ -2,8 +2,7 @@ name: Create a Release
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
 
@@ -12,7 +11,6 @@ permissions:
 
 jobs:
   release-create:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -20,15 +18,15 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Extract Version from pyproject.toml
-        id: extract-version
-        uses: ./.github/actions/retrieve_version
+      - uses: SebRollen/toml-action@v1.0.2
+        id: read_toml
         with:
-          pyproject-path: 'pyproject.toml'
-
+          file: 'pyproject.toml'
+          field: 'tool.poetry.version'
+  
       - name: Create Tag
         run: |
-          version_tag="v${{ steps.extract-version.outputs.version }}"
+          version_tag="v${{ steps.read_toml.outputs.value }}"
           git tag $version_tag
           git push origin $version_tag
         env:
@@ -58,15 +56,14 @@ jobs:
           draft: false
           prerelease: false
       
-      # Assuming you have built your package and the files are in the 'dist' directory
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This was created by the create-release step
-          asset_path: ./dist/sean_gpt-${{ steps.extract-version.outputs.version }}-py3-none-any.whl
-          asset_name: sean_gpt-${{ steps.extract-version.outputs.version }}-py3-none-any.whl
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/sean_gpt-${{ steps.read_toml.outputs.value }}-py3-none-any.whl
+          asset_name: sean_gpt-${{ steps.read_toml.outputs.value }}-py3-none-any.whl
           asset_content_type: application/octet-stream
       
       - name: Upload Release Asset
@@ -74,13 +71,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This was created by the create-release step
-          asset_path: ./dist/sean_gpt-${{ steps.extract-version.outputs.version }}.tar.gz
-          asset_name: sean_gpt-${{ steps.extract-version.outputs.version }}.tar.gz
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/sean_gpt-${{ steps.read_toml.outputs.value }}.tar.gz
+          asset_name: sean_gpt-${{ steps.read_toml.outputs.value }}.tar.gz
           asset_content_type: application/octet-stream
 
   merge-main-into-development:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

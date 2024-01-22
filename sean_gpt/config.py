@@ -1,34 +1,31 @@
-
 """ Configuration for the app. """
+import os
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
-from .util.env import yaml_env
-
-yaml_env('sean_gpt_chart/values.yaml', ['env'], 'sean_gpt_')
+if 'SEAN_GPT_DEBUG' not in os.environ:
+    os.environ['SEAN_GPT_DEBUG'] = 'False'
 
 class Settings(BaseSettings):
     """ Configuration for the app. """
-    debug: bool = False
+    debug: bool|None = Field(alias='SEAN_GPT_DEBUG')
 
     # SECRETS
     # Values from secrets need default values for testing because we do not load
     # the secrets file in testing
-    jwt_secret_key: str = Field(default="TEST_SECRET_KEY", alias='sean_gpt_jwt_secret_key')
-    api_db_user: str = Field(default="TEST_SEAN_GPT_DB_USER", alias='sean_gpt_api_db_user')
-    api_db_password: str = Field(default="TEST_SEAN_GPT_DB_PASSWORD",
-                                 alias='sean_gpt_api_db_password')
-    openai_api_key: str = Field(default="TEST_OPENAI_API_KEY", alias='sean_gpt_openai_api_key')
-    user_admin_phone: str = Field(default="TEST_USER_ADMIN_PHONE",
-                                  alias='sean_gpt_user_admin_phone')
-    user_admin_password: str = Field(default="TEST_USER_ADMIN_PASSWORD",
-                                     alias='sean_gpt_user_admin_password')
-    twilio_test_sid: str = Field(default="TEST_TWILIO_SID", alias='sean_gpt_twilio_test_sid')
-    twilio_test_auth_token: str = Field(default="TEST_TWILIO_AUTH_TOKEN",
-                                        alias='sean_gpt_twilio_test_auth_token')
-    twilio_sid: str = Field(default="TEST_TWILIO_SID", alias='sean_gpt_twilio_sid')
-    twilio_auth_token: str = Field(default="TEST_TWILIO_AUTH_TOKEN",
-                                   alias='sean_gpt_twilio_auth_token')
+    jwt_secret_key: str = Field(alias='sean_gpt_jwt_secret_key')
+    api_db_user: str = Field(alias='sean_gpt_api_db_user')
+    api_db_password: str = Field(alias='sean_gpt_api_db_password')
+    openai_api_key: str = Field(alias='sean_gpt_openai_api_key')
+    user_admin_phone: str = Field(alias='sean_gpt_user_admin_phone')
+    user_admin_password: str = Field(alias='sean_gpt_user_admin_password')
+    twilio_test_sid: str = Field( alias='sean_gpt_twilio_test_sid')
+    twilio_test_auth_token: str = Field(alias='sean_gpt_twilio_test_auth_token')
+    twilio_sid: str = Field( alias='sean_gpt_twilio_sid')
+    twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
+    minio_access_key: str = Field(alias='sean_gpt_minio_access_key')
+    minio_secret_key: str = Field(alias='sean_gpt_minio_secret_key')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')
@@ -45,6 +42,9 @@ class Settings(BaseSettings):
     database_name: str = Field(alias='sean_gpt_database_name')
 
     redis_host: str = Field(alias='sean_gpt_redis_host')
+
+    minio_host: str = Field(alias='sean_gpt_minio_host')
+    minio_port: str = Field(alias='sean_gpt_minio_port')
 
     app_phone_number: str = Field(alias='sean_gpt_app_phone_number')
     app_welcome_message: str = Field(alias='sean_gpt_app_welcome_message')

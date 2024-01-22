@@ -1,0 +1,16 @@
+seangpt:
+  api_image:
+    image_name: "ghcr.io/mrplants/sean_gpt_api"
+    image_tag: "" # Provided in release command
+
+  migrate_image:
+    image_name: "ghcr.io/mrplants/sean_gpt_migrate"
+    image_tag: "" # Provided in release command
+
+  frontend_image:
+    image_name: "ghcr.io/mrplants/sean_gpt_frontend"
+    image_tag: "" # Provided in release command
+
+domain: "sean-gpt.com"
+api_domain: "api.sean-gpt.com"
+cert_prefix: "sean-gpt"

@@ -1,6 +1,4 @@
-# Check if the values file has the local flag set to true
-{{- if .Values.local }}
-{{- else }}
+{{- if eq .Values.environment "prod" }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

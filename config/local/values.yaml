@@ -1,0 +1,12 @@
+seangpt:
+  api_image:
+    image_name: "sean_gpt_api"
+    image_tag: "latest"
+
+  migrate_image:
+    image_name: "sean_gpt_migrate"
+    image_tag: "latest"
+
+  frontend_image:
+    image_name: "sean_gpt_frontend"
+    image_tag: "latest"

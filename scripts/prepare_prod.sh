@@ -23,7 +23,7 @@ docker push ghcr.io/mrplants/sean_gpt_migrate:latest
 
 # Build and push the frontend
 cd sean_gpt_frontend
-CI=true npm run build
+CI=true REACT_APP_API_ENDPOINT="api.sean-gpt.com" npm run build
 cd ..
 docker build --platform=linux/amd64 -t ghcr.io/mrplants/sean_gpt_frontend:$LATEST_VERSION -f Dockerfile.frontend .
 docker tag ghcr.io/mrplants/sean_gpt_frontend:$LATEST_VERSION ghcr.io/mrplants/sean_gpt_frontend:latest

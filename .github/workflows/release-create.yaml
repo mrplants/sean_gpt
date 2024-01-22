@@ -54,8 +54,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
-          tag_name: "v${{ steps.extract-version.outputs.version }}"
-          release_name: "Release v${{ steps.extract-version.outputs.version }}"
+          tag_name: "v${{ steps.read_toml.outputs.value }}"
+          release_name: "Release v${{ steps.read_toml.outputs.value }}"
           body_path: pr_description.md
           draft: false
           prerelease: false
@@ -91,7 +91,7 @@ jobs:
       - name: Merge main into development
         run: |
           git fetch origin
-          git checkout origin/development
+          git checkout -b development origin/development
           git merge origin/main
           git push origin development
         env:

@@ -38,11 +38,25 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Create secrets.yaml
+      run: |
+        mkdir -p config/production
+        echo "${{ secrets.SECRETS_YAML }}" | base64 -d > config/production/secrets.yaml
+
+    - name: Setup dependencies
+      uses: ./.github/actions/setup_dependencies
+
     - name: Prepare for Deployment
       run: ./scripts/prepare_prod.sh
+
+    - uses: SebRollen/toml-action@v1.0.2
+      id: read_toml
+      with:
+        file: 'pyproject.toml'
+        field: 'tool.poetry.version'
 
     - uses: helmfile/helmfile-action@v1.0.0
       with:
         helmfile-version: 'v0.160.0'
         helm-version: 'v3.13.3'
-        helmfile-args: sync --environment prod --set seangpt.api_image.image_tag=${{ steps.get-latest-release.outputs.tag }} --set seangpt.migrate_image.image_tag=${{ steps.get-latest-release.outputs.tag }} --set seangpt.frontend_image.image_tag=${{ steps.get-latest-release.outputs.tag }}
+        helmfile-args: sync --environment prod --set seangpt.api_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.migrate_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.frontend_image.image_tag=${{ steps.read_toml.outputs.value }}

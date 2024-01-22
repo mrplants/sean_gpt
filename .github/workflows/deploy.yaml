@@ -31,23 +31,10 @@ jobs:
         mkdir -p $HOME/.kube
         echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-    - name: Log in to the Container registry
-      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Create secrets.yaml
       run: |
         mkdir -p config/production
         echo "${{ secrets.SECRETS_YAML }}" | base64 -d > config/production/secrets.yaml
-
-    - name: Setup dependencies
-      uses: ./.github/actions/setup_dependencies
-
-    - name: Prepare for Deployment
-      run: ./scripts/prepare_prod.sh
 
     - uses: SebRollen/toml-action@v1.0.2
       id: read_toml

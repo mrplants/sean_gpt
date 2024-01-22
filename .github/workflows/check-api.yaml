@@ -56,30 +56,17 @@ jobs:
       #              run test suite
       #----------------------------------------------
 
-      - name: Wait for installation
+      - name: Wait for initialization
         run: |
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql-0 -n postgres --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt -c alembic-migration || true
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql-0 -n postgres --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt -c alembic-migration || true
-          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
-          kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt -c alembic-migration || true
-          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
-          kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt || true
-          kubectl logs deployments/api -n seangpt -c alembic-migration || true
 
       - name: Run tests
         run: |
-          poetry run pytest tests/
-          coverage report
+          poetry run pytest

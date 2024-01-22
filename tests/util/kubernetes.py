@@ -12,7 +12,7 @@ def await_ready():
         "status",
         "deployments/api",
         "--namespace",
-        f"seangpt",
+        "seangpt",
         "--timeout",
         "1m"
     ], check=True, capture_output=True)
@@ -30,7 +30,7 @@ def monitor_logs():
         yield
     else:
         api_stern_process = subprocess.Popen(
-            ['stern', 'api-*', "-n", f"seangpt", "--since", "1s"])
+            ['stern', 'api-*', "-n", "seangpt", "--since", "1s"])
         try:
             yield
         finally:
@@ -44,7 +44,7 @@ def port_forward(port):
         "port-forward",
         "deployments/api",
         "--namespace",
-        f"seangpt",
+        "seangpt",
         f"{port}:{port}"
     ])
     try:

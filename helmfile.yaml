@@ -80,7 +80,7 @@ releases:
     createNamespace: true
     namespace: minio-tenant
     needs:
-    - minio/minio-operator
+    - minio-operator/minio-operator
     set:
     - name: tenant.pools[0].servers
       value: 1

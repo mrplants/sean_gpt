@@ -65,6 +65,10 @@ spec:
           mountPath: /app/sean_gpt
 {{- end }}
         env:
+{{ if eq .Values.environment "local" }}
+        - name: SEAN_GPT_DEBUG
+          value: 1
+{{ end }}
         {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 8 }}
 {{ if ne .Values.environment "prod" }}
         - name: LAST_DEPLOYED

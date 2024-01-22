@@ -60,11 +60,19 @@ jobs:
         run: |
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
-          kubectl rollout status statefulsets/postgres-postgresql-0 -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
           kubectl get pods --all-namespaces
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
-          kubectl rollout status statefulsets/postgres-postgresql-0 -n postgres --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
+          kubectl rollout status statefulsets/myminio-ss-0 -n minio-tenant --timeout 30s || true
+          kubectl rollout status statefulsets/postgres-postgresql -n postgres --timeout 30s || true
           kubectl get pods --all-namespaces
 
       - name: Run tests

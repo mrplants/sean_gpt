@@ -38,6 +38,9 @@ spec:
       - name: wait-for-postgres
         image: busybox
         command: ['sh', '-c', 'until nslookup {{ .Values.database.host }}; do echo waiting for {{ .Values.database.host }}; sleep 1; done;']
+      - name: wait-for-redis
+        image: busybox
+        command: ['sh', '-c', 'until nslookup {{ .Values.redis.host }}; do echo waiting for {{ .Values.redis.host }}; sleep 1; done;']
       - name: alembic-migration
         image: {{ .Values.seangpt.migrate_image.image_name }}:{{ .Values.seangpt.migrate_image.image_tag }}
         imagePullPolicy: IfNotPresent
@@ -62,7 +65,7 @@ spec:
           timeoutSeconds: 1
         image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
         imagePullPolicy: IfNotPresent
-{{ if .Values.mount_host }}
+{{ if and (eq .Values.environment "local") .Values.mount_host }}
         volumeMounts:
         - name: host-volume
           mountPath: /app/sean_gpt
@@ -77,7 +80,7 @@ spec:
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}
-{{ if .Values.mount_host }}
+{{ if and (eq .Values.environment "local") .Values.mount_host }}
       volumes:
       - name: host-volume
         hostPath:

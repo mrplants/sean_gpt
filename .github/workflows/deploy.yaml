@@ -45,4 +45,4 @@ jobs:
       with:
         helmfile-version: 'v0.160.0'
         helm-version: 'v3.13.3'
-        helmfile-args: sync --environment prod
+        helmfile-args: sync --environment prod --set seangpt.api_image.image_tag=${{ steps.get-latest-release.outputs.tag }} --set seangpt.migrate_image.image_tag=${{ steps.get-latest-release.outputs.tag }} --set seangpt.frontend_image.image_tag=${{ steps.get-latest-release.outputs.tag }}

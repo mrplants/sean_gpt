@@ -92,7 +92,7 @@ jobs:
         run: |
           git fetch origin
           git checkout -b development origin/development
-          git merge origin/main
+          git merge origin/main --allow-unrelated-histories
           git push origin development
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

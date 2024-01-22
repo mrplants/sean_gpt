@@ -14,17 +14,12 @@ spec:
     spec:
       containers:
       - name: frontend
-{{ if and (ne .Values.environment "prod") (ne .Values.environment "dev") }}
         imagePullPolicy: IfNotPresent
-{{- end }}
-{{ if eq .Values.environment "dev" }}
-        imagePullPolicy: Always
-{{- end }}
         image: {{ .Values.seangpt.frontend_image.image_name }}:{{ .Values.seangpt.frontend_image.image_tag }}
         ports:
         - containerPort: 80
         env:
-{{ if and (ne .Values.environment "prod") (ne .Values.environment "dev") }}
+{{ if ne .Values.environment "prod" }}
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}

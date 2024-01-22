@@ -15,16 +15,13 @@ from sean_gpt.util.describe import describe
 
 from .fixtures.kubernetes import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 from .fixtures.auth import * # pylint: disable=wildcard-import disable=unused-wildcard-import
-from .util.kubernetes import monitor_logs, port_forward, is_ready
+from .util.kubernetes import monitor_logs, port_forward, await_ready
 
 @describe(""" Test fixture to provide a test client for the application. """)
 @pytest.fixture(scope="session")
 def sean_gpt_host() -> str:
-    # Get the environment
-    env = os.environ['ENV'] if 'ENV' in os.environ else "local"
 
-    if is_ready(env):
-        print("API is ready.")
+    await_ready()
 
-    with monitor_logs(env), port_forward(env, 8000):
+    with monitor_logs(), port_forward(8000):
         yield "http://localhost:8000"

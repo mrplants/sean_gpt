@@ -41,19 +41,21 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.8.0
         with:
-          cluster_name: sean-gpt-test
+          cluster_name: sean-gpt-local
+
+      - name: Prepare for Installation
+        run: ./scripts/prepare_test.sh
   
       - uses: helmfile/helmfile-action@v1.0.0
         with:
           helmfile-version: 'v0.160.0'
           helm-version: 'v3.13.3'
-          helmfile-args: apply --environment test --suppress-diff --quiet
+          helmfile-args: sync --quiet
 
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
       - name: Run tests
         run: |
-          source .venv/bin/activate
-          ENV=test poetry run pytest tests/
+          poetry run pytest tests/
           coverage report

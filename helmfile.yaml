@@ -187,8 +187,6 @@ releases:
     set:
     - name: environment
       value: {{ .Environment.Name }}
-    - name: env
-      value: {{ .Environment.Name }}
     - name: database.host
       value: "postgres-postgresql.postgres.svc.cluster.local"
     - name: redis.host
@@ -197,3 +195,8 @@ releases:
       value: "minio.minio.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
+    {{ if eq .Environment.Name "prod" }}
+    needs:
+    - ingress-nginx/ingress-nginx
+    - cert-manager/cert-manager
+    {{ end }}

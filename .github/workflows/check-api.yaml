@@ -76,7 +76,7 @@ jobs:
           kubectl rollout status statefulsets/redis-master -n redis --timeout 30s || true
           kubectl rollout status deployments/milvus-standalone -n milvus --timeout 30s || true
           kubectl get pods --all-namespaces
-          kuebctl describe deployments/api -n seangpt
+          kubectl describe deployments/api -n seangpt
           kubectl rollout status deployments/api -n seangpt --timeout 10m || true
           kubectl get pods --all-namespaces
 

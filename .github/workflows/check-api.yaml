@@ -56,16 +56,15 @@ jobs:
       #              run test suite
       #----------------------------------------------
 
-      - name: Run tests
-        continue-on-error: true
+      - name: Wait for installation
         run: |
-          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
 
       - name: Run tests

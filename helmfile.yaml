@@ -131,6 +131,8 @@ releases:
       value: {{ .Environment.Values.api_db_user }}
     - name: primary.service.ports.postgresql
       value: {{ .Environment.Values.database.port }}
+    - name: primary.resources.requests.cpu
+      value: 150m
 
   - name: redis
     chart: bitnami/redis

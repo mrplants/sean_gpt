@@ -20,8 +20,6 @@ repositories:
     url: https://kedacore.github.io/charts
   - name: milvus
     url: https://zilliztech.github.io/milvus-helm/
-  - name: minio
-    url: https://charts.min.io/
   - name: ingress-nginx
     url: https://kubernetes.github.io/ingress-nginx
   - name: kubernetes-dashboard
@@ -32,6 +30,8 @@ repositories:
     url: https://prometheus-community.github.io/helm-charts
   - name: grafana
     url: https://grafana.github.io/helm-charts
+  - name: minio
+    url: https://operator.min.io/
 
 releases:
   - name: ingress-nginx
@@ -71,16 +71,16 @@ releases:
       value: false
 
   - name: minio-operator
-    chart: minio-operator/operator
+    chart: minio/operator
     createNamespace: true
     namespace: minio-operator
   
   - name: minio-tenant
-    chart: minio-operator/tenant
+    chart: minio/tenant
     createNamespace: true
     namespace: minio-tenant
     needs:
-    - minio-operator/minio-operator
+    - minio/minio-operator
     set:
     - name: tenant.pools[0].servers
       value: 1

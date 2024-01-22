@@ -165,7 +165,7 @@ def test_multi_message(verified_opted_in_user: dict, sean_gpt_host: str):
     # Check that the text of the 'Message' element is the outgoing message
     # Note that it should be only the first X characters of the outgoing
     # message with the ellipsis appended.
-    expected_message = outgoing_msg[:settings.app_max_sms_characters]
+    expected_message = outgoing_msg[:int(settings.app_max_sms_characters)]
     assert root[0].text == expected_message, (
         f"Expected first child element text to be '{expected_message}', got {root[0].text}")
 

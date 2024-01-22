@@ -1,7 +1,6 @@
 """ Minio utilities.
 """
 from typing import Annotated, Any
-from urllib3.exceptions import MaxRetryError
 import logging
 
 from minio import Minio
@@ -25,7 +24,7 @@ def get_minio_client(): # pylint: disable=missing-function-docstring
     )
     try:
         minio_client.list_buckets()
-    except MaxRetryError as err:
+    except Exception as err:
         logging.critical("Object storage not reachable")
         raise err
     # Make sure the user-uploads bucket exists

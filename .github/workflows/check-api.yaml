@@ -55,6 +55,18 @@ jobs:
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
+
+      - name: Run tests
+        run: |
+          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl get pods --all-namespaces
+          kubectl rollout status deployments/api -n seangpt --timeout 30s
+          kubectl get pods --all-namespaces
+
       - name: Run tests
         run: |
           poetry run pytest tests/

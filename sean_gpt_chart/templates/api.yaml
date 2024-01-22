@@ -35,6 +35,9 @@ spec:
         app: api
     spec:
       initContainers:
+      - name: wait-for-postgres
+        image: busybox
+        command: ['sh', '-c', 'until nslookup {{ .Values.database.host }}; do echo waiting for {{ .Values.database.host }}; sleep 1; done;']
       - name: alembic-migration
         image: {{ .Values.seangpt.migrate_image.image_name }}:{{ .Values.seangpt.migrate_image.image_tag }}
         imagePullPolicy: IfNotPresent
@@ -59,9 +62,11 @@ spec:
           timeoutSeconds: 1
         image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
         imagePullPolicy: IfNotPresent
+{{ if .Values.mount_host }}
         volumeMounts:
         - name: host-volume
           mountPath: /app/sean_gpt
+{{ end }}
         env:
 {{ if eq .Values.environment "local" }}
         - name: SEAN_GPT_DEBUG
@@ -72,11 +77,13 @@ spec:
         - name: LAST_DEPLOYED
           value: "{{ now | unixEpoch }}"
 {{- end }}
+{{ if .Values.mount_host }}
       volumes:
       - name: host-volume
         hostPath:
           path: /mnt/sean_gpt
           type: Directory
+{{ end }}
 ---
 apiVersion: v1
 kind: Service

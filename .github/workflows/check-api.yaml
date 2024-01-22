@@ -50,7 +50,7 @@ jobs:
         with:
           helmfile-version: 'v0.160.0'
           helm-version: 'v3.13.3'
-          helmfile-args: sync --quiet
+          helmfile-args: sync --quiet --set mount_host=false
 
       #----------------------------------------------
       #              run test suite
@@ -60,20 +60,24 @@ jobs:
         run: |
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt
-          kubectl logs deployments/api -n seangpt
+          kubectl describe deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt -c alembic-migration || true
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt
-          kubectl logs deployments/api -n seangpt
+          kubectl describe deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt -c alembic-migration || true
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt
-          kubectl logs deployments/api -n seangpt
+          kubectl describe deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt -c alembic-migration || true
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
-          kubectl describe deployments/api -n seangpt
-          kubectl logs deployments/api -n seangpt
+          kubectl describe deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt || true
+          kubectl logs deployments/api -n seangpt -c alembic-migration || true
 
       - name: Run tests
         run: |

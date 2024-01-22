@@ -183,6 +183,8 @@ releases:
     createNamespace: true
     namespace: seangpt
     set:
+    - name: mount_host
+      value: true
     - name: environment
       value: {{ if eq .Environment.Name "default" }}local{{ else }}{{ .Environment.Name }}{{ end }}
     - name: database.host

@@ -37,13 +37,17 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const pr = await github.rest.pulls.get({
+            const prs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
+              state: 'closed',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 1
             });
-            fs.writeFileSync('pr_description.md', pr.data.body);
-                  
+            const mostRecentPr = prs.data[0];
+            fs.writeFileSync('pr_description.md', mostRecentPr.body);
+                              
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -87,7 +91,7 @@ jobs:
       - name: Merge main into development
         run: |
           git fetch origin
-          git checkout development
+          git checkout origin/development
           git merge origin/main
           git push origin development
         env:

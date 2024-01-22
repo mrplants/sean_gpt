@@ -60,12 +60,20 @@ jobs:
         run: |
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
+          kubectl describe deployments/api -n seangpt
+          kubectl logs deployments/api -n seangpt
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
+          kubectl describe deployments/api -n seangpt
+          kubectl logs deployments/api -n seangpt
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
+          kubectl describe deployments/api -n seangpt
+          kubectl logs deployments/api -n seangpt
           kubectl rollout status deployments/api -n seangpt --timeout 30s || true
           kubectl get pods --all-namespaces
+          kubectl describe deployments/api -n seangpt
+          kubectl logs deployments/api -n seangpt
 
       - name: Run tests
         run: |

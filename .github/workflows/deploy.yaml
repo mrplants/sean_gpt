@@ -46,4 +46,4 @@ jobs:
       with:
         helmfile-version: 'v0.160.0'
         helm-version: 'v3.13.3'
-        helmfile-args: sync --environment prod --set seangpt.api_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.migrate_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.frontend_image.image_tag=${{ steps.read_toml.outputs.value }}
+        helmfile-args: sync --quiet --environment prod --set seangpt.api_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.migrate_image.image_tag=${{ steps.read_toml.outputs.value }} --set seangpt.frontend_image.image_tag=${{ steps.read_toml.outputs.value }}

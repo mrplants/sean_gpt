@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     minio_host: str = Field(alias='sean_gpt_minio_host')
     minio_port: str = Field(alias='sean_gpt_minio_port')
 
+    kafka_brokers: str = Field(alias='sean_gpt_kafka_brokers')
+
     app_phone_number: str = Field(alias='sean_gpt_app_phone_number')
     app_welcome_message: str = Field(alias='sean_gpt_app_welcome_message')
     app_request_referral_message: str = Field(alias='sean_gpt_app_request_referral_message')

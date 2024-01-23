@@ -8,3 +8,9 @@ database:
 
 minio:
   port: 443
+
+kafka:
+  brokers: >
+    kafka-controller-0.kafka-controller-headless.kafka.svc.cluster.local:9092,
+    kafka-controller-1.kafka-controller-headless.kafka.svc.cluster.local:9092,
+    kafka-controller-2.kafka-controller-headless.kafka.svc.cluster.local:9092

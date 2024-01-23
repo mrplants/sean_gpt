@@ -4,12 +4,14 @@ import uuid
 
 from fastapi import APIRouter, WebSocket, status, WebSocketException, WebSocketDisconnect, Query
 from sqlmodel import select
+from confluent_kafka import TopicPartition
 
 from ...util.describe import describe
 from ...config import settings
 from ...util.database import RedisConnectionDep, SessionDep
 from ...util.user import IsVerifiedUserDep
 from ...model.file import File, ORDERED_FILE_STATUSES
+from ...util.kafka_client import KafkaConsumerDep
 
 router = APIRouter(prefix="/file/processing")
 
@@ -44,6 +46,7 @@ Args:
     redis_conn (RedisConnectionDep):  The redis connection.
     session (SessionDep):  The database session.
     websocket (WebSocket):  The websocket connection.
+    consumer (KafkaConsumerDep):  The kafka consumer.
 """)
 @router.websocket("/ws")
 async def generate_chat_stream( # pylint: disable=missing-function-docstring
@@ -51,7 +54,8 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
     token: str = Query(),
     redis_conn: RedisConnectionDep,
     session: SessionDep,
-    websocket: WebSocket):
+    websocket: WebSocket,
+    consumer: KafkaConsumerDep):
     # First, check that the token is valid in redis
     if not await redis_conn.exists(token):
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
@@ -80,15 +84,25 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
         if not file:
             raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
         # Start sending back file processing statuses
-        # No matter how far along the file is, send the prior statuses in order.
-        # This also sends the current status
-        for prior_status in ORDERED_FILE_STATUSES:
-            await websocket.send_text(prior_status)
-            if prior_status == file.status:
-                break
-        current_status = file.status
-        while current_status != ORDERED_FILE_STATUSES[-1]:
-            # 
+        # This iterates over all the messages in the kafka monitoring topic for this file
+        # It continues polling and sending back messages until the final status is reached
+        # or the client disconnects
+        # Manually assign the partition and offset.  This is necessary because the consumer must
+        # start from the beginning of the topic, which only has one partition.
+
+        assigned_partition = TopicPartition('monitor_file_processing', 0, 0)  # topic, partition, offset
+        consumer.assign([assigned_partition])
+
+        while True:
+            msg = consumer.poll(timeout=.0)
+            if msg is None:
+                continue
+            if msg.error():
+                print("Consumer error: {}".format(msg.error()))
+                continue
+
+            # Process the message...
+            print(f"Received message: {msg.value().decode('utf-8')}")
 
         await websocket.close()
     except WebSocketDisconnect:

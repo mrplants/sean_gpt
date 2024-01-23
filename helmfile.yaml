@@ -199,6 +199,8 @@ releases:
     - {{ toYaml .Environment.Values | nindent 6}}
     needs:
     - minio-tenant/minio-tenant
+    - redis/redis
+    - postgres/postgres
     {{ if eq .Environment.Name "prod" }}
     - ingress-nginx/ingress-nginx
     - cert-manager/cert-manager

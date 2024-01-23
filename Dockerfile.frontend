@@ -1,4 +1,4 @@
-FROM nginx:1.17.1-alpine
+FROM nginx:1.25.3-alpine
 
 # Copy the build output from React to the Nginx html directory
 COPY sean_gpt_frontend/build /usr/share/nginx/html

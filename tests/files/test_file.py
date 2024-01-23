@@ -3,7 +3,6 @@
 
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -67,7 +66,6 @@ from sean_gpt.model.file import (
     FILE_STATUS_COMPLETE,
     FILE_STATUS_PROCESSING,
     FILE_STATUS_AWAITING_PROCESSING)
-from sean_gpt.config import settings
 
 from ..util.check_routes import check_verified_route
 

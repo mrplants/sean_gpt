@@ -257,38 +257,38 @@ Args:
 def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     # Semanti search not yet implemented
     pass
-    # temp_file = tmp_path / "test_file.py"
-    # temp_file.write_text("Hello, World!")
-    # upload_response = httpx.post(
-    #     f"{sean_gpt_host}/file",
-    #     headers={
-    #         "Authorization": f"Bearer {verified_new_user['access_token']}"
-    #     },
-    #     files={"file": temp_file.open("rb")}
-    # ).json()
-    # # Retrieve the file
-    # get_response = httpx.get(
-    #     f"{sean_gpt_host}/file",
-    #     headers={
-    #         "Authorization": f"Bearer {verified_new_user['access_token']}"
-    #     },
-    #     params={
-    #         "semantic_search": "Welcome, Globe!",
-    #         "threshold": 0.5 # This is a very low threshold. Just for testing that it is accepted.
-    #     }
-    # )
-    # # The response should be:
-    # # HTTP/1.1 200 OK
-    # # [{
-    # #     "id": "...",
-    # #  ...
-    # # }]
-    # assert get_response.status_code == 200, (
-    #     f"Expected status code 200. Received status code {get_response.status_code}"
-    # )
-    # assert get_response.json()[0]['id'] == upload_response['id'], (
-    #     f"Expected response to contain 'id'. Received response {get_response.json()}"
-    # )
+    temp_file = tmp_path / "test_file.py"
+    temp_file.write_text("Hello, World!")
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        files={"file": temp_file.open("rb")}
+    ).json()
+    # Retrieve the file
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        params={
+            "semantic_search": "Welcome, Globe!",
+            "threshold": 0.5 # This is a very low threshold. Just for testing that it is accepted.
+        }
+    )
+    # The response should be:
+    # HTTP/1.1 200 OK
+    # [{
+    #     "id": "...",
+    #  ...
+    # }]
+    assert get_response.status_code == 200, (
+        f"Expected status code 200. Received status code {get_response.status_code}"
+    )
+    assert get_response.json()[0]['id'] == upload_response['id'], (
+        f"Expected response to contain 'id'. Received response {get_response.json()}"
+    )
 
 @describe(
 """ Test that a only supported file types can be uploaded.
@@ -442,12 +442,11 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
                             "/file",
                             params={"share_set_id": upload_response['default_share_set_id']},
                             verified_user=verified_new_user)
-    # TODO: Test semantic search
-    # check_verified_route("GET",
-    #                      sean_gpt_host,
-    #                         "/file",
-    #                         params={"semantic_search": "test"},
-    #                         verified_user=verified_new_user)
+    check_verified_route("GET",
+                         sean_gpt_host,
+                            "/file",
+                            params={"semantic_search": "test"},
+                            verified_user=verified_new_user)
     check_verified_route("GET",
                          sean_gpt_host,
                             "/share_set",

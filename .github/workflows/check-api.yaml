@@ -77,6 +77,14 @@ jobs:
           kubectl rollout status deployments/milvus-standalone -n milvus --timeout 30s || true
           kubectl get pods --all-namespaces
           kubectl describe deployments/api -n seangpt
+          pods=$(kubectl get pods -n seangpt -l app=api -o jsonpath="{.items[*].metadata.name}")
+          for pod in $pods
+          do
+            echo "Logs for $pod"
+            kubectl logs $pod -n seangpt
+            kubectl logs $pod -n seangpt -c wait-for-redis
+            kubectl logs $pod -n seangpt -c wait-for-postgres
+          done
           kubectl rollout status deployments/api -n seangpt --timeout 10m || true
           kubectl get pods --all-namespaces
 

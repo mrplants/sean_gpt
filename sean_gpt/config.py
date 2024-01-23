@@ -57,6 +57,6 @@ class Settings(BaseSettings):
     app_chat_history_length: int = Field(alias='sean_gpt_app_chat_history_length')
     app_default_ai_model: str = Field(alias='sean_gpt_app_default_ai_model')
     app_phone_verification_message: str = Field(alias='sean_gpt_app_phone_verification_message')
-    app_chat_token_timeout_seconds: int = Field(alias='sean_gpt_app_chat_token_timeout_seconds')
+    app_ws_token_timeout_seconds: int = Field(alias='sean_gpt_app_ws_token_timeout_seconds')
 
 settings = Settings()

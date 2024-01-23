@@ -19,7 +19,7 @@ app:
   max_sms_characters: 139
   phone_number: "+15104548054"
   phone_verification_message: "Your verification code is: {}"
-  chat_token_timeout_seconds: 30
+  ws_token_timeout_seconds: 30
 
 api:
   replicas: 1

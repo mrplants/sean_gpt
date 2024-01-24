@@ -4,8 +4,10 @@ import hashlib
 import tempfile
 import os
 import uuid
+import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from kafka import KafkaProducer
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
@@ -18,6 +20,7 @@ from ...model.file import (
     ShareSet,
     FileShareSetLink
 )
+from ...config import settings
 
 router = APIRouter(
     prefix="/file"
@@ -47,13 +50,11 @@ async def upload_file( # pylint: disable=missing-function-docstring
     file_id = uuid.uuid4()
     # Hash the file, calculate its size, and put it in temporary storage
     sha256_hash = hashlib.sha256()
-    # file_size = 0
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     chunk_size = 8192
     chunk = await file.read(chunk_size)
     while len(chunk) > 0:
         sha256_hash.update(chunk)
-        # file_size += len(chunk)
         temp_file.write(chunk)
         chunk = await file.read(chunk_size)
     file_hash = sha256_hash.hexdigest()
@@ -96,5 +97,25 @@ async def upload_file( # pylint: disable=missing-function-docstring
     session.add(file_share_set_link)
     session.commit()
     session.refresh(file_record)
+    # Pass the file's status (awaiting processing) to the kafka topic for file-monitoring
+    file_kafka_producer = KafkaProducer(
+        bootstrap_servers=settings.kafka_brokers,
+        value_serializer=lambda x: x.encode('utf-8')
+    )
+    file_kafka_producer.send(
+        'monitor_file_processing',
+        key=str(file_id).encode('utf-8'),
+        value=json.dumps({
+            'status': FILE_STATUS_AWAITING_PROCESSING
+        }).encode('utf-8')
+    )
+    # Pass a message to start the file processing pipeline
+    file_kafka_producer.send(
+        'file_processing_stage_0',
+        json.dumps({
+            'file_id': str(file_id)
+        }).encode('utf-8')
+    )
+
     # Return the file record
     return file_record

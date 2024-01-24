@@ -34,7 +34,7 @@ alembic = "^1.13.1"
 pymilvus = "^2.3.5"
 minio = "^7.2.3"
 kubernetes = "^29.0.0"
-confluent-kafka = "^2.3.0"
+kafka-python = "^2.0.2"
 
 
 [build-system]

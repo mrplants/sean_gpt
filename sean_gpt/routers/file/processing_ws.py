@@ -1,17 +1,18 @@
 """ This module contains the route for monitoring file processing status via websocket.
 """
 import uuid
+import json
 
 from fastapi import APIRouter, WebSocket, status, WebSocketException, WebSocketDisconnect, Query
 from sqlmodel import select
-from confluent_kafka import TopicPartition
+from kafka import KafkaConsumer
+from tomlkit import key
 
 from ...util.describe import describe
 from ...config import settings
 from ...util.database import RedisConnectionDep, SessionDep
 from ...util.user import IsVerifiedUserDep
 from ...model.file import File, ORDERED_FILE_STATUSES
-from ...util.kafka_client import KafkaConsumerDep
 
 router = APIRouter(prefix="/file/processing")
 
@@ -54,8 +55,7 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
     token: str = Query(),
     redis_conn: RedisConnectionDep,
     session: SessionDep,
-    websocket: WebSocket,
-    consumer: KafkaConsumerDep):
+    websocket: WebSocket):
     # First, check that the token is valid in redis
     if not await redis_conn.exists(token):
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
@@ -86,24 +86,24 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
         # Start sending back file processing statuses
         # This iterates over all the messages in the kafka monitoring topic for this file
         # It continues polling and sending back messages until the final status is reached
-        # or the client disconnects
-        # Manually assign the partition and offset.  This is necessary because the consumer must
-        # start from the beginning of the topic, which only has one partition.
+        # or the client disconnects or consumer times out
 
-        assigned_partition = TopicPartition('monitor_file_processing', 0, 0)  # topic, partition, offset
-        consumer.assign([assigned_partition])
-
-        while True:
-            msg = consumer.poll(timeout=.0)
-            if msg is None:
-                continue
-            if msg.error():
-                print("Consumer error: {}".format(msg.error()))
-                continue
-
-            # Process the message...
-            print(f"Received message: {msg.value().decode('utf-8')}")
-
+        file_status_msg_consumer = KafkaConsumer(
+            'monitor_file_processing',
+            bootstrap_servers=settings.kafka_brokers,
+            auto_offset_reset='earliest',
+            enable_auto_commit=False,
+            group_id='monitor_file_processing',
+            value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+            key_deserializer=lambda x: x.decode('utf-8'),
+            consumer_timeout_ms=settings.app_file_status_consumer_timeout_seconds * 1000
+        )
+        # TODO:  This is inefficient because the consumer is synchronous.
+        for msg in file_status_msg_consumer:
+            if msg.key() == str(file_id):                    
+                await websocket.send_json(msg.value())
+                if msg.value()['status'] == ORDERED_FILE_STATUSES[-1]:
+                    break
         await websocket.close()
     except WebSocketDisconnect:
         # The client disconnected, so close the websocket

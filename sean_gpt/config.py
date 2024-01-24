@@ -60,5 +60,7 @@ class Settings(BaseSettings):
     app_default_ai_model: str = Field(alias='sean_gpt_app_default_ai_model')
     app_phone_verification_message: str = Field(alias='sean_gpt_app_phone_verification_message')
     app_ws_token_timeout_seconds: int = Field(alias='sean_gpt_app_ws_token_timeout_seconds')
+    app_file_status_consumer_timeout_seconds: int = (
+        Field(alias='sean_gpt_app_file_status_consumer_timeout_seconds'))
 
 settings = Settings()

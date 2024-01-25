@@ -11,6 +11,9 @@ from .describe import describe
 
 # Import all the models, so that they're registered with sqlmodel
 from ..model.authenticated_user import AuthenticatedUser
+from ..model.message import Message
+from ..model.verification_token import VerificationToken
+from ..model.file import File, ShareSet, FileShareSetLink
 from ..model.chat import Chat
 from ..model.ai import AI
 

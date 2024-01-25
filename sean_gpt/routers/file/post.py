@@ -39,6 +39,13 @@ async def upload_file( # pylint: disable=missing-function-docstring
     session: SessionDep,
     minio_client: MinioClientDep,
     current_user: AuthenticatedUserDep) -> FileModel:
+    # Determine the file type from the file extension
+    file_extension = os.path.splitext(file.filename)[1][1:]
+    if file_extension not in SUPPORTED_FILE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File type {file_extension} is not supported."
+        )
     # Create the default share set for this file
     default_share_set = ShareSet(name="",
                                  is_public=False,
@@ -69,13 +76,6 @@ async def upload_file( # pylint: disable=missing-function-docstring
     finally:
         # Remove the temporary file
         os.unlink(temp_file.name)
-    # Determine the file type from the file extension
-    file_extension = os.path.splitext(file.filename)[1][1:]
-    if file_extension not in SUPPORTED_FILE_TYPES:
-        raise HTTPException(
-            status_code=422,
-            detail=f"File type {file_extension} is not supported."
-        )
     # Create a file record in the database
     file_record = FileModel(
         id=file_id,
@@ -100,21 +100,22 @@ async def upload_file( # pylint: disable=missing-function-docstring
     # Pass the file's status (awaiting processing) to the kafka topic for file-monitoring
     file_kafka_producer = KafkaProducer(
         bootstrap_servers=settings.kafka_brokers,
+        key_serializer=lambda x: x.encode('utf-8') if x else None,
         value_serializer=lambda x: x.encode('utf-8')
     )
     file_kafka_producer.send(
         'monitor_file_processing',
-        key=str(file_id).encode('utf-8'),
+        key=str(file_id),
         value=json.dumps({
             'status': FILE_STATUS_AWAITING_PROCESSING
-        }).encode('utf-8')
+        })
     )
     # Pass a message to start the file processing pipeline
     file_kafka_producer.send(
         'file_processing_stage_0',
         json.dumps({
             'file_id': str(file_id)
-        }).encode('utf-8')
+        })
     )
 
     # Return the file record

@@ -100,9 +100,10 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
         )
         # TODO:  This is inefficient because the consumer is synchronous.
         for msg in file_status_msg_consumer:
-            if msg.key() == str(file_id):                    
-                await websocket.send_json(msg.value())
-                if msg.value()['status'] == ORDERED_FILE_STATUSES[-1]:
+            if msg.key == str(file_id):
+                await websocket.send_json(msg.value)
+                print(msg)
+                if msg.value['status'] == ORDERED_FILE_STATUSES[-1]:
                     break
         await websocket.close()
     except WebSocketDisconnect:

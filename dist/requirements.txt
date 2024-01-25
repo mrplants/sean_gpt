@@ -1,3 +1,6 @@
+aio-pika==9.4.0 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
+    --hash=sha256:06d3680ea8515aa6c02ac6f94ffe2dde3396f141fde92eef63beb98c7a143cfd \
+    --hash=sha256:5199be0f50bd0fb1338962390383bb83a3ce8e760bb603aa071e58b56afeeec1
 aiohttp-retry==2.8.3 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:3aeeead8f6afe48272db93ced9440cf4eda8b6fd7ee2abb25357b7eb28525b45 \
     --hash=sha256:9a8e637e31682ad36e1ff9f8bcba912fcfc7d7041722bc901a4b948da4d71ea9
@@ -81,6 +84,9 @@ aiohttp==3.9.1 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" 
 aioredis==2.0.1 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:9ac0d0b3b485d293b8ca1987e6de8658d7dafcca1cddfcd1d506cae8cdebfdd6 \
     --hash=sha256:eaa51aaf993f2d71f54b70527c440437ba65340588afeb786cd87c55c89cd98e
+aiormq==6.8.0 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
+    --hash=sha256:198f9c7430feb7bc491016099a06266dc45880b6b1de3925d410fde6541a66fb \
+    --hash=sha256:9a16174dcae4078c957a773d2f02d3dfd6c2fcf12c909dc244333a458f2aeab0
 aiosignal==1.3.1 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc \
     --hash=sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17
@@ -797,6 +803,9 @@ openai==1.8.0 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
 packaging==23.2 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5 \
     --hash=sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7
+pamqp==3.3.0 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
+    --hash=sha256:40b8795bd4efcf2b0f8821c1de83d12ca16d5760f4507836267fd7a02b06763b \
+    --hash=sha256:c901a684794157ae39b52cbf700db8c9aae7a470f13528b9d7b4e5f7202f8eb0
 pandas==2.1.4 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:00028e6737c594feac3c2df15636d73ace46b8314d236100b57ed7e4b9ebe8d9 \
     --hash=sha256:0aa6e92e639da0d6e2017d9ccff563222f4eb31e4b2c3cf32a2a392fc3103c0d \
@@ -826,6 +835,9 @@ pandas==2.1.4 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
 passlib[bcrypt]==1.7.4 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:aa6bca462b8d8bda89c70b382f0c298a20b5560af6cbfa2dce410c0a2fb669f1 \
     --hash=sha256:defd50f72b65c5402ab2c573830a6978e5f202ad0d984793c8dde2c4152ebe04
+pika==1.3.2 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
+    --hash=sha256:0779a7c1fafd805672796085560d290213a465e4f6f76a6fb19e378d8041a14f \
+    --hash=sha256:b2a327ddddf8570b4965b3576ac77091b850262d34ce8c1d8cb4e4146aa4145f
 platformdirs==4.1.0 ; python_version >= "3.10.dev0" and python_version < "3.11.dev0" \
     --hash=sha256:11c8f37bcca40db96d8144522d925583bdb7a31f7b0e37e3ed4318400a8e2380 \
     --hash=sha256:906d548203468492d432bcb294d4bc2fff751bf84971fbb2c10918cc206ee420

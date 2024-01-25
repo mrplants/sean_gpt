@@ -1,14 +1,14 @@
 """ File POST endpoint.
 """
 import hashlib
+import queue
 import tempfile
 import os
 import uuid
 import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from kafka import KafkaProducer
-import kafka
+import pika
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
@@ -98,29 +98,26 @@ async def upload_file( # pylint: disable=missing-function-docstring
     session.add(file_share_set_link)
     session.commit()
     session.refresh(file_record)
-    # Pass the file's status (awaiting processing) to the kafka topic for file-monitoring
-    file_kafka_producer = KafkaProducer(
-        bootstrap_servers=settings.kafka_brokers,
-        key_serializer=lambda x: x.encode('utf-8') if x else None,
-        value_serializer=lambda x: x.encode('utf-8')
-    )
-    file_kafka_producer.send(
-        'monitor_file_processing',
-        key=str(file_id),
-        value=json.dumps({
+    # Pass the file's status (awaiting processing) to the queue for file-monitoring
+    queue_conn = pika.BlockingConnection(
+        pika.ConnectionParameters(settings.rabbitmq_host,
+                                  credentials=pika.PlainCredentials(
+                                      settings.rabbitmq_secret_username,
+                                      settings.rabbitmq_secret_password)))
+    channel = queue_conn.channel()
+    channel.exchange_declare(exchange='monitor_file_processing', exchange_type='fanout')
+    channel.basic_publish(exchange='monitor_file_processing', routing_key='', body=json.dumps({
             'status': FILE_STATUS_AWAITING_PROCESSING
-        })
-    )
+        }))
 
     # Pass a message to start the file processing pipeline
-    file_kafka_producer.send(
-        'file_processing_stage_0',
-        json.dumps({
+    channel.queue_declare(queue='file_processing_stage_0')
+    channel.basic_publish(exchange='',
+                          routing_key='file_processing_stage_0',
+                          body=json.dumps({
             'file_id': str(file_id)
-        })
-    )
-    file_kafka_producer.flush()
-    print(f'sent message to monitor_file_processing topic for file {file_id}')
+        }))
+    queue_conn.close()
 
     # Return the file record
     return file_record

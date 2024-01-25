@@ -1,13 +1,12 @@
 """ This module contains the route for monitoring file processing status via websocket.
 """
-from select import poll
 import uuid
 import json
 import asyncio
 
 from fastapi import APIRouter, WebSocket, status, WebSocketException, WebSocketDisconnect, Query
 from sqlmodel import select
-from kafka import KafkaConsumer, TopicPartition
+import aio_pika
 
 from ...util.describe import describe
 from ...config import settings
@@ -71,61 +70,39 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
     #          'file_id': "..."
     #      }
     #  }
-    file_status_msg_consumer = KafkaConsumer(
-        'monitor_file_processing',
-        bootstrap_servers=settings.kafka_brokers,
-        auto_offset_reset='earliest',
-        enable_auto_commit=False,
-        group_id='monitor_file_processing',
-        value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-        key_deserializer=lambda x: x.decode('utf-8'),
-        consumer_timeout_ms=settings.app_file_status_consumer_timeout_seconds * 1000
-    )
-    # Put the websocket in a try block to catch any disconnect exceptions
-    try:
-        message = await websocket.receive_json()
-        if message['action'] != 'monitor_file_processing':
-            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
-        if 'file_id' not in message['payload']:
-            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
-        # Get the file ID
-        file_id = message['payload']['file_id']
-        # Check that the file exists
-        file = session.exec(select(File).where(File.id == file_id)).first()
-        if not file:
-            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
-        # Start sending back file processing statuses
-        # This iterates over all the messages in the kafka monitoring topic for this file
-        # It continues polling and sending back messages until the final status is reached
-        # or the client disconnects or consumer times out
+    mq_conn = await aio_pika.connect_robust(host=settings.rabbitmq_host,
+                                            login=settings.rabbitmq_secret_username,
+                                            password=settings.rabbitmq_secret_password)
+    async with mq_conn:
+        channel = await mq_conn.channel()
+        # Put the websocket in a try block to catch any disconnect exceptions
+        try:
+            message = await websocket.receive_json()
+            if message['action'] != 'monitor_file_processing':
+                raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+            if 'file_id' not in message['payload']:
+                raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+            # Get the file ID
+            file_id = message['payload']['file_id']
+            # Check that the file exists
+            file = session.exec(select(File).where(File.id == file_id)).first()
+            if not file:
+                raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+            # Start sending back file processing statuses, starting with the current file status
+            await websocket.send_json({'status': file.status})
 
-        # TODO:  This is inefficient because the consumer is synchronous.
-        # DEBUG
-        print('before consumer poll')
-        print(f'file_id: {file_id}')
-
-        cycles_without_records = 0
-        while cycles_without_records < settings.app_file_status_consumer_timeout_seconds:
-            record = file_status_msg_consumer.poll(max_records=1, update_offsets=True)
-            if not record:
-                print('no record')
-                cycles_without_records += 1
-                await asyncio.sleep(1)
-                continue
-            cycles_without_records = 0
-            status_record = record[TopicPartition(topic='monitor_file_processing',
-                                                  partition=0)][0]
-            status_msg = status_record.value
-            status_key = status_record.key
-            if status_key == file_id:
-                # Send the status message to the websocket
-                await websocket.send_json(status_msg)
-                if status_msg['status'] == ORDERED_FILE_STATUSES[-1]:
-                    break
-
-        file_status_msg_consumer.close()
-        await websocket.close()
-    except WebSocketDisconnect:
-        # The client disconnected, so close the websocket
-        file_status_msg_consumer.close()
-        await websocket.close()
+            await channel.declare_exchange(name='monitor_file_processing', type='fanout')
+            queue = await channel.declare_queue(name='', exclusive=True)
+            await queue.bind(exchange='monitor_file_processing')
+            async with queue.iterator() as queue_iter:
+                async for message in queue_iter:
+                    async with message.process():
+                        body = json.loads(message.body.decode('utf-8'))
+                        asyncio.run(websocket.send_json(body))
+                        if body['status'] == ORDERED_FILE_STATUSES[-1]:
+                            # Stop consuming
+                            break
+            await websocket.close()
+        except WebSocketDisconnect:
+            # The client disconnected, so close the websocket
+            await websocket.close()

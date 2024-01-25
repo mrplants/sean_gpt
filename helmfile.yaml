@@ -89,21 +89,10 @@ releases:
     - name: tenant.users[0].name
       value: "minio-user"
       
-  - name: kafka
-    chart: bitnami/kafka
+  - name: rabbitmq
+    chart: bitnami/rabbitmq-cluster-operator
     createNamespace: true
-    namespace: kafka
-    set:
-    - name: listeners.client.protocol
-      value: "PLAINTEXT"
-    - name: sasl.interbroker.password
-      value: {{ .Environment.Values.kafka.sasl.interbroker.password | quote}}
-    - name: sasl.controller.password
-      value: {{ .Environment.Values.kafka.sasl.controller.password | quote}}
-{{ if eq (exec "helm" (list "list" "-f" "kafka" "--namespace" "kafka" "--output" "json" "--kube-context" .Environment.KubeContext)) "[]" }}
-    - name: kraft.clusterId
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}" "--context" .Environment.KubeContext) | exec "base64" (list "-d") | quote }}
-{{ end }}
+    namespace: rabbitmq
 
   - name: keda
     chart: kedacore/keda
@@ -193,6 +182,7 @@ releases:
     - {{ toYaml .Environment.Values | nindent 6}}
     needs:
     - minio-tenant/minio-tenant
+    - rabbitmq/rabbitmq
     {{ if eq .Environment.Name "prod" }}
     - ingress-nginx/ingress-nginx
     - cert-manager/cert-manager

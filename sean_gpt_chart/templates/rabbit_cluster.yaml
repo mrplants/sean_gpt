@@ -1,0 +1,22 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: file-processing-queue
+spec:
+  secretBackend:
+    externalSecret: 
+      name: "rabbitmq-secret"
+---
+apiVersion: v1
+data:
+  default_user.conf: {{ printf "default_user = %s\ndefault_pass = %s" .Values.rabbitmq.secret_username .Values.rabbitmq.secret_password | b64enc }}
+  host: {{ .Values.rabbitmq.secret_host | b64enc }} # 'file-processing-queue.seangpt.svc'
+  password: {{ .Values.rabbitmq.secret_password | b64enc }}
+  port: {{ .Values.rabbitmq.secret_port | b64enc }} # '5672'
+  provider: {{ .Values.rabbitmq.secret_provider | b64enc }} # "rabbitmq"
+  type: {{ .Values.rabbitmq.secret_type | b64enc }} # 'rabbitmq'
+  username:  {{ .Values.rabbitmq.secret_username | b64enc }}
+kind: Secret
+metadata:
+  name: "rabbitmq-secret" 
+type: Opaque

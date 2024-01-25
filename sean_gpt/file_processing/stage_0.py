@@ -8,6 +8,7 @@ import os
 import tempfile
 import json
 import uuid
+import sys
 
 from kafka import KafkaConsumer, KafkaProducer, TopicPartition
 from sqlmodel import Session, select
@@ -37,7 +38,8 @@ def get_file_id_from_kafka_topic(kafka_topic: str) -> str:
     records = message_consumer.poll(max_records=1, timeout_ms=5000, update_offsets=True)
     if not records:
         message_consumer.close()
-        raise Exception(f"File ID not found in kafka topic {kafka_topic}.")
+        print(f"File ID not found in kafka topic {kafka_topic}.")
+        sys.exit(0)
     file_id = records[TopicPartition(topic=kafka_topic, partition=0)][0].value['file_id']
     message_consumer.commit()
     message_consumer.close()
@@ -70,7 +72,8 @@ def get_file_record_from_postgres(file_id: str) -> File:
     with Session(get_db_engine()) as session:
         file_record = session.exec(select(File).where(File.id == file_id)).first()
         if not file_record:
-            raise Exception(f"File with ID {file_id} not found in database.")
+            print(f"File with ID {file_id} not found in database.")
+            sys.exit(0)
         return file_record
 
 @describe(
@@ -136,7 +139,8 @@ def chunk_file(file_id: str, file_record: File, temp_file_path: str, next_stage_
     if file_record.type == "txt":
         chunk_txt_file(file_id, temp_file_path, file_record, next_stage_producer)
     else:
-        raise Exception(f"Unsupported file type: {file_record.type}")
+        print(f"Unsupported file type: {file_record.type}")
+        sys.exit(0)
 
 if __name__ == "__main__":
     # Retrieve a single file ID from the stage 0 kafka topic

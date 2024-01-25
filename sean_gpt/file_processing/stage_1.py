@@ -6,6 +6,7 @@ the vector embedding, and posts the result to milvus.
 from typing import Tuple, List
 import json
 from unittest.mock import patch
+import sys
 
 from kafka import KafkaConsumer, KafkaProducer, TopicPartition
 from openai import OpenAI
@@ -18,47 +19,8 @@ from ..model.file import FILE_STATUS_COMPLETE, TextFileChunkingStatus
 from ..util.database import _DATABASE_URL
 
 if settings.debug:
-    def get_random_embedding(*args, **kwargs):
-        """ Mocks the openai embeddings endpoint.
-        """
-        print('Mock OpenAI embeddings request:', kwargs['input'])
-        if type(kwargs['input']) == str:
-            return {
-                "object": "list",
-                "data": [
-                    {
-                    "object": "embedding",
-                    "embedding": [0.0 for _ in range(1536)],
-                    "index": 0
-                    }
-                ],
-                "model": "text-embedding-ada-002",
-                "usage": {
-                    "prompt_tokens": 8,
-                    "total_tokens": 8
-                }
-            }
-        else:
-            # The input is a list of strings
-            # So return a list of embeddings that matches the length of the input
-            return {
-                "object": "list",
-                "data": [
-                    {
-                    "object": "embedding",
-                    "embedding": [0.0 for _ in range(1536)],
-                    "index": i
-                    } for i in range(len(kwargs['input']))
-                ],
-                "model": "text-embedding-ada-002",
-                "usage": {
-                    "prompt_tokens": 8,
-                    "total_tokens": 8
-                }
-            }
-    embeddings_patch = patch('openai.resources.Embeddings.create',
-                            new=get_random_embedding)
-    embeddings_patch.start()
+    from ..routers.mock.openai import startup
+    startup()
 
 openai_client = OpenAI(api_key = settings.openai_api_key)
 connections.connect(host=settings.milvus_host, port=settings.milvus_port)
@@ -134,7 +96,8 @@ def increment_chunks_processed_count(file_id: str) -> Tuple[int, int]:
         ).first()
 
         if not result:
-            raise Exception(f"File with ID {file_id} not found in database.")
+            print(f"File with ID {file_id} not found in database.")
+            sys.exit(0)
 
         return result[0], result[1]
 

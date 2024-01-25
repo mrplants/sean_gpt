@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
     minio_access_key: str = Field(alias='sean_gpt_minio_access_key')
     minio_secret_key: str = Field(alias='sean_gpt_minio_secret_key')
+    rabbitmq_secret_password: str = Field(alias='sean_gpt_rabbitmq_secret_password')
+    rabbitmq_secret_username: str = Field(alias='sean_gpt_rabbitmq_secret_username')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')
@@ -47,6 +49,7 @@ class Settings(BaseSettings):
     minio_port: str = Field(alias='sean_gpt_minio_port')
 
     kafka_brokers: str = Field(alias='sean_gpt_kafka_brokers')
+    rabbitmq_host: str = Field(alias='sean_gpt_rabbitmq_host')
 
     milvus_host: str = Field(alias='sean_gpt_milvus_host')
     milvus_port: str = Field(alias='sean_gpt_milvus_port')

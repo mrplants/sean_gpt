@@ -31,6 +31,47 @@ async def get_openai_stream(*args, **kwargs):
     print('Mock OpenAI response:', openai_response)
     return AsyncMockStream(openai_response, delay)
 
+def get_random_embedding(*args, **kwargs):
+    """ Mocks the openai embeddings endpoint.
+    """
+    print('Mock OpenAI embeddings request:', kwargs['input'])
+    if type(kwargs['input']) == str:
+        return {
+            "object": "list",
+            "data": [
+                {
+                "object": "embedding",
+                "embedding": [0.0 for _ in range(1536)],
+                "index": 0
+                }
+            ],
+            "model": "text-embedding-ada-002",
+            "usage": {
+                "prompt_tokens": 8,
+                "total_tokens": 8
+            }
+        }
+    else:
+        # The input is a list of strings
+        # So return a list of embeddings that matches the length of the input
+        return {
+            "object": "list",
+            "data": [
+                {
+                "object": "embedding",
+                "embedding": [0.0 for _ in range(1536)],
+                "index": i
+                } for i in range(len(kwargs['input']))
+            ],
+            "model": "text-embedding-ada-002",
+            "usage": {
+                "prompt_tokens": 8,
+                "total_tokens": 8
+            }
+        }
+embeddings_patch = patch('openai.resources.Embeddings.create',
+                        new=get_random_embedding)
+
 chat_completion_patch = patch('openai.resources.chat.AsyncCompletions.create',
                               new=get_openai_stream)
 
@@ -40,9 +81,11 @@ def startup():
     redis_conn.set("openai_response_delay", 0.1)
     redis_conn.set("latest_openai_request", json.dumps({'msg':"No request yet submitted"}))
     chat_completion_patch.start()
+    embeddings_patch.start()
 
 def shutdown():
     chat_completion_patch.stop()
+    embeddings_patch.stop()
 
 router = APIRouter(prefix="/mock/openai")
 

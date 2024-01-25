@@ -189,12 +189,6 @@ releases:
       value: true
     - name: environment
       value: {{ if eq .Environment.Name "default" }}local{{ else }}{{ .Environment.Name }}{{ end }}
-    - name: database.host
-      value: "postgres-postgresql.postgres.svc.cluster.local"
-    - name: redis.host
-      value: "redis-master.redis.svc.cluster.local"
-    - name: minio.host
-      value: "minio.minio-tenant.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
     needs:

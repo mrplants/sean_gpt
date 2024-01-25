@@ -8,6 +8,7 @@ import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from kafka import KafkaProducer
+import kafka
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
@@ -110,6 +111,7 @@ async def upload_file( # pylint: disable=missing-function-docstring
             'status': FILE_STATUS_AWAITING_PROCESSING
         })
     )
+
     # Pass a message to start the file processing pipeline
     file_kafka_producer.send(
         'file_processing_stage_0',
@@ -117,6 +119,8 @@ async def upload_file( # pylint: disable=missing-function-docstring
             'file_id': str(file_id)
         })
     )
+    file_kafka_producer.flush()
+    print(f'sent message to monitor_file_processing topic for file {file_id}')
 
     # Return the file record
     return file_record

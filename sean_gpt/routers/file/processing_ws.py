@@ -1,12 +1,13 @@
 """ This module contains the route for monitoring file processing status via websocket.
 """
+from select import poll
 import uuid
 import json
+import asyncio
 
 from fastapi import APIRouter, WebSocket, status, WebSocketException, WebSocketDisconnect, Query
 from sqlmodel import select
-from kafka import KafkaConsumer
-from tomlkit import key
+from kafka import KafkaConsumer, TopicPartition
 
 from ...util.describe import describe
 from ...config import settings
@@ -70,6 +71,16 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
     #          'file_id': "..."
     #      }
     #  }
+    file_status_msg_consumer = KafkaConsumer(
+        'monitor_file_processing',
+        bootstrap_servers=settings.kafka_brokers,
+        auto_offset_reset='earliest',
+        enable_auto_commit=False,
+        group_id='monitor_file_processing',
+        value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+        key_deserializer=lambda x: x.decode('utf-8'),
+        consumer_timeout_ms=settings.app_file_status_consumer_timeout_seconds * 1000
+    )
     # Put the websocket in a try block to catch any disconnect exceptions
     try:
         message = await websocket.receive_json()
@@ -88,24 +99,33 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
         # It continues polling and sending back messages until the final status is reached
         # or the client disconnects or consumer times out
 
-        file_status_msg_consumer = KafkaConsumer(
-            'monitor_file_processing',
-            bootstrap_servers=settings.kafka_brokers,
-            auto_offset_reset='earliest',
-            enable_auto_commit=False,
-            group_id='monitor_file_processing',
-            value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-            key_deserializer=lambda x: x.decode('utf-8'),
-            consumer_timeout_ms=settings.app_file_status_consumer_timeout_seconds * 1000
-        )
         # TODO:  This is inefficient because the consumer is synchronous.
-        for msg in file_status_msg_consumer:
-            if msg.key == str(file_id):
-                await websocket.send_json(msg.value)
-                print(msg)
-                if msg.value['status'] == ORDERED_FILE_STATUSES[-1]:
+        # DEBUG
+        print('before consumer poll')
+        print(f'file_id: {file_id}')
+
+        cycles_without_records = 0
+        while cycles_without_records < settings.app_file_status_consumer_timeout_seconds:
+            record = file_status_msg_consumer.poll(max_records=1, update_offsets=True)
+            if not record:
+                print('no record')
+                cycles_without_records += 1
+                await asyncio.sleep(1)
+                continue
+            cycles_without_records = 0
+            status_record = record[TopicPartition(topic='monitor_file_processing',
+                                                  partition=0)][0]
+            status_msg = status_record.value
+            status_key = status_record.key
+            if status_key == file_id:
+                # Send the status message to the websocket
+                await websocket.send_json(status_msg)
+                if status_msg['status'] == ORDERED_FILE_STATUSES[-1]:
                     break
+
+        file_status_msg_consumer.close()
         await websocket.close()
     except WebSocketDisconnect:
         # The client disconnected, so close the websocket
+        file_status_msg_consumer.close()
         await websocket.close()

@@ -3,7 +3,7 @@
 import uuid
 from uuid import UUID
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlmodel import Field, SQLModel, Relationship
 
@@ -44,6 +44,15 @@ SUPPORTED_FILE_TYPES = (
     "tsv",
 )
 
+class TextFileChunkingStatus(SQLModel, table=True):
+    """ TextFileStatus model. """
+    id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    file_id: UUID = Field(foreign_key="file.id", index=True)
+    total_chunks: int
+    chunks_processed: int = 0
+
+    file: "File" = Relationship(back_populates="processing_status")
+
 class File(SQLModel, table=True):
     """ File model. """
     id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -58,6 +67,10 @@ class File(SQLModel, table=True):
 
     owner: "AuthenticatedUser" = Relationship(back_populates="files")
     file_share_set_links: List["FileShareSetLink"] = Relationship(
+        back_populates="file",
+        sa_relationship_kwargs={"cascade": "all, delete"})
+    
+    processing_status: Optional[TextFileChunkingStatus] = Relationship(
         back_populates="file",
         sa_relationship_kwargs={"cascade": "all, delete"})
 

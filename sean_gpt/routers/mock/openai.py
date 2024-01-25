@@ -7,12 +7,14 @@
 # Disable pylint flags for new type of docstring:
 # pylint: disable=missing-function-docstring
 
+from math import e
 from unittest.mock import patch
 import asyncio
 from typing import Any
 import json
 
 from fastapi import APIRouter, Body
+from openai import embeddings
 import redis
 
 from ...config import settings

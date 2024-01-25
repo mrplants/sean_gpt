@@ -1,4 +1,4 @@
-""" Performs the first stage of file processing.
+""" Performs the first stage of file processing: chunking
 
 This file is used as a kubernetes job that retrieves a file ID from a kafka topic, downloads the
 file from minio, and then chunks the file, posting the chunks to a kafka topic for processing by
@@ -7,13 +7,13 @@ stage 1.
 import os
 import tempfile
 import json
+import uuid
 
 from kafka import KafkaConsumer, KafkaProducer, TopicPartition
 from sqlmodel import Session, select
-from tomlkit import key
 
 from ..util.describe import describe
-from ..model.file import File, FILE_STATUS_PROCESSING
+from ..model.file import File, FILE_STATUS_PROCESSING, TextFileChunkingStatus
 from ..config import settings
 from ..util.minio_client import get_minio_client, USER_UPLOAD_BUCKET_NAME
 from ..util.database import get_db_engine
@@ -31,14 +31,13 @@ def get_file_id_from_kafka_topic(kafka_topic: str) -> str:
     message_consumer = KafkaConsumer(
         kafka_topic,
         bootstrap_servers=settings.kafka_brokers,
-        group_id="file_processing_stage_0",
+        group_id=kafka_topic,
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
     records = message_consumer.poll(max_records=1, timeout_ms=5000, update_offsets=True)
     if not records:
         message_consumer.close()
         raise Exception(f"File ID not found in kafka topic {kafka_topic}.")
-    # The first record in the first partition is the file ID
     file_id = records[TopicPartition(topic=kafka_topic, partition=0)][0].value['file_id']
     message_consumer.commit()
     message_consumer.close()
@@ -80,7 +79,28 @@ def get_file_record_from_postgres(file_id: str) -> File:
 def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File, producer: KafkaProducer):
     """ Chunks a txt file, and posts the chunks to a kafka topic.
     """
-    # Check the file type and chunk accordingly.
+    # Count the chunks in the file WITHOUT posting them to kafka
+    num_chunks = 0
+    with open(temp_file_path, "r", encoding='utf-8') as file:
+        while True:
+            file_chunk = file.read(CHUNK_LENGTH)
+            if not file_chunk:
+                break
+            num_chunks += 1
+            seek_position = file.tell() - (CHUNK_LENGTH - CHUNK_STRIDE)
+            if seek_position < 0:
+                file.seek(0, os.SEEK_END)
+            else:
+                file.seek(seek_position)
+    # Create a record to track the chunking status
+    with Session(get_db_engine()) as session:
+        session.add(
+            TextFileChunkingStatus(
+                file_id=uuid.UUID(file_id),
+                total_chunks=num_chunks
+            )
+        )
+        session.commit()
     # The chunk processing will happen in a separate kubernetes job, so post the chunks to a kafka
     # topic.
     # Chunk the file
@@ -95,7 +115,8 @@ def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File, produce
                 'file_processing_stage_1',
                 {
                     'file_id': str(file_id),
-                    'chunk': file_chunk
+                    'chunk_txt': file_chunk,
+                    'chunk_location': file.tell() - len(file_chunk),
                 }
             )
             seek_position = file.tell() - (CHUNK_LENGTH - CHUNK_STRIDE)
@@ -103,6 +124,7 @@ def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File, produce
                 file.seek(0, os.SEEK_END)
             else:
                 file.seek(seek_position)
+    producer.flush()
 
 @describe(
 """ Chunk a file.
@@ -135,6 +157,7 @@ if __name__ == "__main__":
             'status': FILE_STATUS_PROCESSING
         }
     )
+    producer.flush()
     # Retrieve the file record from postgres
     file_record = get_file_record_from_postgres(file_id)
     # Download the file from minio

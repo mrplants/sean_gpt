@@ -5,9 +5,20 @@ database:
   driver: ""
   port: 5432
   name: "sean_gpt"
+  host: "postgres-postgresql.postgres.svc.cluster.local"
+
+redis:
+  host: "redis-master.redis.svc.cluster.local"
 
 minio:
+  host: "minio.minio-tenant.svc.cluster.local"
   port: 443
+
+milvus:
+  host: "milvus.milvus.svc.cluster.local"
+  port: 19530
+  collection:
+    name: "sean_gpt"
 
 kafka:
   brokers: >

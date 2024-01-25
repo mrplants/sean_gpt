@@ -1,0 +1,57 @@
+{{/*
+recursiveFlattenDictEnv - Recursively flattens a nested dictionary for env variables.
+Args:
+    dict: The dictionary to flatten.
+    prefix: The string to prefix to keys (used for recursion).
+*/}}
+{{- define "recursiveFlattenDictEnv" -}}
+    {{- $localCtx := . -}}
+    {{- range $key, $value := .dict -}}
+        {{- if kindOf $value | eq "map" -}}
+            {{- include "recursiveFlattenDictEnv" (dict "dict" $value "prefix" (printf "%s%s_" $localCtx.prefix $key)) -}}
+        {{- else -}}
+            {{- printf "- name: %s%s\n  value: \"%v\"\n" $localCtx.prefix $key $value -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: file-processing-stage-1
+  namespace: seangpt
+spec:
+  jobTargetRef:
+    template:
+      spec:
+        containers:
+        - name: file-processing-stage-1
+          image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "sean_gpt.file_processing.stage_1"]
+          env:
+{{ if eq .Values.environment "local" }}
+          - name: SEAN_GPT_DEBUG
+            value: "1"
+{{ end }}
+          {{- include "recursiveFlattenDictEnv" (dict "dict" .Values "prefix" "sean_gpt_") | nindent 10 }}
+{{ if and (eq .Values.environment "local") .Values.mount_host }}
+          volumeMounts:
+          - name: host-volume
+            mountPath: /app/sean_gpt
+        volumes:
+        - name: host-volume
+          hostPath:
+            path: /mnt/sean_gpt
+            type: Directory
+{{ end }}
+
+
+  pollingInterval: 1
+  triggers:
+  - type: kafka
+    metadata:
+      allowIdleConsumers: "true"
+      bootstrapServers: {{ .Values.kafka.brokers }}
+      consumerGroup: "file_processing_stage_1"
+      topic: "file_processing_stage_1"

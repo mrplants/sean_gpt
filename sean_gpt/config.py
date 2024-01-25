@@ -48,6 +48,10 @@ class Settings(BaseSettings):
 
     kafka_brokers: str = Field(alias='sean_gpt_kafka_brokers')
 
+    milvus_host: str = Field(alias='sean_gpt_milvus_host')
+    milvus_port: str = Field(alias='sean_gpt_milvus_port')
+    milvus_collection_name: str = Field(alias='sean_gpt_milvus_collection_name')
+
     app_phone_number: str = Field(alias='sean_gpt_app_phone_number')
     app_welcome_message: str = Field(alias='sean_gpt_app_welcome_message')
     app_request_referral_message: str = Field(alias='sean_gpt_app_request_referral_message')

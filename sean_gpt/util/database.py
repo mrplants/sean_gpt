@@ -4,6 +4,7 @@ from typing import Annotated, Any
 from sqlmodel import create_engine, Session, select
 from fastapi import Depends
 import aioredis
+from pymilvus import Collection, connections, DataType, FieldSchema, CollectionSchema, utility
 
 from ..config import settings
 from .auth import get_password_hash
@@ -18,7 +19,33 @@ from ..model.chat import Chat
 from ..model.ai import AI
 
 # Module-level variable to store the database engine instance
+_DATABASE_URL = f"{settings.database_dialect}{settings.database_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}" # pylint: disable=line-too-long
 _DB_ENGINE = None
+
+def create_milvus_collection_if_necessary():
+    """Create the Milvus collection if it does not already exist."""
+
+    # Connect to the Milvus server
+    connections.connect(host=settings.milvus_host, port=settings.milvus_port)
+
+    # Check if the collection already exists
+    if settings.milvus_collection_name in utility.list_collections():
+        print(f"Collection '{settings.milvus_collection_name}' already exists.")
+        return
+
+    # Define the fields
+    chunk_id = FieldSchema(name="chunk_id", dtype=DataType.INT64, is_primary=True, auto_id=True)
+    file_id = FieldSchema(name="file_id", dtype=DataType.VARCHAR, max_length=36)  # For UUIDs
+    chunk_location = FieldSchema(name="chunk_location", dtype=DataType.INT64)
+    chunk_embedding = FieldSchema(name="chunk_embedding", dtype=DataType.FLOAT_VECTOR, dim=1536)  # Default dimensionality
+    chunk_txt = FieldSchema(name="chunk_txt", dtype=DataType.VARCHAR, max_length=1024)
+
+    # Define the schema
+    schema = CollectionSchema(fields=[chunk_id, file_id, chunk_location, chunk_embedding, chunk_txt], description="Chunk collection schema")
+
+    # Create the collection
+    milvus_collection = Collection(name=settings.milvus_collection_name, schema=schema)
+    print(f"Collection '{settings.milvus_collection_name}' created successfully.")
 
 @describe(
 """ Resets the database connection. """)
@@ -32,8 +59,7 @@ def get_db_engine(): # pylint: disable=missing-function-docstring
     global _DB_ENGINE # pylint: disable=global-statement
     if _DB_ENGINE is None:
         # dialect+driver://username:password@host:port/database
-        database_url = f"{settings.database_dialect}{settings.database_driver}://{settings.api_db_user}:{settings.api_db_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}" # pylint: disable=line-too-long
-        _DB_ENGINE = create_engine(database_url, echo=settings.debug)
+        _DB_ENGINE = create_engine(_DATABASE_URL, echo=settings.debug)
     return _DB_ENGINE
 
 @describe(

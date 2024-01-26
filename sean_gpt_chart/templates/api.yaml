@@ -35,6 +35,9 @@ spec:
         app: api
     spec:
       initContainers:
+      - name: wait-for-milvus
+        image: busybox
+        command: ['sh', '-c', 'until nslookup {{ .Values.milvus.host }}; do echo waiting for {{ .Values.milvus.host }}; sleep 1; done;']
       - name: wait-for-postgres
         image: busybox
         command: ['sh', '-c', 'until nslookup {{ .Values.database.host }}; do echo waiting for {{ .Values.database.host }}; sleep 1; done;']

@@ -21,6 +21,8 @@ app:
   phone_verification_message: "Your verification code is: {}"
   ws_token_timeout_seconds: 30
   file_status_consumer_timeout_seconds: 60
+  file_processing_stage_txtfile2chunk_topic_name: "file_processing_stage_txtfile2chunk"
+  file_processing_stage_chunk2embedding_topic_name: "file_processing_stage_chunk2embedding"
 
 api:
   replicas: 1

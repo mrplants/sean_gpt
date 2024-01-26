@@ -20,28 +20,6 @@ ORDERED_FILE_STATUSES = (
 SUPPORTED_FILE_TYPES = (
     # Plaintext file types
     "txt",
-    "md",
-    "rst",
-
-    # Code file types
-    "py",
-    "c",
-    "cpp",
-    "h",
-    "hpp",
-    "java",
-    "js",
-    "ts",
-    "html",
-    "css",
-    "json",
-
-    # Data file types
-    "xml",
-    "yaml",
-    "yml",
-    "csv",
-    "tsv",
 )
 
 class TextFileChunkingStatus(SQLModel, table=True):

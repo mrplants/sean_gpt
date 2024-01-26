@@ -89,19 +89,33 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
             if not file:
                 raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
             # Start sending back file processing statuses, starting with the current file status
-            await websocket.send_json({'status': file.status})
+            for status in ORDERED_FILE_STATUSES:
+                await websocket.send_json({
+                    'file_id': str(file_id),
+                    'status': status})
+                if file.status == status:
+                    break
 
             await channel.declare_exchange(name='monitor_file_processing', type='fanout')
             queue = await channel.declare_queue(name='', exclusive=True)
             await queue.bind(exchange='monitor_file_processing')
             async with queue.iterator() as queue_iter:
-                async for message in queue_iter:
-                    async with message.process():
-                        body = json.loads(message.body.decode('utf-8'))
-                        asyncio.run(websocket.send_json(body))
-                        if body['status'] == ORDERED_FILE_STATUSES[-1]:
-                            # Stop consuming
-                            break
+                while True:
+                    try:
+                        # Wait for a message for 5 seconds, then break if timeout occurs
+                        message = await asyncio.wait_for(queue_iter.__anext__(), timeout=settings.app_file_status_consumer_timeout_seconds)
+                    except asyncio.TimeoutError:
+                        # Break the loop if no message is received in 5 seconds
+                        print(f"No message received in {settings.app_file_status_consumer_timeout_seconds} seconds. Exiting.")
+                        break
+                    else:
+                        async with message.process():
+                            body = json.loads(message.body.decode('utf-8'))
+                            if body['file_id'] == file_id:
+                                await websocket.send_json(body)
+                                if (body['status'] == ORDERED_FILE_STATUSES[-1]):
+                                    # Stop consuming
+                                    break
             await websocket.close()
         except WebSocketDisconnect:
             # The client disconnected, so close the websocket

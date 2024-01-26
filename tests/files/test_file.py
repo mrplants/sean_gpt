@@ -57,8 +57,12 @@
 # TODO: Test that only file owners can access non-public files
 
 from pathlib import Path
+import threading as th
 
 import httpx
+from websockets.sync.client import connect as connect_ws
+from websockets.exceptions import ConnectionClosed
+import json
 
 from sean_gpt.util.describe import describe
 from sean_gpt.model.file import (
@@ -257,7 +261,7 @@ Args:
 def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
     # Semanti search not yet implemented
     pass
-    temp_file = tmp_path / "test_file.py"
+    temp_file = tmp_path / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(
         f"{sean_gpt_host}/file",
@@ -266,6 +270,37 @@ def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict
         },
         files={"file": temp_file.open("rb")}
     ).json()
+    # Wait for the file processing to be complete
+    # Create a file processing token
+    token = httpx.get(
+        f"{sean_gpt_host}/file/processing/token",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"}).json()['token']
+    timer = None
+    # Connect to the websocket
+    # Put in a try block to catch any disconnect exceptions
+    try:
+        with connect_ws(f"{sean_gpt_host}/file/processing/ws?token={token}".replace('http',
+                                                                                    'ws')) as ws:
+            # The first messagein the exchange is the prior: a list of messages.
+            ws.send(json.dumps({
+                'action': 'monitor_file_processing',
+                'payload': {
+                    'file_id': upload_response['id']
+                }
+            }))
+            def timeout_assertion():
+                ws.close()
+                assert False, "The server took too long to respond."
+            timer = th.Timer(30, timeout_assertion)
+            timer.start()
+            # The server will disconnect when the file is processed)
+            print(f'Waiting for file processing to complete...')
+            while True:
+                print(f'Received message: {ws.recv()}')
+    except ConnectionClosed:
+        timer.cancel()
+
     # Retrieve the file
     get_response = httpx.get(
         f"{sean_gpt_host}/file",

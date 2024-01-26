@@ -108,6 +108,7 @@ def test_file_processing_ws( # pylint: disable=missing-function-docstring
             timer.start()
             while True:
                 events.append(json.loads(ws.recv()))
+                print(f'received event: {events[-1]}')
             # All subsequent messages are the response.
     except ConnectionClosed:
         if timer:
@@ -120,9 +121,15 @@ def test_file_processing_ws( # pylint: disable=missing-function-docstring
         f"Expected 3 events. Received {len(events)} events: {events}"
     )
     assert events == [
-        {'status':FILE_STATUS_AWAITING_PROCESSING},
-        {'status':FILE_STATUS_PROCESSING},
-        {'status':FILE_STATUS_COMPLETE}
+        {
+            'file_id':file_record['id'],
+            'status':FILE_STATUS_AWAITING_PROCESSING},
+        {
+            'file_id':file_record['id'],
+            'status':FILE_STATUS_PROCESSING},
+        {
+            'file_id':file_record['id'],
+            'status':FILE_STATUS_COMPLETE}
     ]
 
 @describe(""" Test the verified and authorized routes. """)

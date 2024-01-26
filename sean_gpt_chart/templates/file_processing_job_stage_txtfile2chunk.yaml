@@ -18,17 +18,17 @@ Args:
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: file-processing-stage-1
+  name: file-processing-stage-0
   namespace: seangpt
 spec:
   jobTargetRef:
     template:
       spec:
         containers:
-        - name: file-processing-stage-1
+        - name: file-processing-stage-0
           image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
           imagePullPolicy: IfNotPresent
-          command: ["python", "-m", "sean_gpt.file_processing.stage_1"]
+          command: ["python", "-m", "sean_gpt.file_processing.stage_txtfile2chunk"]
           env:
 {{ if eq .Values.environment "local" }}
           - name: SEAN_GPT_DEBUG
@@ -45,13 +45,9 @@ spec:
             path: /mnt/sean_gpt
             type: Directory
 {{ end }}
-
-
   pollingInterval: 1
   triggers:
-  - type: kafka
+  - type: rabbitmq
     metadata:
-      allowIdleConsumers: "true"
-      bootstrapServers: {{ .Values.kafka.brokers }}
-      consumerGroup: "file_processing_stage_1"
-      topic: "file_processing_stage_1"
+      host: "amqp://{{.Values.rabbitmq.secret_username}}:{{.Values.rabbitmq.secret_password}}@{{.Values.rabbitmq.host}}:{{.Values.rabbitmq.secret_port}}/" # amqp://guest:password@localhost:5672/vhost
+      queueName: {{.Values.app.file_processing_stage_txtfile2chunk_topic_name}}

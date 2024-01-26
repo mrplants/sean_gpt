@@ -69,5 +69,9 @@ class Settings(BaseSettings):
     app_ws_token_timeout_seconds: int = Field(alias='sean_gpt_app_ws_token_timeout_seconds')
     app_file_status_consumer_timeout_seconds: int = (
         Field(alias='sean_gpt_app_file_status_consumer_timeout_seconds'))
+    app_file_processing_stage_chunk2embedding_topic_name: str = (
+        Field(alias='sean_gpt_app_file_processing_stage_chunk2embedding_topic_name'))
+    app_file_processing_stage_txtfile2chunk_topic_name: str = (
+        Field(alias='sean_gpt_app_file_processing_stage_txtfile2chunk_topic_name'))
 
 settings = Settings()

@@ -1,14 +1,13 @@
 """ File POST endpoint.
 """
 import hashlib
-import queue
 import tempfile
 import os
 import uuid
 import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import pika
+import aio_pika
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
@@ -99,25 +98,34 @@ async def upload_file( # pylint: disable=missing-function-docstring
     session.commit()
     session.refresh(file_record)
     # Pass the file's status (awaiting processing) to the queue for file-monitoring
-    queue_conn = pika.BlockingConnection(
-        pika.ConnectionParameters(settings.rabbitmq_host,
-                                  credentials=pika.PlainCredentials(
-                                      settings.rabbitmq_secret_username,
-                                      settings.rabbitmq_secret_password)))
-    channel = queue_conn.channel()
-    channel.exchange_declare(exchange='monitor_file_processing', exchange_type='fanout')
-    channel.basic_publish(exchange='monitor_file_processing', routing_key='', body=json.dumps({
-            'status': FILE_STATUS_AWAITING_PROCESSING
-        }))
+    connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
+                                            login=settings.rabbitmq_secret_username,
+                                            password=settings.rabbitmq_secret_password)
+    async with connection:
+        channel = await connection.channel()
 
-    # Pass a message to start the file processing pipeline
-    channel.queue_declare(queue='file_processing_stage_0')
-    channel.basic_publish(exchange='',
-                          routing_key='file_processing_stage_0',
-                          body=json.dumps({
-            'file_id': str(file_id)
-        }))
-    queue_conn.close()
+        exchange = await channel.declare_exchange(name="monitor_file_processing", type="fanout")
+
+        await exchange.publish(
+            aio_pika.Message(
+            json.dumps({
+                'file_id': str(file_id),
+                'status': FILE_STATUS_AWAITING_PROCESSING
+            }).encode('utf-8'),
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        ),
+            routing_key='',
+        )
+
+        await channel.declare_queue(settings.app_file_processing_stage_txtfile2chunk_topic_name)
+        # Sending the message
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+            json.dumps({
+                'file_id': str(file_id),
+            }).encode('utf-8'), delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        ), routing_key=settings.app_file_processing_stage_txtfile2chunk_topic_name,
+        )
 
     # Return the file record
     return file_record

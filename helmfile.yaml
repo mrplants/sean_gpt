@@ -182,6 +182,8 @@ releases:
     - {{ toYaml .Environment.Values | nindent 6}}
     needs:
     - minio-tenant/minio-tenant
+    - redis/redis
+    - postgres/postgres
     - rabbitmq/rabbitmq
     {{ if eq .Environment.Name "prod" }}
     - ingress-nginx/ingress-nginx

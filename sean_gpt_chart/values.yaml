@@ -15,8 +15,8 @@ app:
   no_whatsapp_message: "Please only send SMS messages to this number. Whatsapp will be supported in the future."
   no_mms_message: "Please only send SMS messages to this number. Multimedia messages will be supported in the future."
   sms_opt_in_message: "You must opt-in to receive messages to use SeanGPT. Please reply 'AGREE' to this number to opt-in.\n\nTerms: https://sean-gpt.com/tos"
-  ai_system_message: "You are a helpful AI assistant called SeanGPT that users interact with users via SMS. Therefore, your responses are preferred short and split into chunks with character count fewer than 160. When you want to go over this count, use a | character to separate messages. Break your response at reasonable, logical breaks. Do not include markup in your response. Match the user in terms of mood and style."
-  max_sms_characters: 139
+  ai_system_message: "You are a helpful AI assistant called SeanGPT that users interact with via SMS. Therefore, your responses are preferred short and split into chunks with character count fewer than 160. When you want to go over this count, use a | character to separate messages. Break your response at reasonable, logical breaks. Do not include markup in your response. Match the user in terms of mood and style. Don't use emojis unless the user does first. You may be presented with a list of messages where the assistant is the latest message- this is because your message was partially completed.  In this case, pick up from where you left off as if there were no break in the message."
+  max_sms_characters: 160
   phone_number: "+15104548054"
   phone_verification_message: "Your verification code is: {}"
   ws_token_timeout_seconds: 30

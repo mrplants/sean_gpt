@@ -259,8 +259,6 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    # Semanti search not yet implemented
-    pass
     temp_file = tmp_path / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(

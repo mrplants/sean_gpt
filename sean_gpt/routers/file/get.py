@@ -78,10 +78,10 @@ async def get_files( # pylint: disable=missing-function-docstring
             limit=10, # TODO: Make this configurable in the GET query
             param={},
             output_fields=['file_id']
-        ).result()
+        )
         # Finally, retrieve the files that match the results
-        file_ids = [hit.entity.get('file_id') for hits in results for hit in hits]
-        ret_files = session.exec(select(File).where(File.id in file_ids)).all()
+        file_ids = [hit.entity.get('file_id') for hit in results[0]]
+        ret_files = session.exec(select(File).where(File.id.in_(file_ids))).all()
     else:
         raise HTTPException(status_code=400, detail="Must specify file_id, share_set_id, or "
                                                     "semantic_search.")

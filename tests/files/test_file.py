@@ -180,7 +180,7 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    temp_file = tmp_path.parent / "test_file.py"
+    temp_file = tmp_path.parent / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(
         f"{sean_gpt_host}/file",
@@ -220,7 +220,7 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_share_set_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    temp_file = tmp_path / "test_file.py"
+    temp_file = tmp_path / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(
         f"{sean_gpt_host}/file",

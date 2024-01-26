@@ -49,12 +49,9 @@ def create_milvus_collection_if_necessary():
     # Create the collection index
     index_param = {
         "metric_type": "L2",
-        "index_type": "IVF_FLAT",  # This is an example, use the index type that suits your needs
-        "params": {"nlist": 128}  # This is an example, adjust the parameters according to your needs
+        "index_type": "FLAT",
     }
     milvus_collection.create_index(field_name="chunk_embedding", index_params=index_param)
-
-    print(f"Collection '{settings.milvus_collection_name}' created successfully.")
 
 @describe(
 """ Resets the database connection. """)

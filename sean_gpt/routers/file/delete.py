@@ -4,12 +4,14 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
+from pymilvus import connections, Collection
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
 from ...util.minio_client import MinioClientDep, USER_UPLOAD_BUCKET_NAME
 from ...util.describe import describe
 from ...model.file import File, ShareSet, FileShareSetLink
+from ...config import settings
 
 router = APIRouter(
     prefix="/file"
@@ -57,6 +59,14 @@ async def delete_file( # pylint: disable=missing-function-docstring
         )
     except Exception as exception:
         raise HTTPException(status_code=500, detail=str(exception)) from exception
-
+    
+    # Delete the embeddings associated with this file from milvus
+    connections.connect(host=settings.milvus_host, port=settings.milvus_port)
+    milvus_collection = Collection(name=settings.milvus_collection_name)
+    milvus_collection.load()
+    milvus_collection.delete(
+        expr='file_id in {}'.format([str(file_id)]),
+    )
+    
     session.delete(share_set)
     session.commit()

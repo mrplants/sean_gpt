@@ -4,7 +4,7 @@ import uuid
 import json
 import asyncio
 
-from fastapi import APIRouter, WebSocket, status, WebSocketException, WebSocketDisconnect, Query
+from fastapi import APIRouter, WebSocket, WebSocketException, WebSocketDisconnect, Query
 from sqlmodel import select
 import aio_pika
 
@@ -103,17 +103,21 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
                 while True:
                     try:
                         # Wait for a message for 5 seconds, then break if timeout occurs
-                        message = await asyncio.wait_for(queue_iter.__anext__(), timeout=settings.app_file_status_consumer_timeout_seconds)
+                        message = await asyncio.wait_for(
+                            queue_iter.__anext__(), # pylint: disable=unnecessary-dunder-call
+                            timeout=settings.app_file_status_consumer_timeout_seconds)
                     except asyncio.TimeoutError:
                         # Break the loop if no message is received in 5 seconds
-                        print(f"No message received in {settings.app_file_status_consumer_timeout_seconds} seconds. Exiting.")
+                        print(f"No message received in "
+                              f"{settings.app_file_status_consumer_timeout_seconds} seconds. "
+                               "Exiting.")
                         break
                     else:
                         async with message.process():
                             body = json.loads(message.body.decode('utf-8'))
                             if body['file_id'] == file_id:
                                 await websocket.send_json(body)
-                                if (body['status'] == ORDERED_FILE_STATUSES[-1]):
+                                if body['status'] == ORDERED_FILE_STATUSES[-1]:
                                     # Stop consuming
                                     break
             await websocket.close()

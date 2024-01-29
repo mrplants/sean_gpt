@@ -7,7 +7,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .util.database import reset_db_connection, create_admin_if_necessary, create_milvus_collection_if_necessary
+from .util.database import (
+    reset_db_connection, create_admin_if_necessary, create_milvus_collection_if_necessary)
 from .routers import chat
 from .routers import user
 from .routers import twilio

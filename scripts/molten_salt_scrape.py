@@ -86,4 +86,5 @@ if __name__ == '__main__':
     for pdf_link in tqdm(pdf_links):
         download_dir = os.path.dirname(__file__)+'/../datasets/moltensalt_org/pdf'
         total_size += download_to_file(pdf_link, download_dir)
+
     print(f'Total size of downloaded PDFs: {format_size(total_size)}')

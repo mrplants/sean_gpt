@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str = Field(alias='sean_gpt_twilio_auth_token')
     minio_access_key: str = Field(alias='sean_gpt_minio_access_key')
     minio_secret_key: str = Field(alias='sean_gpt_minio_secret_key')
+    rabbitmq_secret_password: str = Field(alias='sean_gpt_rabbitmq_secret_password')
+    rabbitmq_secret_username: str = Field(alias='sean_gpt_rabbitmq_secret_username')
 
     # NOT SECRETS
     openai_api_url: str = Field(alias='sean_gpt_openai_api_url')
@@ -46,6 +48,13 @@ class Settings(BaseSettings):
     minio_host: str = Field(alias='sean_gpt_minio_host')
     minio_port: str = Field(alias='sean_gpt_minio_port')
 
+    kafka_brokers: str = Field(alias='sean_gpt_kafka_brokers')
+    rabbitmq_host: str = Field(alias='sean_gpt_rabbitmq_host')
+
+    milvus_host: str = Field(alias='sean_gpt_milvus_host')
+    milvus_port: str = Field(alias='sean_gpt_milvus_port')
+    milvus_collection_name: str = Field(alias='sean_gpt_milvus_collection_name')
+
     app_phone_number: str = Field(alias='sean_gpt_app_phone_number')
     app_welcome_message: str = Field(alias='sean_gpt_app_welcome_message')
     app_request_referral_message: str = Field(alias='sean_gpt_app_request_referral_message')
@@ -56,7 +65,18 @@ class Settings(BaseSettings):
     app_max_sms_characters: int = Field(alias='sean_gpt_app_max_sms_characters')
     app_chat_history_length: int = Field(alias='sean_gpt_app_chat_history_length')
     app_default_ai_model: str = Field(alias='sean_gpt_app_default_ai_model')
+    app_text_embedding_model: str = Field(alias='sean_gpt_app_text_embedding_model')
+    app_text_embedding_model_dim: int = Field(alias='sean_gpt_app_text_embedding_model_dim')
     app_phone_verification_message: str = Field(alias='sean_gpt_app_phone_verification_message')
-    app_chat_token_timeout_seconds: int = Field(alias='sean_gpt_app_chat_token_timeout_seconds')
+    app_ws_token_timeout_seconds: int = Field(alias='sean_gpt_app_ws_token_timeout_seconds')
+    app_file_status_consumer_timeout_seconds: int = (
+        Field(alias='sean_gpt_app_file_status_consumer_timeout_seconds'))
+    app_file_processing_stage_chunk2embedding_topic_name: str = (
+        Field(alias='sean_gpt_app_file_processing_stage_chunk2embedding_topic_name'))
+    app_file_processing_stage_txtfile2chunk_topic_name: str = (
+        Field(alias='sean_gpt_app_file_processing_stage_txtfile2chunk_topic_name'))
+    app_chunk2embedding_batch_size: int = (
+        Field(alias='sean_gpt_app_chunk2embedding_batch_size'))
+    api_domain: str = Field(alias='sean_gpt_api_domain')
 
 settings = Settings()

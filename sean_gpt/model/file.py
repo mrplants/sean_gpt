@@ -3,7 +3,7 @@
 import uuid
 from uuid import UUID
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlmodel import Field, SQLModel, Relationship
 
@@ -11,32 +11,25 @@ FILE_STATUS_AWAITING_PROCESSING = "awaiting processing"
 FILE_STATUS_PROCESSING = "processing"
 FILE_STATUS_COMPLETE = "complete"
 
+ORDERED_FILE_STATUSES = (
+    FILE_STATUS_AWAITING_PROCESSING,
+    FILE_STATUS_PROCESSING,
+    FILE_STATUS_COMPLETE,
+)
+
 SUPPORTED_FILE_TYPES = (
     # Plaintext file types
     "txt",
-    "md",
-    "rst",
-
-    # Code file types
-    "py",
-    "c",
-    "cpp",
-    "h",
-    "hpp",
-    "java",
-    "js",
-    "ts",
-    "html",
-    "css",
-    "json",
-
-    # Data file types
-    "xml",
-    "yaml",
-    "yml",
-    "csv",
-    "tsv",
 )
+
+class TextFileChunkingStatus(SQLModel, table=True):
+    """ TextFileStatus model. """
+    id: UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    file_id: UUID = Field(foreign_key="file.id", index=True)
+    total_chunks: int
+    chunks_processed: int = 0
+
+    file: "File" = Relationship(back_populates="processing_status")
 
 class File(SQLModel, table=True):
     """ File model. """
@@ -52,6 +45,10 @@ class File(SQLModel, table=True):
 
     owner: "AuthenticatedUser" = Relationship(back_populates="files")
     file_share_set_links: List["FileShareSetLink"] = Relationship(
+        back_populates="file",
+        sa_relationship_kwargs={"cascade": "all, delete"})
+
+    processing_status: Optional[TextFileChunkingStatus] = Relationship(
         back_populates="file",
         sa_relationship_kwargs={"cascade": "all, delete"})
 

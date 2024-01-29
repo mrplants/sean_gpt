@@ -86,6 +86,8 @@ jobs:
             kubectl logs $pod -n seangpt -c wait-for-redis
             kubectl logs $pod -n seangpt -c wait-for-postgres
           done
+          kubectl scale deployment api --replicas=0 -n seangpt
+          kubectl scale deployment api --replicas=1 -n seangpt
           kubectl rollout status deployments/api -n seangpt --timeout 10m || true
           kubectl get pods --all-namespaces
 

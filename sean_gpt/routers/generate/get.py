@@ -26,6 +26,6 @@ async def generate_chat_response( # pylint: disable=missing-function-docstring
     # Create the token using uuid4
     token = str(uuid.uuid4())
     # Save the token in redis with a timeout
-    await redis_conn.set(token, 1, ex=settings.app_chat_token_timeout_seconds)
+    await redis_conn.set(token, 1, ex=settings.app_ws_token_timeout_seconds)
     # Return the token
     return {"token": token}

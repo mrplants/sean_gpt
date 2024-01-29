@@ -10,3 +10,6 @@ seangpt:
   frontend_image:
     image_name: "sean_gpt_frontend"
     image_tag: "latest"
+
+domain: "sean-gpt.com"
+api_domain: "api.sean-gpt.com"

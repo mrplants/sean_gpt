@@ -4,8 +4,10 @@ import hashlib
 import tempfile
 import os
 import uuid
+import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+import aio_pika
 
 from ...util.user import AuthenticatedUserDep
 from ...util.database import SessionDep
@@ -18,11 +20,13 @@ from ...model.file import (
     ShareSet,
     FileShareSetLink
 )
+from ...config import settings
 
 router = APIRouter(
     prefix="/file"
 )
 
+# TODO: This function is getting out of hand. It should be refactored into smaller building blocks.
 @describe(
 """ Uploads a file.
 
@@ -30,12 +34,19 @@ Args:
     files (List[UploadFile]): The files to upload.
 """)
 @router.post("")
-async def upload_file( # pylint: disable=missing-function-docstring
+async def upload_file( # pylint: disable=missing-function-docstring disable=too-many-locals
     *,
     file: UploadFile = File(...),
     session: SessionDep,
     minio_client: MinioClientDep,
     current_user: AuthenticatedUserDep) -> FileModel:
+    # Determine the file type from the file extension
+    file_extension = os.path.splitext(file.filename)[1][1:]
+    if file_extension not in SUPPORTED_FILE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File type {file_extension} is not supported."
+        )
     # Create the default share set for this file
     default_share_set = ShareSet(name="",
                                  is_public=False,
@@ -47,13 +58,11 @@ async def upload_file( # pylint: disable=missing-function-docstring
     file_id = uuid.uuid4()
     # Hash the file, calculate its size, and put it in temporary storage
     sha256_hash = hashlib.sha256()
-    # file_size = 0
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     chunk_size = 8192
     chunk = await file.read(chunk_size)
     while len(chunk) > 0:
         sha256_hash.update(chunk)
-        # file_size += len(chunk)
         temp_file.write(chunk)
         chunk = await file.read(chunk_size)
     file_hash = sha256_hash.hexdigest()
@@ -68,13 +77,6 @@ async def upload_file( # pylint: disable=missing-function-docstring
     finally:
         # Remove the temporary file
         os.unlink(temp_file.name)
-    # Determine the file type from the file extension
-    file_extension = os.path.splitext(file.filename)[1][1:]
-    if file_extension not in SUPPORTED_FILE_TYPES:
-        raise HTTPException(
-            status_code=422,
-            detail=f"File type {file_extension} is not supported."
-        )
     # Create a file record in the database
     file_record = FileModel(
         id=file_id,
@@ -96,5 +98,35 @@ async def upload_file( # pylint: disable=missing-function-docstring
     session.add(file_share_set_link)
     session.commit()
     session.refresh(file_record)
+    # Pass the file's status (awaiting processing) to the queue for file-monitoring
+    connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
+                                            login=settings.rabbitmq_secret_username,
+                                            password=settings.rabbitmq_secret_password)
+    async with connection:
+        channel = await connection.channel()
+
+        exchange = await channel.declare_exchange(name="monitor_file_processing", type="fanout")
+
+        await exchange.publish(
+            aio_pika.Message(
+            json.dumps({
+                'file_id': str(file_id),
+                'status': FILE_STATUS_AWAITING_PROCESSING
+            }).encode('utf-8'),
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        ),
+            routing_key='',
+        )
+
+        await channel.declare_queue(settings.app_file_processing_stage_txtfile2chunk_topic_name)
+        # Sending the message
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+            json.dumps({
+                'file_id': str(file_id),
+            }).encode('utf-8'), delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        ), routing_key=settings.app_file_processing_stage_txtfile2chunk_topic_name,
+        )
+
     # Return the file record
     return file_record

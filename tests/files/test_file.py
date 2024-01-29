@@ -3,7 +3,6 @@
 
 # Disable pylint flags for test fixtures:
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-import
 # pylint: disable=unused-argument
 
 # Disable pylint flags for new type of docstring:
@@ -20,7 +19,7 @@
 #   - The user can filter on:
 #     -  Share Set ID (exact)
 #     -  File ID
-#     -  File Contents and Metadata (Semantic Search, default or user-set threshold)
+#     -  File Contents and Metadata (Semantic Search)
 #
 # DELETE (protected, verified)
 #   Delete a file.  The user must have own the file.
@@ -56,10 +55,13 @@
 #    -  TODO: PDF files (pdf)
 # TODO: Test for uploading large files
 # TODO: Test that only file owners can access non-public files
-
 from pathlib import Path
+import threading as th
+import json
 
 import httpx
+from websockets.sync.client import connect as connect_ws
+from websockets.exceptions import ConnectionClosed
 
 from sean_gpt.util.describe import describe
 from sean_gpt.model.file import (
@@ -67,7 +69,6 @@ from sean_gpt.model.file import (
     FILE_STATUS_COMPLETE,
     FILE_STATUS_PROCESSING,
     FILE_STATUS_AWAITING_PROCESSING)
-from sean_gpt.config import settings
 
 from ..util.check_routes import check_verified_route
 
@@ -178,7 +179,7 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    temp_file = tmp_path.parent / "test_file.py"
+    temp_file = tmp_path.parent / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(
         f"{sean_gpt_host}/file",
@@ -218,7 +219,7 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_share_set_id(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    temp_file = tmp_path / "test_file.py"
+    temp_file = tmp_path / "test_file.txt"
     temp_file.write_text("Hello, World!")
     upload_response = httpx.post(
         f"{sean_gpt_host}/file",
@@ -257,40 +258,74 @@ Args:
     tmp_path (Path): A temporary path.
 """)
 def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict, tmp_path: Path):
-    # Semanti search not yet implemented
-    pass
-    # temp_file = tmp_path / "test_file.py"
-    # temp_file.write_text("Hello, World!")
-    # upload_response = httpx.post(
-    #     f"{sean_gpt_host}/file",
-    #     headers={
-    #         "Authorization": f"Bearer {verified_new_user['access_token']}"
-    #     },
-    #     files={"file": temp_file.open("rb")}
-    # ).json()
-    # # Retrieve the file
-    # get_response = httpx.get(
-    #     f"{sean_gpt_host}/file",
-    #     headers={
-    #         "Authorization": f"Bearer {verified_new_user['access_token']}"
-    #     },
-    #     params={
-    #         "semantic_search": "Welcome, Globe!",
-    #         "threshold": 0.5 # This is a very low threshold. Just for testing that it is accepted.
-    #     }
-    # )
-    # # The response should be:
-    # # HTTP/1.1 200 OK
-    # # [{
-    # #     "id": "...",
-    # #  ...
-    # # }]
-    # assert get_response.status_code == 200, (
-    #     f"Expected status code 200. Received status code {get_response.status_code}"
-    # )
-    # assert get_response.json()[0]['id'] == upload_response['id'], (
-    #     f"Expected response to contain 'id'. Received response {get_response.json()}"
-    # )
+    temp_file = tmp_path / "test_file.txt"
+    temp_file.write_text("Hello, World!")
+    upload_response = httpx.post(
+        f"{sean_gpt_host}/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        files={"file": temp_file.open("rb")}
+    ).json()
+    # Wait for the file processing to be complete
+    # Create a file processing token
+    token = httpx.get(
+        f"{sean_gpt_host}/file/processing/token",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"}).json()['token']
+    timer = None
+    # Connect to the websocket
+    # Put in a try block to catch any disconnect exceptions
+    try:
+        with connect_ws(f"{sean_gpt_host}/file/processing/ws?token={token}".replace('http',
+                                                                                    'ws')) as ws:
+            # The first messagein the exchange is the prior: a list of messages.
+            ws.send(json.dumps({
+                'action': 'monitor_file_processing',
+                'payload': {
+                    'file_id': upload_response['id']
+                }
+            }))
+            def timeout_assertion():
+                ws.close()
+                assert False, "The server took too long to respond."
+            timer = th.Timer(30, timeout_assertion)
+            timer.start()
+            # The server will disconnect when the file is processed)
+            print('Waiting for file processing to complete...')
+            while True:
+                print(f'Received message: {ws.recv()}')
+    except ConnectionClosed:
+        timer.cancel()
+
+    # Retrieve the file
+    get_response = httpx.get(
+        f"{sean_gpt_host}/file",
+        headers={
+            "Authorization": f"Bearer {verified_new_user['access_token']}"
+        },
+        params={
+            "semantic_search": "Welcome, Globe!",
+        }
+    )
+    # The response should be:
+    # HTTP/1.1 200 OK
+    # [{
+    #     "id": "...",
+    #  ...
+    # }]
+    assert get_response.status_code == 200, (
+        f"Expected status code 200. Received status code {get_response.status_code}"
+    )
+    assert len(get_response.json()) >= 1, (
+        f"Expected response to contain at least one file. Received response {get_response.json()}"
+    )
+    assert 'id' in get_response.json()[0], (
+        f"Expected response to contain 'id'. Received response {get_response.json()}"
+    )
+    assert get_response.json()[0]['id'] == upload_response['id'], (
+        f"Expected response to contain 'id'. Received response {get_response.json()}"
+    )
 
 @describe(
 """ Test that a only supported file types can be uploaded.
@@ -444,12 +479,11 @@ def test_verified_and_authorized(verified_new_user, sean_gpt_host, tmp_path):
                             "/file",
                             params={"share_set_id": upload_response['default_share_set_id']},
                             verified_user=verified_new_user)
-    # TODO: Test semantic search
-    # check_verified_route("GET",
-    #                      sean_gpt_host,
-    #                         "/file",
-    #                         params={"semantic_search": "test"},
-    #                         verified_user=verified_new_user)
+    check_verified_route("GET",
+                         sean_gpt_host,
+                            "/file",
+                            params={"semantic_search": "test"},
+                            verified_user=verified_new_user)
     check_verified_route("GET",
                          sean_gpt_host,
                             "/share_set",

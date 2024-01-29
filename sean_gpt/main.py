@@ -7,7 +7,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .util.database import reset_db_connection, create_admin_if_necessary
+from .util.database import (
+    reset_db_connection, create_admin_if_necessary, create_milvus_collection_if_necessary)
 from .routers import chat
 from .routers import user
 from .routers import twilio
@@ -23,6 +24,7 @@ if os.environ.get('SEAN_GPT_DEBUG', '0') == '1':
 async def lifespan(_): # pylint: disable=missing-function-docstring
     # Startup logic
     reset_db_connection()
+    create_milvus_collection_if_necessary()
     create_admin_if_necessary()
     if os.environ.get('SEAN_GPT_DEBUG', '0') == '1':
         mock.startup()

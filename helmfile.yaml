@@ -89,21 +89,10 @@ releases:
     - name: tenant.users[0].name
       value: "minio-user"
       
-  - name: kafka
-    chart: bitnami/kafka
+  - name: rabbitmq
+    chart: bitnami/rabbitmq-cluster-operator
     createNamespace: true
-    namespace: kafka
-    set:
-    - name: listeners.client.protocol
-      value: "PLAINTEXT"
-    - name: sasl.interbroker.password
-      value: {{ .Environment.Values.kafka.sasl.interbroker.password | quote}}
-    - name: sasl.controller.password
-      value: {{ .Environment.Values.kafka.sasl.controller.password | quote}}
-{{ if eq (exec "helm" (list "list" "-f" "kafka" "--namespace" "kafka" "--output" "json" "--kube-context" .Environment.KubeContext)) "[]" }}
-    - name: kraft.clusterId
-      value: {{ exec "kubectl" (list "get" "secret" "--namespace" "kafka" "kafka-kraft-cluster-id" "-o" "jsonpath={.data.kraft-cluster-id}" "--context" .Environment.KubeContext) | exec "base64" (list "-d") | quote }}
-{{ end }}
+    namespace: rabbitmq
 
   - name: keda
     chart: kedacore/keda
@@ -189,18 +178,13 @@ releases:
       value: true
     - name: environment
       value: {{ if eq .Environment.Name "default" }}local{{ else }}{{ .Environment.Name }}{{ end }}
-    - name: database.host
-      value: "postgres-postgresql.postgres.svc.cluster.local"
-    - name: redis.host
-      value: "redis-master.redis.svc.cluster.local"
-    - name: minio.host
-      value: "minio.minio-tenant.svc.cluster.local"
     values:
     - {{ toYaml .Environment.Values | nindent 6}}
     needs:
     - minio-tenant/minio-tenant
     - redis/redis
     - postgres/postgres
+    - rabbitmq/rabbitmq
     {{ if eq .Environment.Name "prod" }}
     - ingress-nginx/ingress-nginx
     - cert-manager/cert-manager

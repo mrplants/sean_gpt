@@ -110,6 +110,28 @@ def get_openai_response():
         "delay": float(redis_conn.get("openai_response_delay").decode("utf-8"))
     }
 
+class ChoiceDelta: # pylint: disable=too-few-public-methods
+    """ Mocks the ChoiceDelta class from the OpenAI API. """
+    def __init__(self, content='', role=None):
+        self.content = content
+        self.role = role
+        self.tool_calls = None
+
+class Choice: # pylint: disable=too-few-public-methods
+    """ Mocks the Choice class from the OpenAI API."""
+    def __init__(self, delta, finish_reason=None):
+        self.delta = delta
+        self.finish_reason = finish_reason
+
+class ChatCompletionChunk: # pylint: disable=too-few-public-methods
+    """ Mocks the ChatCompletionChunk class from the OpenAI API."""
+    def __init__(self, choices, created, model):
+        self.choices = choices
+        self.created = created
+        self.model = model
+        self.id = "mocked-id-stream"
+        self.object = "chat.completion.chunk"
+
 class AsyncMockStream:
     """ Mocks an asynchronous iterable that yields streaming API responses.
     """
@@ -134,28 +156,15 @@ class AsyncMockStream:
             self.index += 1
             await asyncio.sleep(self.delay)
 
-            class ChoiceDelta: # pylint: disable=too-few-public-methods
-                """ Mocks the ChoiceDelta class from the OpenAI API. """
-                def __init__(self, content='', role=None):
-                    self.content = content
-                    self.role = role
-
-            class Choice: # pylint: disable=too-few-public-methods
-                """ Mocks the Choice class from the OpenAI API."""
-                def __init__(self, delta):
-                    self.delta = delta
-
-            class ChatCompletionChunk: # pylint: disable=too-few-public-methods
-                """ Mocks the ChatCompletionChunk class from the OpenAI API."""
-                def __init__(self, choices, created, model):
-                    self.choices = choices
-                    self.created = created
-                    self.model = model
-                    self.id = "mocked-id-stream"
-                    self.object = "chat.completion.chunk"
-
             return ChatCompletionChunk(
                 choices=[Choice(delta=ChoiceDelta(content=char))],
+                created=1234567890,
+                model="gpt-4-mock")
+        elif self.index == len(self.content):
+            self.index += 1
+
+            return ChatCompletionChunk(
+                choices=[Choice(delta=ChoiceDelta(content=''), finish_reason="stop")],
                 created=1234567890,
                 model="gpt-4-mock")
         raise StopAsyncIteration

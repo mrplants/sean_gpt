@@ -27,7 +27,7 @@ milvus_collection = Collection(name=settings.milvus_collection_name)
 
 engine = create_engine(_DATABASE_URL, echo=settings.debug)
 
-CHUNK_BATCH_SIZE = 10
+CHUNK_BATCH_SIZE = settings.app_chunk2embedding_batch_size
 
 async def get_chunk_from_queue(name: str) -> Generator[str, None, None]:
     """Retrieves chunks from the queue.
@@ -48,6 +48,7 @@ async def get_chunk_from_queue(name: str) -> Generator[str, None, None]:
     async with connection:
         # Creating channel
         channel = await connection.channel()
+        await channel.set_qos(prefetch_count=CHUNK_BATCH_SIZE)
 
         # Declaring queue
         queue = await channel.declare_queue(name)
@@ -74,7 +75,7 @@ def calculate_vector_embedding(chunks: List[str]) -> List[List[float]]:
     """ Calculates the vector embedding for a chunk of text
     """
     response = openai_client.embeddings.create(
-        model="text-embedding-ada-002",
+        model="text-embedding-3-small",
         input=chunks,
         encoding_format="float"
     )
@@ -158,6 +159,8 @@ async def main():
                     ),
                         routing_key='',
                     )
+        # Reset the batch
+        batch = []
 
 if __name__ == '__main__':
     asyncio.run(main())

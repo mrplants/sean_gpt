@@ -73,5 +73,7 @@ class Settings(BaseSettings):
         Field(alias='sean_gpt_app_file_processing_stage_chunk2embedding_topic_name'))
     app_file_processing_stage_txtfile2chunk_topic_name: str = (
         Field(alias='sean_gpt_app_file_processing_stage_txtfile2chunk_topic_name'))
-
+    app_chunk2embedding_batch_size: int = (
+        Field(alias='sean_gpt_app_chunk2embedding_batch_size'))
+    
 settings = Settings()

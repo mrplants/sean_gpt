@@ -53,3 +53,5 @@ spec:
     metadata:
       host: "amqp://{{.Values.rabbitmq.secret_username}}:{{.Values.rabbitmq.secret_password}}@{{.Values.rabbitmq.host}}:{{.Values.rabbitmq.secret_port}}/" # amqp://guest:password@localhost:5672/vhost
       queueName: {{.Values.app.file_processing_stage_chunk2embedding_topic_name}}
+      mode: QueueLength
+      value: {{ .Values.app.chunk2embedding_batch_size | quote }}

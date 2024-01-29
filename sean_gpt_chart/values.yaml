@@ -9,7 +9,7 @@ jwt:
 
 app:
   chat_history_length: 10
-  default_ai_model: "gpt-4-1106-preview"
+  default_ai_model: "gpt-4-turbo-preview"
   welcome_message: "Welcome to SeanGPT! Your account is ready to go!"
   request_referral_message: "Please send your referral code as a standalone message."
   no_whatsapp_message: "Please only send SMS messages to this number. Whatsapp will be supported in the future."
@@ -23,6 +23,7 @@ app:
   file_status_consumer_timeout_seconds: 60
   file_processing_stage_txtfile2chunk_topic_name: "file_processing_stage_txtfile2chunk"
   file_processing_stage_chunk2embedding_topic_name: "file_processing_stage_chunk2embedding"
+  chunk2embedding_batch_size: 2048
 
 api:
   replicas: 1

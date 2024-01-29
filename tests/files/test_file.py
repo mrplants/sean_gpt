@@ -19,7 +19,7 @@
 #   - The user can filter on:
 #     -  Share Set ID (exact)
 #     -  File ID
-#     -  File Contents and Metadata (Semantic Search, default or user-set threshold)
+#     -  File Contents and Metadata (Semantic Search)
 #
 # DELETE (protected, verified)
 #   Delete a file.  The user must have own the file.
@@ -307,7 +307,6 @@ def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict
         },
         params={
             "semantic_search": "Welcome, Globe!",
-            "threshold": 0.5 # This is a very low threshold. Just for testing that it is accepted.
         }
     )
     # The response should be:
@@ -318,6 +317,12 @@ def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict
     # }]
     assert get_response.status_code == 200, (
         f"Expected status code 200. Received status code {get_response.status_code}"
+    )
+    assert len(get_response.json()) >= 1, (
+        f"Expected response to contain at least one file. Received response {get_response.json()}"
+    )
+    assert 'id' in get_response.json()[0], (
+        f"Expected response to contain 'id'. Received response {get_response.json()}"
     )
     assert get_response.json()[0]['id'] == upload_response['id'], (
         f"Expected response to contain 'id'. Received response {get_response.json()}"

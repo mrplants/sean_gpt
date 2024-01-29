@@ -82,6 +82,8 @@ async def get_files( # pylint: disable=missing-function-docstring
         # Finally, retrieve the files that match the results
         file_ids = [hit.entity.get('file_id') for hit in results[0]]
         ret_files = session.exec(select(File).where(File.id.in_(file_ids))).all()
+        print(f'Found {len(ret_files)} files matching semantic search', flush=True)
+        print(f'Files: {ret_files}', flush=True)
     else:
         raise HTTPException(status_code=400, detail="Must specify file_id, share_set_id, or "
                                                     "semantic_search.")

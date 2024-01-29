@@ -37,6 +37,7 @@ kubernetes = "^29.0.0"
 kafka-python = "^2.0.2"
 pika = "^1.3.2"
 aio-pika = "^9.4.0"
+beautifulsoup4 = "^4.12.3"
 
 
 [build-system]

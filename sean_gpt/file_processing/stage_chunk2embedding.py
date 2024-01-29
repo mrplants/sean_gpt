@@ -10,8 +10,8 @@ import asyncio
 from openai import OpenAI
 from pymilvus import connections, Collection
 from sqlalchemy import create_engine, text
-import aio_pika
 
+from . import util
 from ..util.describe import describe
 from ..config import settings
 from ..model.file import FILE_STATUS_COMPLETE, TextFileChunkingStatus
@@ -41,32 +41,14 @@ async def get_chunk_from_queue(name: str) -> Generator[str, None, None]:
     Yields:
         Generator[str, None, None]: A generator yielding chunks.
     """
-    connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
-                                               login=settings.rabbitmq_secret_username,
-                                               password=settings.rabbitmq_secret_password)
-
-    async with connection:
-        # Creating channel
-        channel = await connection.channel()
+    async with util.get_rabbitmq_channel() as channel:
         await channel.set_qos(prefetch_count=CHUNK_BATCH_SIZE)
 
-        # Declaring queue
-        queue = await channel.declare_queue(name)
-
-        async with queue.iterator() as queue_iter:
-            while True:
-                try:
-                    # Wait for a message for 5 seconds, then break if timeout occurs
-                    message = await asyncio.wait_for(queue_iter.__anext__(), timeout=5)
-                except asyncio.TimeoutError:
-                    # Break the loop if no message is received in 5 seconds
-                    print("No message received in 5 seconds. Exiting.")
-                    yield None
-                    break
-                else:
-                    async with message.process():
-                        payload = json.loads(message.body.decode('utf-8'))
-                        yield payload
+        async for message in util.iterate_queue(name, channel):
+            async with message.process():
+                payload = json.loads(message.body.decode('utf-8'))
+                yield payload
+        yield None
 
 @describe(
 """ Calculates the vector embedding for chunks of text
@@ -75,7 +57,7 @@ def calculate_vector_embedding(chunks: List[str]) -> List[List[float]]:
     """ Calculates the vector embedding for a chunk of text
     """
     response = openai_client.embeddings.create(
-        model="text-embedding-3-small",
+        model=settings.app_text_embedding_model,
         input=chunks,
         encoding_format="float"
     )
@@ -121,7 +103,8 @@ async def main():
     """
     # Begin retrieving chunks one by one from the queue, batching them up
     batch = []
-    async for chunk_dict in get_chunk_from_queue(settings.app_file_processing_stage_chunk2embedding_topic_name):
+    async for chunk_dict in get_chunk_from_queue(
+        settings.app_file_processing_stage_chunk2embedding_topic_name):
         if chunk_dict:
             batch.append(chunk_dict)
         if len(batch) < CHUNK_BATCH_SIZE and chunk_dict:
@@ -139,26 +122,7 @@ async def main():
             # If the count of chunks processed is equal to the total number of chunks, post to the
             # status queue that the file is processed
             if chunks_processed == total_chunks:
-                connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
-                                                            login=settings.rabbitmq_secret_username,
-                                                            password=settings.rabbitmq_secret_password)
-                async with connection:
-                    exchange_name = "monitor_file_processing"
-
-                    channel = await connection.channel()
-
-                    exchange = await channel.declare_exchange(name=exchange_name, type="fanout")
-
-                    await exchange.publish(
-                        aio_pika.Message(
-                        json.dumps({
-                            'file_id': file_id,
-                            'status': FILE_STATUS_COMPLETE
-                        }).encode('utf-8'),
-                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                    ),
-                        routing_key='',
-                    )
+                await util.announce_file_status(file_id, FILE_STATUS_COMPLETE)
         # Reset the batch
         batch = []
 

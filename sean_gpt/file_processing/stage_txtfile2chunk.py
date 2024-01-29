@@ -15,6 +15,7 @@ import asyncio
 from sqlmodel import Session, select
 import aio_pika
 
+from . import util
 from ..util.describe import describe
 from ..model.file import File, FILE_STATUS_PROCESSING, TextFileChunkingStatus
 from ..config import settings
@@ -23,11 +24,6 @@ from ..util.database import get_db_engine
 
 CHUNK_LENGTH = 500
 CHUNK_STRIDE = 100
-
-import asyncio
-import json
-from typing import Generator
-import aio_pika
 
 async def get_file_id_from_queue(name: str) -> Generator[str, None, None]:
     """Retrieves file IDs from the queue.
@@ -41,30 +37,11 @@ async def get_file_id_from_queue(name: str) -> Generator[str, None, None]:
     Yields:
         Generator[str, None, None]: A generator yielding file IDs.
     """
-    connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
-                                               login=settings.rabbitmq_secret_username,
-                                               password=settings.rabbitmq_secret_password)
-
-    async with connection:
-        # Creating channel
-        channel = await connection.channel()
-
-        # Declaring queue
-        queue = await channel.declare_queue(name)
-
-        async with queue.iterator() as queue_iter:
-            while True:
-                try:
-                    # Wait for a message for 5 seconds, then break if timeout occurs
-                    message = await asyncio.wait_for(queue_iter.__anext__(), timeout=5)
-                except asyncio.TimeoutError:
-                    # Break the loop if no message is received in 5 seconds
-                    print("No message received in 5 seconds. Exiting.", flush=True)
-                    break
-                else:
-                    async with message.process():
-                        payload = json.loads(message.body.decode('utf-8'))
-                        yield payload['file_id']
+    async with util.get_rabbitmq_channel() as channel:
+        async for message in util.iterate_queue(name, channel):
+            async with message.process():
+                payload = json.loads(message.body.decode('utf-8'))
+                yield payload['file_id']
 
 @describe(
 """ Downloads a file from minio, and returns the temporary file path.
@@ -102,10 +79,10 @@ def get_file_record_from_postgres(file_id: str) -> File|None:
 @describe(
 """ Chunks a txt file, and posts the chunks to a kafka topic.
 """)
-async def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File):
+async def chunk_txt_file(file_id: str, temp_file_path: str):
     """ Chunks a txt file, and posts the chunks to a kafka topic.
     """
-    # Save the chunks to the local filesystem in temporary files, temporary subdirectory named "chunks"
+    # Save the chunks to the local filesystem in temporary files, temporary subdir named "chunks"
     # Create a temporary directory for all chunks
     print('creating temporary directory for chunks', flush=True)
     num_chunks = 0
@@ -118,7 +95,9 @@ async def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File):
                 if not file_chunk:
                     break
                 # Create a temporary file for the chunk with the name as the chunk location
-                with open(os.path.join(temp_dir, str(file.tell() - len(file_chunk))), "w", encoding='utf-8') as temp_file:
+                with open(os.path.join(temp_dir, str(file.tell() - len(file_chunk))),
+                          "w",
+                          encoding='utf-8') as temp_file:
                     temp_file.write(file_chunk)
                     num_chunks += 1
         # Create a record to track the chunking status
@@ -131,32 +110,31 @@ async def chunk_txt_file(file_id: str, temp_file_path: str, file_record: File):
             )
             session.commit()
         print(f"File {file_id} has {num_chunks} chunks", flush=True)
-        # The chunk processing will happen in a separate kubernetes job, so post the chunks to a queue.
+        # The chunk processing will happen in a separate kubernetes job; post the chunks to a queue.
         # Iterate over all the chunk files, posting each to a queue
         print('posting chunks to queue', flush=True)
-        connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
-                                                login=settings.rabbitmq_secret_username,
-                                                password=settings.rabbitmq_secret_password)
-        async with connection:
-            # Creating a channel
-            channel = await connection.channel()
+        async with util.get_rabbitmq_channel() as channel:
             await channel.set_qos(prefetch_count=1)
 
             for chunk_file_name in os.listdir(temp_dir):
                 # Post the contents of the chunk file to the queue
-                with open(os.path.join(temp_dir, chunk_file_name), "r", encoding='utf-8') as chunk_file:
+                with open(os.path.join(temp_dir, chunk_file_name),
+                          "r",
+                          encoding='utf-8') as file_chunk:
                     message = aio_pika.Message(
                         json.dumps({
                             'file_id': str(file_id),
-                            'chunk_txt': chunk_file.read(),
+                            'chunk_txt': file_chunk.read(),
                             'chunk_location': int(chunk_file_name),
                         }).encode('utf-8'), delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                     )
                     print(f'Posting chunk: {chunk_file_name}', flush=True)
-                    await channel.declare_queue(settings.app_file_processing_stage_chunk2embedding_topic_name)
+                    await channel.declare_queue(
+                        settings.app_file_processing_stage_chunk2embedding_topic_name)
                     # Sending the message
                     await channel.default_exchange.publish(
-                        message, routing_key=settings.app_file_processing_stage_chunk2embedding_topic_name,
+                        message,
+                        routing_key=settings.app_file_processing_stage_chunk2embedding_topic_name,
                     )
 
 @describe(
@@ -167,7 +145,7 @@ async def chunk_file(file_id: str, file_record: File, temp_file_path: str):
     """
     # Chunk the file
     if file_record.type == "txt":
-        await chunk_txt_file(file_id, temp_file_path, file_record)
+        await chunk_txt_file(file_id, temp_file_path)
     else:
         print(f"Unsupported file type: {file_record.type}", flush=True)
         return
@@ -175,7 +153,7 @@ async def chunk_file(file_id: str, file_record: File, temp_file_path: str):
 async def post_file_status(file_id: str, status: str):
     """ Posts the file status to a queue and updates it in the database.
     """
-    # Post the file status to a kafka topic
+    # Post the file status to a queue
     with Session(get_db_engine()) as session:
         file_record = session.exec(select(File).where(File.id == file_id)).first()
         if not file_record:
@@ -184,41 +162,23 @@ async def post_file_status(file_id: str, status: str):
         file_record.status = status
         session.add(file_record)
         session.commit()
-    connection = await aio_pika.connect_robust(host=settings.rabbitmq_host,
-                                            login=settings.rabbitmq_secret_username,
-                                            password=settings.rabbitmq_secret_password)
-    async with connection:
-        exchange_name = "monitor_file_processing"
-
-        channel = await connection.channel()
-
-        exchange = await channel.declare_exchange(name=exchange_name, type="fanout")
-
-        await exchange.publish(
-            aio_pika.Message(
-            json.dumps({
-                'file_id': file_id,
-                'status': status
-            }).encode('utf-8'),
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-        ),
-            routing_key='',
-        )
+    await util.announce_file_status(file_id, status)
 
 @describe(
 """ Main function.
 """)
-async def main():
+async def main(): # pylint: disable=missing-function-docstring
     # Iterate over the queue of file IDs, chunking each file
     print("Starting file processing", flush=True)
-    async for file_id in get_file_id_from_queue(settings.app_file_processing_stage_txtfile2chunk_topic_name):
+    async for file_id in get_file_id_from_queue(
+        settings.app_file_processing_stage_txtfile2chunk_topic_name):
         # Post to the status topic that the file is processing
         print(f"Processing file {file_id}", flush=True)
         print(f"Posting file status: {FILE_STATUS_PROCESSING}", flush=True)
         await post_file_status(file_id, FILE_STATUS_PROCESSING)
         print(f"File status posted: {FILE_STATUS_PROCESSING}", flush=True)
         # Retrieve the file record from postgres
-        print(f"Retrieving file record from postgres", flush=True)
+        print("Retrieving file record from postgres", flush=True)
         file_record = get_file_record_from_postgres(file_id)
         print(f"File record retrieved from postgres: {file_record}", flush=True)
         if not file_record:

@@ -26,6 +26,7 @@ router = APIRouter(
     prefix="/file"
 )
 
+# TODO: This function is getting out of hand. It should be refactored into smaller building blocks.
 @describe(
 """ Uploads a file.
 
@@ -33,7 +34,7 @@ Args:
     files (List[UploadFile]): The files to upload.
 """)
 @router.post("")
-async def upload_file( # pylint: disable=missing-function-docstring
+async def upload_file( # pylint: disable=missing-function-docstring disable=too-many-locals
     *,
     file: UploadFile = File(...),
     session: SessionDep,

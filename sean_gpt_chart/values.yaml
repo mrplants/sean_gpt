@@ -24,6 +24,8 @@ app:
   file_processing_stage_txtfile2chunk_topic_name: "file_processing_stage_txtfile2chunk"
   file_processing_stage_chunk2embedding_topic_name: "file_processing_stage_chunk2embedding"
   chunk2embedding_batch_size: 2048
+  text_embedding_model: "text-embedding-3-small"
+  text_embedding_model_dim: 1536
 
 api:
   replicas: 1

@@ -4,7 +4,7 @@ import uuid
 import json
 import asyncio
 
-from fastapi import APIRouter, WebSocket, WebSocketException, WebSocketDisconnect, Query
+from fastapi import APIRouter, WebSocket, WebSocketException, WebSocketDisconnect, Query, status
 from sqlmodel import select
 import aio_pika
 
@@ -89,11 +89,11 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
             if not file:
                 raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
             # Start sending back file processing statuses, starting with the current file status
-            for status in ORDERED_FILE_STATUSES:
+            for file_status in ORDERED_FILE_STATUSES:
                 await websocket.send_json({
                     'file_id': str(file_id),
-                    'status': status})
-                if file.status == status:
+                    'status': file_status})
+                if file.status == file_status:
                     break
 
             await channel.declare_exchange(name='monitor_file_processing', type='fanout')

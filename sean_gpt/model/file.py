@@ -47,7 +47,7 @@ class File(SQLModel, table=True):
     file_share_set_links: List["FileShareSetLink"] = Relationship(
         back_populates="file",
         sa_relationship_kwargs={"cascade": "all, delete"})
-    
+
     processing_status: Optional[TextFileChunkingStatus] = Relationship(
         back_populates="file",
         sa_relationship_kwargs={"cascade": "all, delete"})

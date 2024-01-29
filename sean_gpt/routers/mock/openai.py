@@ -160,7 +160,7 @@ class AsyncMockStream:
                 choices=[Choice(delta=ChoiceDelta(content=char))],
                 created=1234567890,
                 model="gpt-4-mock")
-        elif self.index == len(self.content):
+        if self.index == len(self.content):
             self.index += 1
 
             return ChatCompletionChunk(

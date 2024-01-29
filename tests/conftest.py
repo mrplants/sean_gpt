@@ -10,9 +10,9 @@ from typing import Generator
 
 import pytest
 
-from .fixtures.kubernetes import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 from sean_gpt.util.describe import describe
 
+from .fixtures.kubernetes import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 from .fixtures.auth import * # pylint: disable=wildcard-import disable=unused-wildcard-import
 from .util.kubernetes import monitor_logs, port_forward
 

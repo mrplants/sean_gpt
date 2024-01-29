@@ -55,14 +55,13 @@
 #    -  TODO: PDF files (pdf)
 # TODO: Test for uploading large files
 # TODO: Test that only file owners can access non-public files
-
 from pathlib import Path
 import threading as th
+import json
 
 import httpx
 from websockets.sync.client import connect as connect_ws
 from websockets.exceptions import ConnectionClosed
-import json
 
 from sean_gpt.util.describe import describe
 from sean_gpt.model.file import (
@@ -293,7 +292,7 @@ def test_file_get_by_semantic_search(sean_gpt_host: str, verified_new_user: dict
             timer = th.Timer(30, timeout_assertion)
             timer.start()
             # The server will disconnect when the file is processed)
-            print(f'Waiting for file processing to complete...')
+            print('Waiting for file processing to complete...')
             while True:
                 print(f'Received message: {ws.recv()}')
     except ConnectionClosed:

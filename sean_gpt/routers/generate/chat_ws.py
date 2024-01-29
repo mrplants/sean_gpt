@@ -61,14 +61,19 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
             # Send the response back to the client chunk by chunk
             finish_reason = None
             async for chunk in response_stream:
-                if chunk.choices[0].delta.content is not None and chunk.choices[0].delta.content != '':
+                if (chunk.choices[0].delta.content is not None and
+                    chunk.choices[0].delta.content != ''):
                     await websocket.send_text(chunk.choices[0].delta.content)
                 if chunk.choices[0].delta.tool_calls is not None:
                     tool_call_results = []
                     for tool_call in chunk.choices[0].delta.tool_calls:
-                        if not tool_call.function or not tool_call.function.name or not tool_call.function.arguments:
+                        if (not tool_call.function or
+                            not tool_call.function.name or
+                            not tool_call.function.arguments):
                             continue
-                        tool_call_results.append((run_tool(tool_call.function.name, tool_call.function.arguments), tool_call.id))
+                        tool_call_results.append((run_tool(tool_call.function.name,
+                                                           tool_call.function.arguments),
+                                                  tool_call.id))
                     for result, tool_call_id in tool_call_results:
                         conversation.append({
                             "role": "tool",
@@ -94,7 +99,8 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
         # The client disconnected, so close the websocket
         await websocket.close()
 
-async def get_chat_completion_stream(conversation, include_tools:bool):
+# TODO: This is a hack.  Fix it.
+async def get_chat_completion_stream(conversation, include_tools:bool): # pylint: disable=missing-function-docstring
     if include_tools:
         return await openai_client.chat.completions.create(
             model=default_ai().name,
@@ -102,9 +108,8 @@ async def get_chat_completion_stream(conversation, include_tools:bool):
             stream=True,
             tools=nuclear_tools
         )
-    else:
-        return await openai_client.chat.completions.create(
-            model=default_ai().name,
-            messages=conversation,
-            stream=True,
-        )
+    return await openai_client.chat.completions.create(
+        model=default_ai().name,
+        messages=conversation,
+        stream=True,
+    )

@@ -1,4 +1,5 @@
 """ Database utilities for the Sean GPT API. """
+# pylint: disable=unused-import
 from typing import Annotated, Any
 
 from sqlmodel import create_engine, Session, select
@@ -37,11 +38,17 @@ def create_milvus_collection_if_necessary():
     chunk_id = FieldSchema(name="chunk_id", dtype=DataType.INT64, is_primary=True, auto_id=True)
     file_id = FieldSchema(name="file_id", dtype=DataType.VARCHAR, max_length=36)  # For UUIDs
     chunk_location = FieldSchema(name="chunk_location", dtype=DataType.INT64)
-    chunk_embedding = FieldSchema(name="chunk_embedding", dtype=DataType.FLOAT_VECTOR, dim=1536)  # Default dimensionality
+    chunk_embedding = FieldSchema(name="chunk_embedding",
+                                  dtype=DataType.FLOAT_VECTOR,
+                                  dim=settings.app_text_embedding_model_dim)
     chunk_txt = FieldSchema(name="chunk_txt", dtype=DataType.VARCHAR, max_length=1024)
 
     # Define the schema
-    schema = CollectionSchema(fields=[chunk_id, file_id, chunk_location, chunk_embedding, chunk_txt], description="Chunk collection schema")
+    schema = CollectionSchema(fields=[chunk_id,
+                                      file_id,
+                                      chunk_location,
+                                      chunk_embedding,
+                                      chunk_txt], description="Chunk collection schema")
 
     # Create the collection
     milvus_collection = Collection(name=settings.milvus_collection_name, schema=schema)

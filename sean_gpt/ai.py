@@ -1,9 +1,9 @@
 """ AI model functions. """
-import chunk
+import json
+
 from sqlmodel import Session, select
 from openai.types.chat import ChatCompletionToolParam
 from openai.types.shared_params import FunctionDefinition
-import json
 from pymilvus import connections, Collection
 import openai
 
@@ -53,8 +53,10 @@ def default_ai() -> AI:
     """
     return get_ai(settings.app_default_ai_model) or create_ai(settings.app_default_ai_model)
 
-def get_molten_salt_documents(query:str):
-    embedding = openai_client.embeddings.create(input=query)
+# TODO: This is a hack.  Fix it.
+def get_molten_salt_documents(query:str): # pylint: disable=missing-function-docstring
+    embedding = openai_client.embeddings.create(input=query,
+                                                model=settings.app_text_embedding_model)
     connections.connect(host=settings.milvus_host, port=settings.milvus_port)
     milvus_collection = Collection(name=settings.milvus_collection_name)
     milvus_collection.load()
@@ -71,14 +73,17 @@ def get_molten_salt_documents(query:str):
     result = ('I, the assistant, chose to use a function to retrieve relevant documents for '
               'research about molten salt nuclear reactors. This tool returned the following:\n')
     for index, (file_id, chunk) in enumerate(zip(file_ids, chunks)):
-        result += f'Result {index+1}:\n{chunk}\nDownload link: {settings.api_domain}/file?file_id={file_id}\n\n'
+        result += (f'Result {index+1}:\n{chunk}\nDownload link: '
+                   f'{settings.api_domain}/file?file_id={file_id}\n\n')
     return result
 
-def run_tool(name: str, arguments: str):
+# TODO: This is a hack.  Fix it.
+def run_tool(name: str, arguments: str): # pylint: disable=missing-function-docstring
     args = json.loads(arguments)
     if name == "get_molten_salt_documents":
         query = args["prompt"]
         return get_molten_salt_documents(query)
+    raise ValueError(f"Tool '{name}' not found.")
 
 nuclear_tools = [ChatCompletionToolParam(
     type="function",

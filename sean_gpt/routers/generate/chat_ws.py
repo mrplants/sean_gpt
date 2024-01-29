@@ -68,11 +68,21 @@ async def generate_chat_stream( # pylint: disable=missing-function-docstring
                     for tool_call in chunk.choices[0].delta.tool_calls:
                         if not tool_call.function or not tool_call.function.name or not tool_call.function.arguments:
                             continue
-                        tool_call_results.append(run_tool(tool_call.function.name, tool_call.function.arguments))
-                    for result in tool_call_results:
+                        tool_call_results.append((run_tool(tool_call.function.name, tool_call.function.arguments), tool_call.id))
+                    for result, tool_call_id in tool_call_results:
                         conversation.append({
-                            "role": "assistant",
-                            "content": result
+                            "role": "tool",
+                            "content": result,
+                            "tool_call_id": tool_call_id
+                        })
+                        conversation.append({
+                            "role": "system",
+                            "content": ("When passing retrieved data to the user, never provide an "
+"interpretation of the results to answer the user's question. Provide them a quotation and a "
+"download link. You are not the expert and are not qualified to interpret the results. Your only "
+"job is to identify which document answers the user's query, give a quote that inspires confidence "
+"that the answer is in the document, and provide a download link. Feel free to provide multiple "
+"documents that may answer the user's query. Use markup to make the links pretty.")
                         })
                 finish_reason = chunk.choices[0].finish_reason
             if finish_reason is not None and finish_reason != "tool_calls":

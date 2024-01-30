@@ -61,7 +61,8 @@ def calculate_vector_embedding(chunks: List[str]) -> List[List[float]]:
         input=chunks,
         encoding_format="float"
     )
-    embeddings = [embedding['embedding'] for embedding in response['data']]
+    print(response)
+    embeddings = [embedding.embedding for embedding in response.data]
     return embeddings
 
 @describe(

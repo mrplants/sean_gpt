@@ -18,17 +18,28 @@ Args:
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: file-processing-stage-txtfile2chunk
+  name: file-processing-stage-0
   namespace: seangpt
 spec:
   jobTargetRef:
     template:
       spec:
         containers:
-        - name: file-processing-stage-txtfile2chunk
-          image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
+        - name: file-processing-stage-0
+          image: nvidia/cuda:12.3.1-base-ubuntu20.04
+          # image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
           imagePullPolicy: IfNotPresent
-          command: ["python", "-m", "sean_gpt.file_processing.stage_txtfile2chunk"]
+          command: ["nvidia-smi"]
+          # command: ["python", "-m", "sean_gpt.file_processing.stage_txtfile2chunk"]
+          resources:
+            limits:
+              nvidia.com/gpu: 1 # requesting 1 GPU
+        tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Equal"
+          value: "present"
+          effect: "NoSchedule"
+
           env:
 {{ if eq .Values.environment "local" }}
           - name: SEAN_GPT_DEBUG

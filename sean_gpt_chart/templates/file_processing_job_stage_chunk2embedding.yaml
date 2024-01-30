@@ -18,14 +18,14 @@ Args:
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: file-processing-stage-1
+  name: file-processing-stage-chunk2embedding
   namespace: seangpt
 spec:
   jobTargetRef:
     template:
       spec:
         containers:
-        - name: file-processing-stage-1
+        - name: file-processing-stage-chunk2embedding
           image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
           imagePullPolicy: IfNotPresent
           command: ["python", "-m", "sean_gpt.file_processing.stage_chunk2embedding"]

@@ -27,7 +27,7 @@ spec:
         containers:
         - name: file-processing-stage-chunk2embedding
           image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["python", "-m", "sean_gpt.file_processing.stage_chunk2embedding"]
           env:
 {{ if eq .Values.environment "local" }}

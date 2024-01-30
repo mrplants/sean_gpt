@@ -67,7 +67,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 1
         image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
 {{ if and (eq .Values.environment "local") .Values.mount_host }}
         volumeMounts:
         - name: host-volume

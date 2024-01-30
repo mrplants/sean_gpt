@@ -28,7 +28,7 @@ spec:
         - name: file-processing-stage-0
           image: nvidia/cuda:12.3.1-base-ubuntu20.04
           # image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["nvidia-smi"]
           # command: ["python", "-m", "sean_gpt.file_processing.stage_txtfile2chunk"]
           resources:

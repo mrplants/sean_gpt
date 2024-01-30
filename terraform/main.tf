@@ -16,6 +16,9 @@ resource "azurerm_kubernetes_cluster" "sean_gpt_aks" {
   default_node_pool {
     name       = "default"
     node_count = 1
+    enable_auto_scaling = true
+    min_count = 1
+    max_count = 2
     vm_size    = "Standard_DS2_v2"
   }
 
@@ -23,6 +26,21 @@ resource "azurerm_kubernetes_cluster" "sean_gpt_aks" {
     type = "SystemAssigned"
   }
 
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "gpu_node_pool" {
+  name                  = "gpunodepool"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.sean_gpt_aks.id
+  vm_size               = "Standard_NC4as_T4_v3"
+  node_count            = 0
+  min_count             = 0
+  max_count             = 10
+  enable_auto_scaling   = true
+  os_disk_size_gb       = 30
+  node_taints = ["nvidia.com/gpu=present:NoSchedule"]
+  node_labels = {
+    "gpu" = "nvidia"
+  }
 }
 
 resource "null_resource" "configure_kubectl_context" {

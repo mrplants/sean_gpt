@@ -18,17 +18,28 @@ Args:
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: file-processing-stage-chunk2embedding
+  name: file-processing-stage-0
   namespace: seangpt
 spec:
   jobTargetRef:
     template:
       spec:
         containers:
-        - name: file-processing-stage-chunk2embedding
-          image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
+        - name: file-processing-stage-0
+          image: nvidia/cuda:12.3.1-base-ubuntu20.04
+          # image: {{ .Values.seangpt.api_image.image_name }}:{{ .Values.seangpt.api_image.image_tag }}
           imagePullPolicy: Always
-          command: ["python", "-m", "sean_gpt.file_processing.stage_chunk2embedding"]
+          command: ["nvidia-smi"]
+          # command: ["python", "-m", "sean_gpt.file_processing.stage_txtfile2chunk"]
+          resources:
+            limits:
+              nvidia.com/gpu: 1 # requesting 1 GPU
+        tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Equal"
+          value: "present"
+          effect: "NoSchedule"
+
           env:
 {{ if eq .Values.environment "local" }}
           - name: SEAN_GPT_DEBUG
@@ -45,13 +56,11 @@ spec:
             path: /mnt/sean_gpt
             type: Directory
 {{ end }}
-
-
   pollingInterval: 1
   triggers:
   - type: rabbitmq
     metadata:
       host: "amqp://{{.Values.rabbitmq.secret_username}}:{{.Values.rabbitmq.secret_password}}@{{.Values.rabbitmq.host}}:{{.Values.rabbitmq.secret_port}}/" # amqp://guest:password@localhost:5672/vhost
-      queueName: {{.Values.app.file_processing_stage_chunk2embedding_topic_name}}
+      queueName: {{.Values.app.file_processing_stage_txtfile2chunk_topic_name}}
       mode: QueueLength
-      value: {{ .Values.app.chunk2embedding_batch_size | quote }}
+      value: "1"

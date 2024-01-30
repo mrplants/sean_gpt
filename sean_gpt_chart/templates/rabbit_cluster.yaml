@@ -3,6 +3,11 @@ kind: RabbitmqCluster
 metadata:
   name: file-processing-queue
 spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
   secretBackend:
     externalSecret: 
       name: "rabbitmq-secret"

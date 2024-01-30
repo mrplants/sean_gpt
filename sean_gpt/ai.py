@@ -55,8 +55,9 @@ def default_ai() -> AI:
 
 # TODO: This is a hack.  Fix it.
 def get_molten_salt_documents(query:str): # pylint: disable=missing-function-docstring
-    embedding = openai_client.embeddings.create(input=query,
-                                                model=settings.app_text_embedding_model)
+    embedding = openai_client.embeddings.create(
+        input=query,
+        model=settings.app_text_embedding_model).data[0].embedding
     connections.connect(host=settings.milvus_host, port=settings.milvus_port)
     milvus_collection = Collection(name=settings.milvus_collection_name)
     milvus_collection.load()
@@ -100,13 +101,15 @@ nuclear_tools = [ChatCompletionToolParam(
 "nuclear power and molten salt reactors."
         ),
         parameters={
+        "type": "object",
         "properties": {
           "prompt": {
             "type": "string",
             "description": (
 "The search prompt. The function will calculate the semantic relevance of the documents to this "
 "prompt and return the most relevant content. Note that the function is semantically matching "
-"against this prompt, so it should be statement to match against, not a question."),
+"against this prompt, so it should be statement to match against, not a question.  Write a "
+"search prompt with lots of detail about what you might need to match against, several sentnences long."),
           },
         },
         "required": ["query"],

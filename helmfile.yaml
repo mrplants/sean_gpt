@@ -32,6 +32,8 @@ repositories:
     url: https://grafana.github.io/helm-charts
   - name: minio
     url: https://operator.min.io/
+  - name: nvdp
+    url: https://nvidia.github.io/k8s-device-plugin
 
 releases:
   - name: ingress-nginx
@@ -54,6 +56,13 @@ releases:
         value: true
 # helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
 
+  - name: nvidia-device-plugin
+    chart: nvdp/nvidia-device-plugin
+    installed: {{ eq .Environment.Name "prod" }}
+    createNamespace: true
+    namespace: nvidia-device-plugin
+    version: "0.14.4"
+
   - name: milvus
     chart: milvus/milvus
     createNamespace: true
@@ -74,6 +83,17 @@ releases:
     chart: minio/operator
     createNamespace: true
     namespace: minio-operator
+    set:
+    - name: operator.replicaCount
+      value: 1
+    - name: operator.resources.requests.memory
+      value: 100Mi
+    - name: operator.resources.requests.cpu
+      value: 100m
+    - name: console.resources.requests.memory
+      value: 100Mi
+    - name: console.resources.requests.cpu
+      value: 100m
   
   - name: minio-tenant
     chart: minio/tenant
@@ -93,6 +113,15 @@ releases:
     chart: bitnami/rabbitmq-cluster-operator
     createNamespace: true
     namespace: rabbitmq
+    set:
+    - name: clusterOperator.resources.requests.cpu
+      value: 50m
+    - name: clusterOperator.resources.requests.memory
+      value: 100Mi
+    - name: msgTopologyOperator.resources.requests.cpu
+      value: 50m
+    - name: msgTopologyOperator.resources.requests.memory
+      value: 100Mi
 
   - name: keda
     chart: kedacore/keda
@@ -133,41 +162,41 @@ releases:
     - name: auth.enabled
       value: false
 
-  - name: grafana
-    chart: grafana/grafana
-    createNamespace: true
-    namespace: monitoring
-    set:
-      - name: adminUser
-        value: {{ .Environment.Values.grafana.adminUser }}
-      - name: adminPassword
-        value: {{ .Environment.Values.grafana.adminPassword }}
-      - name: persistence.enabled
-        value: true
+  # - name: grafana
+  #   chart: grafana/grafana
+  #   createNamespace: true
+  #   namespace: monitoring
+  #   set:
+  #     - name: adminUser
+  #       value: {{ .Environment.Values.grafana.adminUser }}
+  #     - name: adminPassword
+  #       value: {{ .Environment.Values.grafana.adminPassword }}
+  #     - name: persistence.enabled
+  #       value: true
 
-  - name: prometheus
-    chart: prometheus-community/prometheus
-    createNamespace: true
-    namespace: monitoring
-    values:
-    - extraScrapeConfigs: |
-        - job_name: prometheus-postgres-exporter
-          metrics_path: /metrics
-          static_configs:
-          - targets: ['postgres-exporter-prometheus-postgres-exporter.postgres.svc.cluster.local:80']
+  # - name: prometheus
+  #   chart: prometheus-community/prometheus
+  #   createNamespace: true
+  #   namespace: monitoring
+  #   values:
+  #   - extraScrapeConfigs: |
+  #       - job_name: prometheus-postgres-exporter
+  #         metrics_path: /metrics
+  #         static_configs:
+  #         - targets: ['postgres-exporter-prometheus-postgres-exporter.postgres.svc.cluster.local:80']
 
-  - name: postgres-exporter
-    chart: prometheus-community/prometheus-postgres-exporter
-    namespace: postgres
-    set:
-      - name: config.datasource.host
-        value: "postgres-postgresql.postgres.svc.cluster.local"
-      - name: config.datasource.user
-        value: {{ .Environment.Values.api_db_user }}
-      - name: config.datasource.password
-        value: {{ .Environment.Values.api_db_password }}
-      - name: config.datasource.database
-        value: {{ .Environment.Values.database.name }}
+  # - name: postgres-exporter
+  #   chart: prometheus-community/prometheus-postgres-exporter
+  #   namespace: postgres
+  #   set:
+  #     - name: config.datasource.host
+  #       value: "postgres-postgresql.postgres.svc.cluster.local"
+  #     - name: config.datasource.user
+  #       value: {{ .Environment.Values.api_db_user }}
+  #     - name: config.datasource.password
+  #       value: {{ .Environment.Values.api_db_password }}
+  #     - name: config.datasource.database
+  #       value: {{ .Environment.Values.database.name }}
 
   - name: "seangpt"
     chart: "./sean_gpt_chart"
